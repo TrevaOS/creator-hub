@@ -1,0 +1,167 @@
+.content {
+  padding: 16px 16px calc(var(--tab-bar-height) + 16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.exportBtn {
+  font-size: 13px !important;
+  padding: 0 14px !important;
+  min-height: 38px !important;
+  gap: 6px;
+}
+
+.platformScroll {
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.statCard {
+  padding: 0;
+}
+
+.statCardInner {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statIcon {
+  font-size: 18px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.statLabel {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.statDelta {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.up { color: #4CAF50; }
+.down { color: #E53935; }
+
+/* Engagement card */
+.engagementCard {
+  padding: 16px;
+}
+
+.cardTitle {
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.engagementInner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.engagementInfo {
+  flex: 1;
+}
+
+.engagementDesc {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.engagementDesc strong {
+  color: var(--text-primary);
+  font-size: var(--font-body);
+}
+
+.engagementBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  font-weight: 600;
+}
+
+.good { background: rgba(201, 169, 110, 0.15); color: var(--cane); }
+.avg { background: rgba(158, 158, 158, 0.15); color: var(--grey-500); }
+
+/* Chart card */
+.chartCard {
+  padding: 16px;
+}
+
+/* Tooltip */
+.tooltip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.tooltipLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.tooltipVal {
+  font-size: var(--font-body);
+  font-weight: 700;
+  color: var(--cane);
+}
+
+/* Top posts */
+.postCard {
+  flex-shrink: 0;
+  width: 120px;
+}
+
+.postThumb {
+  width: 120px;
+  height: 160px;
+  border-radius: var(--radius-md);
+}
+
+.postStats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+.postStats span {
+  font-size: 11px;
+  color: var(--text-secondary);
+}

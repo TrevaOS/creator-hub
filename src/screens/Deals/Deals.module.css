@@ -1,0 +1,306 @@
+.content {
+  padding: 16px 16px calc(var(--tab-bar-height) + 16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.locationRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  margin-top: 2px;
+}
+
+.filterBtn {
+  font-size: 13px !important;
+  padding: 0 14px !important;
+  min-height: 38px !important;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tabRow {
+  gap: 8px;
+}
+
+.dealList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonDeal {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-secondary);
+  font-size: var(--font-body);
+}
+
+/* Deal Card */
+.dealCard {
+  padding: 0;
+  cursor: pointer;
+}
+
+.dealCardInner {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dealBrandRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dealBrandLogo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: var(--bg-secondary);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandLogoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.brandInitial {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cane);
+}
+
+.dealBrandInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.dealBrandName {
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dealCategory {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+
+.dealPayout {
+  flex-shrink: 0;
+}
+
+.payoutBadge {
+  background-color: rgba(201, 169, 110, 0.15);
+  color: var(--cane);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dealChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dealDeliverables {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.dealMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dealPlatforms {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.platformPill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dealLocation {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Action buttons row */
+.dealActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.dealActionBtn {
+  flex: 1;
+  font-size: 13px !important;
+  min-height: 38px !important;
+  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acceptedBadge {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+}
+
+/* Accepted Deal Card */
+.acceptedCard {
+  padding: 0;
+  cursor: pointer;
+}
+
+.acceptedInner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+.acceptedBrand {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: var(--cane);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--black);
+  flex-shrink: 0;
+}
+
+.acceptedLogoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.acceptedInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.acceptedBrandName {
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.acceptedDeliverable {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusPill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+  align-self: flex-start;
+}
+
+.chatBtn {
+  font-size: 13px !important;
+  padding: 0 16px !important;
+  min-height: 38px !important;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Filter sheet */
+.filterSheet {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filterLabel {
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

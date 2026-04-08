@@ -1,0 +1,23 @@
+.card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.outlined {
+  border: 1px solid var(--border-color);
+}
+
+.clickable {
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.clickable:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
+}

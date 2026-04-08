@@ -1,0 +1,74 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  font-weight: 500;
+  transition: background-color var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+
+/* Sizes */
+.md {
+  padding: 6px 12px;
+  font-size: var(--font-caption);
+  min-height: 32px;
+}
+
+.sm {
+  padding: 4px 8px;
+  font-size: 11px;
+  min-height: 24px;
+}
+
+.lg {
+  padding: 8px 16px;
+  font-size: var(--font-body);
+  min-height: 40px;
+}
+
+/* Variants */
+.default {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.filled {
+  background-color: var(--cane);
+  color: var(--black);
+  border: none;
+}
+
+.outline {
+  background-color: transparent;
+  color: var(--cane);
+  border: 1.5px solid var(--cane);
+}
+
+.ghost {
+  background-color: rgba(201, 169, 110, 0.12);
+  color: var(--cane);
+  border: none;
+}
+
+/* Active state */
+.default.active {
+  background-color: rgba(201, 169, 110, 0.15);
+  color: var(--cane);
+  border-color: var(--cane);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:active {
+  opacity: 0.8;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+}

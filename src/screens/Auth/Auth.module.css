@@ -1,0 +1,96 @@
+.screen {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px 40px;
+  justify-content: center;
+}
+
+.logoSection {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--cane), var(--cane-dark));
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--black);
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 24px rgba(201, 169, 110, 0.4);
+}
+
+.appName {
+  font-size: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.tagline {
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formTitle {
+  font-size: var(--font-title);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.error {
+  color: #E53935;
+  font-size: var(--font-caption);
+  padding: 10px 14px;
+  background-color: rgba(229, 57, 53, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-color);
+}
+
+.demoBtn {
+  font-size: var(--font-body) !important;
+}

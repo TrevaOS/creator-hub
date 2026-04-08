@@ -1,0 +1,206 @@
+.content {
+  padding: 16px 16px calc(var(--tab-bar-height) + 16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.searchBarWrap {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg-primary);
+  padding-bottom: 4px;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--input-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 0 16px;
+  min-height: 48px;
+  transition: border-color var(--transition);
+}
+
+.searchBar:focus-within {
+  border-color: var(--cane);
+}
+
+.searchIcon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  font-size: 16px;
+  color: var(--text-primary);
+  background: none;
+}
+
+.filterRow {
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.section {
+  /* spacing handled by parent gap */
+}
+
+/* Creators grid */
+.creatorsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.creatorCard {
+  padding: 0;
+  overflow: visible;
+}
+
+.creatorCardInner {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.creatorInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.creatorName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.creatorStats {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.followerCount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cane);
+  white-space: nowrap;
+}
+
+.followerLabel {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.collabPill {
+  background-color: rgba(201, 169, 110, 0.1);
+  border-top: 1px solid var(--border-light);
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--cane);
+  font-weight: 500;
+}
+
+/* Recent collabs */
+.collabList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.collabCard {
+  padding: 0;
+}
+
+.collabInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.collabAvatars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.collabX {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.brandIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: var(--cane);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--black);
+}
+
+.collabInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.collabNames {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collabDeliverable {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.collabPlatformIcon {
+  flex-shrink: 0;
+}
+
+/* Sort bar */
+.sortBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+
+.sortBtn {
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  min-height: 28px;
+}
+
+.sortActive {
+  background-color: rgba(201, 169, 110, 0.15);
+  color: var(--cane);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}

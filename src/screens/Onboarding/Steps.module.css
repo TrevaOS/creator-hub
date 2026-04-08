@@ -1,0 +1,224 @@
+.step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px;
+}
+
+.hero {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0 24px;
+}
+
+.logoMark {
+  width: 96px;
+  height: 96px;
+  background: linear-gradient(135deg, var(--cane), var(--cane-dark));
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(201, 169, 110, 0.4);
+}
+
+.logoText {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--black);
+  letter-spacing: -1px;
+}
+
+.content {
+  flex: 1;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.highlight {
+  color: var(--cane);
+}
+
+.body {
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.featureRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.featureEmoji {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.featureText {
+  font-size: var(--font-body);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 0 32px;
+}
+
+.cta {
+  font-size: var(--font-body) !important;
+}
+
+.backBtn {
+  min-width: 80px;
+}
+
+.nextBtn {
+  flex: 1;
+}
+
+/* Socials */
+.socialList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.socialRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  min-height: 60px;
+}
+
+.socialIcon {
+  width: 32px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.socialInputWrap {
+  flex: 1;
+}
+
+.socialLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.socialInput {
+  width: 100%;
+  font-size: 15px;
+  color: var(--text-primary);
+  background: none;
+}
+
+/* Profile */
+.avatarPicker {
+  position: relative;
+  width: 80px;
+  margin: 0 auto 24px;
+  cursor: pointer;
+}
+
+.cameraBadge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 26px;
+  height: 26px;
+  background-color: var(--cane);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+  border: 2px solid var(--bg-primary);
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formLabel {
+  display: block;
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.usernameWrap {
+  display: flex;
+  align-items: center;
+  background-color: var(--input-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  min-height: 48px;
+  transition: border-color var(--transition);
+}
+
+.usernameWrap:focus-within {
+  border-color: var(--cane);
+}
+
+.usernamePrefix {
+  padding: 0 0 0 16px;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.usernameInput {
+  flex: 1;
+  padding: 14px 16px;
+  background: none;
+  border: none !important;
+  min-height: unset !important;
+}
+
+.textarea {
+  min-height: 80px;
+  resize: none;
+  line-height: 1.5;
+}
+
+.nicheGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.error {
+  color: #E53935;
+  font-size: var(--font-caption);
+  margin-top: 8px;
+}

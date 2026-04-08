@@ -1,0 +1,83 @@
+/* ===== CSS VARIABLES ===== */
+:root {
+/* Brand Colors - Premium Cyan Theme */
+--cane: #00ACC1;
+--cane-light: #80DEEA;
+--cane-dark: #006064;
+--white: #FFFFFF;
+--black: #111111;
+
+  /* Greys */
+  --grey-100: #F5F5F5;
+  --grey-300: #D1D1D1;
+  --grey-500: #9E9E9E;
+  --grey-800: #2C2C2C;
+
+  /* Typography */
+  --font-display: 1.75rem;
+  --font-title: 1.25rem;
+  --font-body: 1rem;
+  --font-caption: 0.75rem;
+  --font-label: 0.625rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.12);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.16);
+
+  /* Navigation */
+  --tab-bar-height: 64px;
+
+  /* Transitions */
+  --transition: 200ms ease;
+}
+
+/* ===== LIGHT THEME (default) ===== */
+[data-theme="light"], :root {
+  --bg-primary: var(--white);
+  --bg-secondary: var(--grey-100);
+  --bg-card: var(--white);
+  --bg-overlay: rgba(0,0,0,0.5);
+  --text-primary: var(--black);
+  --text-secondary: var(--grey-500);
+  --text-tertiary: var(--grey-300);
+  --border-color: var(--grey-300);
+  --border-light: var(--grey-100);
+  --input-bg: var(--grey-100);
+  --shadow-color: rgba(0,0,0,0.1);
+  --tab-bg: var(--white);
+  --tab-border: var(--grey-300);
+}
+
+/* ===== DARK THEME ===== */
+[data-theme="dark"] {
+  --bg-primary: var(--black);
+  --bg-secondary: var(--grey-800);
+  --bg-card: #1C1C1C;
+  --bg-overlay: rgba(0,0,0,0.7);
+  --text-primary: var(--white);
+  --text-secondary: var(--grey-500);
+  --text-tertiary: var(--grey-800);
+  --border-color: var(--grey-800);
+  --border-light: #2A2A2A;
+  --input-bg: var(--grey-800);
+  --shadow-color: rgba(0,0,0,0.4);
+  --tab-bg: #1C1C1C;
+  --tab-border: var(--grey-800);
+}

@@ -1,0 +1,205 @@
+.screen {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  /* bottom padding ensures content doesn't hide behind fixed CTA */
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-primary);
+  z-index: 10;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.backBtn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-primary);
+}
+
+.topTitle {
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.content {
+  flex: 1;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.loadingState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+/* Brand section */
+.brandSection {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brandLogo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background-color: var(--cane);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--black);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: var(--font-title);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.category {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+
+.payoutBadge {
+  margin-left: auto;
+  background-color: rgba(201, 169, 110, 0.15);
+  color: var(--cane);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Sections */
+.section {
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.sectionTitle {
+  font-size: var(--font-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cane);
+  margin-bottom: 10px;
+}
+
+.sectionText {
+  font-size: var(--font-body);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.deliverablesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deliverableItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-body);
+  color: var(--text-primary);
+}
+
+.checkIcon {
+  color: var(--cane);
+  flex-shrink: 0;
+}
+
+.platformRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.platformChip {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* CTA bar */
+.ctaBar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  gap: 12px;
+}
+
+.ctaBtn {
+  flex: 1;
+}
+
+.acceptedMsg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--cane);
+  font-weight: 600;
+  width: 100%;
+  text-align: center;
+}

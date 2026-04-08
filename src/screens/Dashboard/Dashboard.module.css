@@ -1,0 +1,448 @@
+.screenContent {
+  padding: 16px 16px calc(var(--tab-bar-height) + 16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.skeletonCard {
+  padding: 24px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Profile Card */
+.profileCard {
+  overflow: hidden;
+}
+
+.profileCardInner {
+  padding: 24px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Avatar with platform badge */
+.avatarWrap {
+  position: relative;
+  display: inline-block;
+}
+
+.igBadge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+}
+
+.profileName {
+  font-size: var(--font-title);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 12px;
+  text-align: center;
+}
+
+.handle {
+  font-size: var(--font-caption);
+  color: var(--cane);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.tagline {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* Stats row */
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 16px;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 14px 0;
+  width: 100%;
+}
+
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.statNum {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.statDivider {
+  width: 1px;
+  height: 28px;
+  background-color: var(--border-color);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.locationRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  margin-top: 8px;
+}
+
+.bio {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.5;
+  margin-top: 10px;
+  max-width: 280px;
+  white-space: pre-line;
+}
+
+.socialsRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.socialBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition);
+}
+
+.socialBtn:active {
+  transform: scale(0.92);
+}
+
+.actionRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.actionBtn {
+  flex: 1;
+  font-size: 14px !important;
+  padding: 0 12px !important;
+  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: var(--font-body);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.viewAllLink {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-caption);
+  color: var(--cane);
+  font-weight: 500;
+}
+
+/* Content tabs */
+.contentTabs {
+  display: flex;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.contentTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border-radius: calc(var(--radius-sm) - 2px);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+
+.contentTabActive {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+/* Posts grid — 3 col Instagram style */
+.postsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.postTile {
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.postTile:active {
+  opacity: 0.85;
+}
+
+.reelIndicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  background-color: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.postOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 6px 6px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.5));
+}
+
+.postLikes {
+  font-size: 10px;
+  color: white;
+  font-weight: 600;
+}
+
+/* YouTube videos list */
+.ytList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ytCard {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ytThumb {
+  width: 100px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytPlayBtn {
+  width: 28px;
+  height: 28px;
+  background-color: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytInfo {
+  flex: 1;
+  padding: 10px 12px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ytTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ytViews {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Carousel */
+.carouselTile {
+  flex-shrink: 0;
+  width: 140px;
+}
+
+.carouselImg {
+  width: 140px;
+  height: 190px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-secondary);
+}
+
+.carouselCaption {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  padding: 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Spotify */
+.spotifyCard {
+  padding: 0;
+}
+
+.spotifyInner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+.spotifyIcon {
+  flex-shrink: 0;
+}
+
+.spotifyInfo {
+  flex: 1;
+}
+
+.spotifyLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.spotifyName {
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.spotifyBtn {
+  font-size: 13px !important;
+  padding: 0 14px !important;
+  min-height: 36px !important;
+  gap: 4px;
+}
+
+/* Collab brands */
+.brandBadge {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.brandLogo {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  background-color: var(--bg-secondary);
+  padding: 4px;
+}
+
+.brandInitial {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background-color: var(--cane);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--black);
+}
+
+.brandName {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,247 @@
+.content {
+  padding: 16px 16px calc(var(--tab-bar-height) + 24px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menuBtn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Sections */
+.section {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionTitle {
+  font-size: var(--font-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cane);
+  margin-bottom: 2px;
+}
+
+/* Avatar picker */
+.avatarPicker {
+  position: relative;
+  width: 72px;
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+.cameraBadge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  background-color: var(--cane);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+  border: 2px solid var(--bg-primary);
+}
+
+/* Form groups */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.textarea {
+  min-height: 80px;
+  resize: none;
+}
+
+.usernameWrap {
+  display: flex;
+  align-items: center;
+  background-color: var(--input-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  min-height: 48px;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.usernameWrap:focus-within {
+  border-color: var(--cane);
+}
+
+.prefix {
+  padding: 0 0 0 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.usernameInput {
+  flex: 1;
+  padding: 14px 12px;
+  font-size: 16px;
+  color: var(--text-primary);
+  background: none;
+  min-height: unset;
+}
+
+.nicheGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Social rows */
+.socialRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.socialRow:last-child {
+  border-bottom: none;
+}
+
+.socialLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.socialInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.socialName {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.socialInput {
+  font-size: 15px;
+  color: var(--text-primary);
+  width: 100%;
+  background: none;
+}
+
+/* Module rows */
+.moduleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 12px;
+}
+
+.moduleRow:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.moduleInfo {
+  flex: 1;
+}
+
+.moduleTitle {
+  font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.moduleDesc {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+
+.saveBtn {
+  font-size: var(--font-body) !important;
+}
+
+/* Menu sheet */
+.menuSheet {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  color: var(--text-primary);
+  font-size: var(--font-body);
+  width: 100%;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+  min-height: 52px;
+}
+
+.menuItem:last-child {
+  border-bottom: none;
+}
+
+.menuItemDanger {
+  color: #E53935;
+}
+
+.menuBadge {
+  margin-left: auto;
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.menuDivider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin: 8px 0;
+}

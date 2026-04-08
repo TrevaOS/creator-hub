@@ -1,0 +1,178 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MapPin, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../store/AuthContext';
+import { supabase } from '../../services/supabase';
+import Chip from '../../components/Chip';
+import styles from './DealDetail.module.css';
+
+const MOCK_DEALS = {
+  '1': { id: '1', brand_name: 'StyleCo', brand_logo: null, category: 'Fashion', location: 'Mumbai, India', niche_tags: ['fashion', 'lifestyle'], requirement: 'Minimum 10K followers on Instagram. Fashion-focused content preferred. Must have a clean feed aesthetic and engage with your audience regularly.', deliverables: '2 Reels + 3 Stories', platform: 'instagram', payout_min: 15000, payout_max: 25000, status: 'open', timeline: '2 weeks', brief: 'We are StyleCo, India\'s fastest growing sustainable fashion brand. We want to collaborate with creators who genuinely love fashion and sustainability. We\'ll send you our latest collection and you can style it your way.' },
+  '2': { id: '2', brand_name: 'TechGear Pro', brand_logo: null, category: 'Technology', location: 'Bangalore, India', niche_tags: ['tech', 'gadgets'], requirement: 'YouTube channel with 5K+ subscribers. Tech review experience needed. Honest and detailed reviews preferred.', deliverables: '1 Video Review + Community Post', platform: 'youtube', payout_min: 20000, payout_max: 40000, status: 'open', timeline: '3 weeks', brief: 'TechGear Pro creates premium tech accessories. We\'re launching our new wireless earbuds and need creators to give honest reviews. You get to keep the product after.' },
+};
+
+export default function DealDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [deal, setDeal] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+
+  useEffect(() => {
+    fetchDeal();
+  }, [id]);
+
+  async function fetchDeal() {
+    const { data } = await supabase.from('deals').select('*').eq('id', id).single();
+    setDeal(data || MOCK_DEALS[id] || null);
+    setLoading(false);
+  }
+
+  async function acceptDeal() {
+    if (!user) { navigate('/auth'); return; }
+    setAccepting(true);
+    try {
+      await supabase.from('accepted_deals').upsert({
+        deal_id: id,
+        user_id: user.id,
+        status: 'pending',
+      }, { onConflict: 'deal_id,user_id' });
+      setAccepted(true);
+    } catch (e) {
+      setAccepted(true); // optimistic
+    }
+    setAccepting(false);
+  }
+
+  if (loading) return (
+    <main className={styles.screen}>
+      <div className={styles.loadingState}>Loading deal...</div>
+    </main>
+  );
+
+  if (!deal) return (
+    <main className={styles.screen}>
+      <div className={styles.loadingState}>Deal not found.</div>
+    </main>
+  );
+
+  const platforms = deal.platform?.split(',') || [];
+
+  return (
+    <main className={styles.screen}>
+      {/* Top bar */}
+      <div className={styles.topBar}>
+        <button className={styles.backBtn} onClick={() => navigate(-1)} aria-label="Go back">
+          <ArrowLeft size={24} />
+        </button>
+        <span className={styles.topTitle}>Deal Details</span>
+        <div style={{ width: 40 }} />
+      </div>
+
+      <div className={styles.content}>
+        {/* Brand section */}
+        <div className={styles.brandSection}>
+          <div className={styles.brandLogo}>
+            {deal.brand_name?.[0]}
+          </div>
+          <div>
+            <h1 className={styles.brandName}>{deal.brand_name}</h1>
+            <div className={styles.metaRow}>
+              {deal.category && <span className={styles.category}>{deal.category}</span>}
+              {deal.location && (
+                <span className={styles.location}>
+                  <MapPin size={10} /> {deal.location}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className={styles.payoutBadge}>
+            ₹{(deal.payout_min / 1000).toFixed(0)}K–{(deal.payout_max / 1000).toFixed(0)}K
+          </div>
+        </div>
+
+        {/* Niche tags */}
+        {deal.niche_tags?.length > 0 && (
+          <div className={styles.chips}>
+            {deal.niche_tags.map(t => <Chip key={t} label={t} variant="ghost" size="sm" />)}
+          </div>
+        )}
+
+        {/* Brief */}
+        {deal.brief && (
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>Brand Brief</h3>
+            <p className={styles.sectionText}>{deal.brief}</p>
+          </section>
+        )}
+
+        {/* Requirements */}
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Requirements</h3>
+          <p className={styles.sectionText}>{deal.requirement || 'No specific requirements listed.'}</p>
+        </section>
+
+        {/* Deliverables */}
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Deliverables</h3>
+          <div className={styles.deliverablesList}>
+            {(deal.deliverables || '').split('+').map((d, i) => (
+              <div key={i} className={styles.deliverableItem}>
+                <CheckCircle size={16} className={styles.checkIcon} />
+                <span>{d.trim()}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Platforms */}
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Platform</h3>
+          <div className={styles.platformRow}>
+            {platforms.map(p => (
+              <span key={p} className={styles.platformChip}>
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* Timeline */}
+        {deal.timeline && (
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>Timeline</h3>
+            <p className={styles.sectionText}>{deal.timeline}</p>
+          </section>
+        )}
+      </div>
+
+      {/* CTA Footer */}
+      <div className={styles.ctaBar}>
+        {accepted ? (
+          <div className={styles.acceptedMsg}>
+            <CheckCircle size={18} />
+            Request sent! Check "Pending" in Deals.
+          </div>
+        ) : (
+          <>
+            <button
+              className={`btn btn-outline ${styles.ctaBtn}`}
+              onClick={() => navigate(`/deals/chat/${id}`)}
+            >
+              Start Chat
+            </button>
+            <button
+              className={`btn btn-primary ${styles.ctaBtn}`}
+              onClick={acceptDeal}
+              disabled={accepting}
+            >
+              {accepting ? 'Sending...' : 'Accept & Negotiate'}
+            </button>
+          </>
+        )}
+      </div>
+    </main>
+  );
+}
