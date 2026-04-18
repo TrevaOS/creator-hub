@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
-import { supabaseConfigError } from '../../services/supabase';
 import styles from './Auth.module.css';
 
 export default function Auth() {
@@ -18,10 +17,6 @@ export default function Auth() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (supabaseConfigError) {
-      setError(supabaseConfigError);
-      return;
-    }
     setError('');
     setLoading(true);
     try {
@@ -39,10 +34,6 @@ export default function Auth() {
   };
 
   const useDefaultAccess = async () => {
-    if (supabaseConfigError) {
-      setError(supabaseConfigError);
-      return;
-    }
     setError('');
     setLoading(true);
     try {

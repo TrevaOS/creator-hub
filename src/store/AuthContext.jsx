@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { supabase } from '../services/supabase';
+import { isDemoMode, supabase } from '../services/supabase';
 
 const AuthContext = createContext(null);
 
@@ -33,6 +33,20 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
+    if (isDemoMode) {
+      const saved = localStorage.getItem('creator_hub_demo_user');
+      if (saved) {
+        try {
+          dispatch({ type: 'SET_USER', payload: JSON.parse(saved) });
+        } catch {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      } else {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -77,6 +91,21 @@ export function AuthProvider({ children }) {
   }
 
   const signUp = async (email, password, username) => {
+    if (isDemoMode) {
+      const demoUser = {
+        id: 'demo-user',
+        email,
+        user_metadata: { username: username || email?.split('@')[0] || 'demo_user' },
+      };
+      localStorage.setItem('creator_hub_demo_user', JSON.stringify(demoUser));
+      dispatch({ type: 'SET_USER', payload: demoUser });
+      dispatch({
+        type: 'SET_PROFILE',
+        payload: { id: demoUser.id, username: demoUser.user_metadata.username, name: 'Demo User' },
+      });
+      return { user: demoUser };
+    }
+
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
@@ -91,18 +120,48 @@ export function AuthProvider({ children }) {
   };
 
   const signIn = async (email, password) => {
+    if (isDemoMode) {
+      if (!email || !password) {
+        throw new Error('Enter email and password');
+      }
+      const demoUser = {
+        id: 'demo-user',
+        email,
+        user_metadata: { username: email.split('@')[0] || 'demo_user' },
+      };
+      localStorage.setItem('creator_hub_demo_user', JSON.stringify(demoUser));
+      dispatch({ type: 'SET_USER', payload: demoUser });
+      dispatch({
+        type: 'SET_PROFILE',
+        payload: { id: demoUser.id, username: demoUser.user_metadata.username, name: 'Demo User' },
+      });
+      return { user: demoUser };
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
   };
 
   const signOut = async () => {
+    if (isDemoMode) {
+      localStorage.removeItem('creator_hub_demo_user');
+      dispatch({ type: 'LOGOUT' });
+      return;
+    }
+
     await supabase.auth.signOut();
     dispatch({ type: 'LOGOUT' });
   };
 
   const updateProfile = async (updates) => {
     if (!state.user) return;
+    if (isDemoMode) {
+      const profile = { ...(state.profile || {}), ...updates, updated_at: new Date().toISOString() };
+      dispatch({ type: 'UPDATE_PROFILE', payload: profile });
+      return profile;
+    }
+
     const { data, error } = await supabase
       .from('users')
       .update({ ...updates, updated_at: new Date().toISOString() })
