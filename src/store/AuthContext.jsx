@@ -77,13 +77,19 @@ export function AuthProvider({ children }) {
   async function fetchProfile(userId) {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('creator_profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('auth_user_id', userId)
         .single();
 
       if (data) {
-        dispatch({ type: 'SET_PROFILE', payload: data });
+        const mapped = {
+          ...data,
+          id: data.auth_user_id,
+          name: data.display_name,
+          location: data.base_city,
+        };
+        dispatch({ type: 'SET_PROFILE', payload: mapped });
       }
     } catch (e) {
       // Profile may not exist yet
@@ -110,10 +116,10 @@ export function AuthProvider({ children }) {
     if (error) throw error;
 
     if (data.user) {
-      await supabase.from('users').insert({
-        id: data.user.id,
-        username: username || email.split('@')[0],
-        name: '',
+      await supabase.from('creator_profiles').insert({
+        auth_user_id: data.user.id,
+        display_name: username || email.split('@')[0],
+        username: (username || email.split('@')[0]).toLowerCase().replace(/\s/g, '_'),
       });
     }
     return data;
@@ -162,15 +168,20 @@ export function AuthProvider({ children }) {
       return profile;
     }
 
+    const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+    if ('name' in dbUpdates) { dbUpdates.display_name = dbUpdates.name; delete dbUpdates.name; }
+    if ('location' in dbUpdates) { dbUpdates.base_city = dbUpdates.location; delete dbUpdates.location; }
+
     const { data, error } = await supabase
-      .from('users')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', state.user.id)
+      .from('creator_profiles')
+      .update(dbUpdates)
+      .eq('auth_user_id', state.user.id)
       .select()
       .single();
     if (error) throw error;
-    dispatch({ type: 'UPDATE_PROFILE', payload: data });
-    return data;
+    const mapped = { ...data, id: data.auth_user_id, name: data.display_name, location: data.base_city };
+    dispatch({ type: 'UPDATE_PROFILE', payload: mapped });
+    return mapped;
   };
 
   return (

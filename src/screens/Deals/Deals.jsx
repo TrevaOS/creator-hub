@@ -29,15 +29,15 @@ export default function Deals() {
 
   async function fetchDeals() {
     setLoading(true);
-    const { data } = await supabase.from('deals').select('*').eq('status', 'open').order('created_at', { ascending: false });
+    const { data } = await supabase.from('creator_hub_deals').select('*').eq('status', 'open').order('created_at', { ascending: false });
     setDeals(data || []);
     setLoading(false);
   }
 
   async function fetchAcceptedDeals() {
     const { data } = await supabase
-      .from('accepted_deals')
-      .select('*, deals(*)')
+      .from('creator_hub_accepted_deals')
+      .select('*, creator_hub_deals(*)')
       .eq('user_id', user.id);
     const list = data || [];
     setAcceptedDeals(list);
@@ -48,7 +48,7 @@ export default function Deals() {
     e.stopPropagation();
     if (!user) { navigate('/auth'); return; }
     try {
-      await supabase.from('accepted_deals').upsert(
+      await supabase.from('creator_hub_accepted_deals').upsert(
         { deal_id: dealId, user_id: user.id, status: 'pending' },
         { onConflict: 'deal_id,user_id' }
       );
@@ -303,7 +303,7 @@ function DealCard({ deal, isAccepted, onPress, onAccept, onChat }) {
 }
 
 function AcceptedDealCard({ acceptedDeal, onChat, onView }) {
-  const deal = acceptedDeal.deals || acceptedDeal;
+  const deal = acceptedDeal.creator_hub_deals || acceptedDeal;
   const statusColors = { pending: '#f59e0b', active: '#10b981', completed: '#6b7280', rejected: '#ef4444' };
 
   return (

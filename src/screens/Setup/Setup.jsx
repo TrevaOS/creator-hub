@@ -134,7 +134,7 @@ export default function Setup() {
   useEffect(() => {
     if (!user?.id) return;
     supabase
-      .from('oauth_tokens')
+      .from('creator_oauth_tokens')
       .select('platform')
       .eq('user_id', user.id)
       .then(({ data }) => {
@@ -292,11 +292,11 @@ export default function Setup() {
             is_visible: socials[p].is_visible,
           }));
         if (rows.length) {
-          await supabase.from('social_accounts').upsert(rows, { onConflict: 'user_id,platform' });
+          await supabase.from('creator_social_accounts').upsert(rows, { onConflict: 'user_id,platform' });
         }
 
         // Upsert modules
-        await supabase.from('dashboard_modules').upsert({
+        await supabase.from('creator_dashboard_modules').upsert({
           user_id: user.id,
           ...modules,
         }, { onConflict: 'user_id' });
@@ -305,7 +305,7 @@ export default function Setup() {
         const existingIds = slides.filter(s => s.isExisting).map(s => s.id);
         const removedExisting = carouselImages.filter(img => !existingIds.includes(img.id));
         for (const img of removedExisting) {
-          await supabase.from('carousel_images').delete().eq('id', img.id);
+          await supabase.from('creator_carousel_images').delete().eq('id', img.id);
         }
 
         // Insert new local slides and upload to storage
@@ -313,7 +313,7 @@ export default function Setup() {
         for (const slide of newSlides) {
           const uploadedUrl = await uploadCarouselSlide(slide);
           if (!uploadedUrl) continue;
-          await supabase.from('carousel_images').insert({
+          await supabase.from('creator_carousel_images').insert({
             user_id:   user.id,
             image_url: uploadedUrl,
             caption:   slide.caption,
@@ -324,7 +324,7 @@ export default function Setup() {
         // Update captions and order of existing slides
         for (const slide of slides.filter(s => s.isExisting)) {
           await supabase
-            .from('carousel_images')
+            .from('creator_carousel_images')
             .update({ caption: slide.caption, order: slides.indexOf(slide) })
             .eq('id', slide.id);
         }

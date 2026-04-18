@@ -30,7 +30,7 @@ export default function DealChat() {
 
     (async () => {
       const { data } = await supabase
-        .from('messages')
+        .from('creator_hub_messages')
         .select('*')
         .eq('deal_id', dealId)
         .order('created_at', { ascending: true });
@@ -45,7 +45,7 @@ export default function DealChat() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'creator_hub_messages',
           filter: `deal_id=eq.${dealId}`,
         },
         (payload) => {
@@ -78,7 +78,7 @@ export default function DealChat() {
     setMessages((prev) => [...prev, optimistic]);
     setInput('');
 
-    const { error } = await supabase.from('messages').insert({
+    const { error } = await supabase.from('creator_hub_messages').insert({
       deal_id: dealId,
       sender_id: user.id,
       content,

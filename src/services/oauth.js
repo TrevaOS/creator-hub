@@ -55,7 +55,7 @@ export async function exchangeInstagramCode(code, userId) {
   const { access_token, user_id: ig_user_id } = await res.json();
 
   // Store long-lived token in Supabase
-  await supabase.from('oauth_tokens').upsert({
+  await supabase.from('creator_oauth_tokens').upsert({
     user_id:      userId,
     platform:     'instagram',
     access_token,
@@ -104,7 +104,7 @@ export async function exchangeYouTubeCode(code, userId) {
   if (!res.ok) throw new Error('YouTube token exchange failed');
   const { access_token, refresh_token, expires_in } = await res.json();
 
-  await supabase.from('oauth_tokens').upsert({
+  await supabase.from('creator_oauth_tokens').upsert({
     user_id:       userId,
     platform:      'youtube',
     access_token,
@@ -119,7 +119,7 @@ export async function exchangeYouTubeCode(code, userId) {
 /* ── DISCONNECT ─────────────────────────────────────────────── */
 export async function disconnectPlatform(userId, platform) {
   await supabase
-    .from('oauth_tokens')
+    .from('creator_oauth_tokens')
     .delete()
     .eq('user_id', userId)
     .eq('platform', platform);
@@ -129,7 +129,7 @@ export async function disconnectPlatform(userId, platform) {
 export async function getConnectedPlatforms(userId) {
   if (!userId) return [];
   const { data } = await supabase
-    .from('oauth_tokens')
+    .from('creator_oauth_tokens')
     .select('platform, expires_at')
     .eq('user_id', userId);
   return (data || []).filter(r => {

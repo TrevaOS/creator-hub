@@ -172,7 +172,7 @@ export default function Analytics() {
   useEffect(() => {
     if (!user?.id) return;
     supabase
-      .from('oauth_tokens')
+      .from('creator_oauth_tokens')
       .select('platform')
       .eq('user_id', user.id)
       .then(({ data: rows }) => {
@@ -187,7 +187,7 @@ export default function Analytics() {
       return;
     }
     supabase
-      .from('oauth_tokens')
+      .from('creator_oauth_tokens')
       .select('access_token')
       .eq('user_id', user.id)
       .eq('platform', 'instagram')

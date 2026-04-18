@@ -19,10 +19,10 @@ export function useProfileData() {
     dispatch({ type: 'SET_LOADING', payload: true });
 
     const [socials, modules, images, brands] = await Promise.all([
-      supabase.from('social_accounts').select('*').eq('user_id', user.id),
-      supabase.from('dashboard_modules').select('*').eq('user_id', user.id).single(),
-      supabase.from('carousel_images').select('*').eq('user_id', user.id).order('order'),
-      supabase.from('collab_brands').select('*').eq('user_id', user.id),
+      supabase.from('creator_social_accounts').select('*').eq('user_id', user.id),
+      supabase.from('creator_dashboard_modules').select('*').eq('user_id', user.id).single(),
+      supabase.from('creator_carousel_images').select('*').eq('user_id', user.id).order('order'),
+      supabase.from('creator_collab_brands').select('*').eq('user_id', user.id),
     ]);
 
     if (socials.data) dispatch({ type: 'SET_SOCIAL_ACCOUNTS', payload: socials.data });

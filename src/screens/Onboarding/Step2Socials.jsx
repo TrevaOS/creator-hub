@@ -25,7 +25,7 @@ export default function Step2Socials({ onNext, onBack }) {
             is_visible: true,
           }));
         if (rows.length) {
-          await supabase.from('social_accounts').upsert(rows, { onConflict: 'user_id,platform' });
+          await supabase.from('creator_social_accounts').upsert(rows, { onConflict: 'user_id,platform' });
         }
       }
     } catch (e) {

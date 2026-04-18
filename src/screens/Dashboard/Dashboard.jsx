@@ -62,7 +62,7 @@ const PLATFORM_ACTION = {
 async function fetchInstagramPosts(userId) {
   if (!userId) return null;
   try {
-    const { data } = await supabase.from('oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'instagram').single();
+    const { data } = await supabase.from('creator_oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'instagram').single();
     if (!data?.access_token) return null;
     const fields = 'id,media_type,thumbnail_url,media_url,like_count,timestamp,caption';
     const res = await fetch(`https://graph.instagram.com/me/media?fields=${fields}&limit=12&access_token=${data.access_token}`);
@@ -75,7 +75,7 @@ async function fetchInstagramPosts(userId) {
 async function fetchInstagramProfile(userId) {
   if (!userId) return null;
   try {
-    const { data } = await supabase.from('oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'instagram').single();
+    const { data } = await supabase.from('creator_oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'instagram').single();
     if (!data?.access_token) return null;
     const fields = 'username,name,biography,profile_picture_url,followers_count,media_count,website';
     const res = await fetch(`https://graph.instagram.com/me?fields=${fields}&access_token=${data.access_token}`);
@@ -87,7 +87,7 @@ async function fetchInstagramProfile(userId) {
 async function fetchYouTubeVideos(userId) {
   if (!userId) return null;
   try {
-    const { data } = await supabase.from('oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'youtube').single();
+    const { data } = await supabase.from('creator_oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'youtube').single();
     if (!data?.access_token) return null;
     const chRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true&access_token=${data.access_token}`);
     if (!chRes.ok) return null;
@@ -134,7 +134,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    supabase.from('oauth_tokens').select('platform').eq('user_id', user.id)
+    supabase.from('creator_oauth_tokens').select('platform').eq('user_id', user.id)
       .then(({ data }) => { if (data) setConnectedPlatforms(data.map(r => r.platform)); });
     fetchInstagramProfile(user.id).then(p => p && setIgProfile(p));
     fetchInstagramPosts(user.id).then(p => p && setIgPosts(p));

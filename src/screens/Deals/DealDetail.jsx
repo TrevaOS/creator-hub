@@ -20,7 +20,7 @@ export default function DealDetail() {
   }, [id]);
 
   async function fetchDeal() {
-    const { data } = await supabase.from('deals').select('*').eq('id', id).single();
+    const { data } = await supabase.from('creator_hub_deals').select('*').eq('id', id).single();
     setDeal(data || null);
     setLoading(false);
   }
@@ -29,7 +29,7 @@ export default function DealDetail() {
     if (!user) { navigate('/auth'); return; }
     setAccepting(true);
     try {
-      await supabase.from('accepted_deals').upsert({
+      await supabase.from('creator_hub_accepted_deals').upsert({
         deal_id: id,
         user_id: user.id,
         status: 'pending',
