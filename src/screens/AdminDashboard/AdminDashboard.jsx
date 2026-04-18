@@ -25,6 +25,9 @@ export default function AdminDashboard() {
   const [editing, setEditing] = useState({ type: null, id: null });
 
   useEffect(() => {
+    const root = document.getElementById('root');
+    root?.classList.add('admin-fullwidth');
+
     let mounted = true;
     loadAdminData().then((data) => {
       if (!mounted) return;
@@ -45,6 +48,7 @@ export default function AdminDashboard() {
     window.addEventListener('offline', onOffline);
     return () => {
       mounted = false;
+      root?.classList.remove('admin-fullwidth');
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
     };

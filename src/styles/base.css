@@ -33,6 +33,12 @@ body {
   background-color: var(--bg-primary);
 }
 
+#root.admin-fullwidth {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}
+
 /* Scrollbars hidden but functional */
 * {
   scrollbar-width: none;
