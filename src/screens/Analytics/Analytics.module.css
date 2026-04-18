@@ -5,25 +5,141 @@
   gap: 20px;
 }
 
+/* ── HEADER ── */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.exportBtn {
-  font-size: 13px !important;
-  padding: 0 14px !important;
-  min-height: 38px !important;
-  gap: 6px;
+.headerLeft h1 {
+  font-size: var(--font-title);
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
+.headerLeft p {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.exportBtn {
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  font-size: 13px !important;
+  gap: 6px;
+  background: var(--bg-card-raised) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── PLATFORM SELECTOR ── */
 .platformScroll {
   gap: 8px;
   padding-bottom: 4px;
 }
 
-/* Stats Grid */
+.platformTab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  font-weight: 600;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.platformTabActive {
+  border-color: var(--brand);
+  background: var(--brand-gradient-soft);
+  color: var(--text-primary);
+}
+
+.platformTabConnected::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  display: block;
+}
+
+/* ── SUMMARY HEADER CARD ── */
+.summaryCard {
+  background: var(--brand-gradient);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.summaryCard::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+.summaryLeft h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.summaryLeft p {
+  font-size: var(--font-caption);
+  color: rgba(255,255,255,0.7);
+  margin-top: 4px;
+}
+
+.summaryEngagement {
+  text-align: right;
+}
+
+.summaryEngagement .bigNum {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+.summaryEngagement .bigLabel {
+  font-size: 10px;
+  color: rgba(255,255,255,0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.engBadge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+/* ── STATS GRID ── */
 .statsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -31,99 +147,95 @@
 }
 
 .statCard {
-  padding: 0;
-}
-
-.statCardInner {
-  padding: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  transition: border-color var(--transition);
+}
+
+.statCard:active {
+  border-color: var(--brand);
+}
+
+.statTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 .statIcon {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
-  margin-bottom: 2px;
-}
-
-.statLabel {
-  font-size: var(--font-caption);
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.statValue {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.1;
 }
 
 .statDelta {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 2px;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
 }
 
-.up { color: #4CAF50; }
-.down { color: #E53935; }
+.up   { color: #10B981; background: rgba(16,185,129,0.1); }
+.down { color: #EF4444; background: rgba(239,68,68,0.1); }
 
-/* Engagement card */
-.engagementCard {
-  padding: 16px;
+.statLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.statValue {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* ── CHART CARD ── */
+.chartCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
 .cardTitle {
   font-size: var(--font-body);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.cardBadge {
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 14px;
-}
-
-.engagementInner {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.engagementInfo {
-  flex: 1;
-}
-
-.engagementDesc {
-  font-size: var(--font-caption);
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 8px;
-}
-
-.engagementDesc strong {
-  color: var(--text-primary);
-  font-size: var(--font-body);
-}
-
-.engagementBadge {
-  display: inline-block;
-  padding: 4px 12px;
+  color: var(--brand);
+  background: var(--brand-gradient-soft);
+  padding: 3px 10px;
   border-radius: var(--radius-full);
-  font-size: var(--font-caption);
-  font-weight: 600;
+  border: 1px solid rgba(124,58,237,0.2);
 }
 
-.good { background: rgba(201, 169, 110, 0.15); color: var(--cane); }
-.avg { background: rgba(158, 158, 158, 0.15); color: var(--grey-500); }
-
-/* Chart card */
-.chartCard {
-  padding: 16px;
-}
-
-/* Tooltip */
+/* ── TOOLTIP ── */
 .tooltip {
-  background: var(--bg-card);
+  background: var(--bg-card-raised);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
@@ -133,15 +245,62 @@
 .tooltipLabel {
   font-size: 11px;
   color: var(--text-secondary);
+  margin-bottom: 2px;
 }
 
 .tooltipVal {
   font-size: var(--font-body);
-  font-weight: 700;
-  color: var(--cane);
+  font-weight: 800;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Top posts */
+/* ── ENGAGEMENT RING ── */
+.engCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+
+.engInner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.engInfo {
+  flex: 1;
+}
+
+.engDesc {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.engDesc strong {
+  color: var(--text-primary);
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+
+.engBadgePill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  font-weight: 700;
+}
+
+.goodBadge { background: rgba(16,185,129,0.12); color: #10B981; }
+.avgBadge  { background: rgba(245,158,11,0.12);  color: #F59E0B; }
+.lowBadge  { background: rgba(239,68,68,0.10);   color: #EF4444; }
+
+/* ── TOP POSTS ── */
 .postCard {
   flex-shrink: 0;
   width: 120px;
@@ -151,6 +310,32 @@
   width: 120px;
   height: 160px;
   border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.postThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.postStatsBadges {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 18px 6px 6px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.6));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.postStatsBadges span {
+  font-size: 10px;
+  color: white;
+  font-weight: 600;
 }
 
 .postStats {

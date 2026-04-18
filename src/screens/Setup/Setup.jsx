@@ -1,9 +1,16 @@
-import { useState, useRef } from 'react';
-import { Menu, Camera, Plus, X, LogOut, Moon, Sun, Shield, Bell, HelpCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Menu, Camera, X, LogOut, Moon, Sun, Shield, Bell, HelpCircle, Plus, Check, Unlink } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { useTheme } from '../../store/ThemeContext';
 import { useProfileData } from '../../hooks/useProfileData';
 import { supabase } from '../../services/supabase';
+import {
+  getInstagramAuthURL,
+  getYouTubeAuthURL,
+  disconnectPlatform,
+  isInstagramOAuthConfigured,
+  isYouTubeOAuthConfigured,
+} from '../../services/oauth';
 import Avatar from '../../components/Avatar';
 import BottomSheet from '../../components/BottomSheet';
 import Toggle from '../../components/Toggle';
@@ -20,59 +27,181 @@ const NICHE_OPTIONS = [
 
 const ALL_PLATFORMS = getAllPlatforms();
 
+// Platforms that support OAuth one-click connect
+const OAUTH_PLATFORMS = {
+  instagram: { getURL: getInstagramAuthURL,  isConfigured: isInstagramOAuthConfigured, label: 'Connect' },
+  youtube:   { getURL: getYouTubeAuthURL,    isConfigured: isYouTubeOAuthConfigured, label: 'Connect' },
+};
+
 export default function Setup() {
   const { profile, user, updateProfile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { socialAccounts, dashboardModules, dispatch } = useProfileData();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const fileRef = useRef(null);
+  const { socialAccounts, dashboardModules, carouselImages, dispatch, refetch } = useProfileData();
+  const [menuOpen, setMenuOpen]   = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [saved, setSaved]         = useState(false);
+  const fileRef                   = useRef(null);
+  const coverFileRef              = useRef(null);
+  const carouselFileRef           = useRef(null);
+  const [connectedPlatforms, setConnectedPlatforms] = useState([]);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [saveError, setSaveError] = useState('');
 
   const [form, setForm] = useState({
-    name: profile?.name || 'Core Forge',
-    username: profile?.username || 'core.forge.in',
-    bio: profile?.bio || 'Maker • Developer • Creator\nBuilding products at the intersection of tech & design.',
-    tagline: profile?.tagline || 'Building things that matter',
-    location: profile?.location || 'India',
-    niches: profile?.niche_tags || ['Technology', 'Programming', 'Design'],
-    avatarPreview: profile?.avatar_url || null,
+    name:          profile?.name          || 'Core Forge',
+    username:      profile?.username      || 'core.forge.in',
+    bio:           profile?.bio           || 'Maker • Developer • Creator\nBuilding products at the intersection of tech & design.',
+    tagline:       profile?.tagline       || 'Building things that matter',
+    location:      profile?.location      || 'India',
+    niches:        profile?.niche_tags    || ['Technology', 'Programming', 'Design'],
+    avatarPreview: profile?.avatar_url    || null,
+    coverPreview:  profile?.cover_url     || null,
   });
-
-  // Default handles for demo / first-time setup
-  const DEMO_HANDLES = {
-    instagram: { handle: 'core.forge.in', url: 'https://www.instagram.com/core.forge.in/', is_visible: true },
-    youtube: { handle: 'DrBro', url: 'https://www.youtube.com/@DrBro', is_visible: true },
-  };
 
   const [socials, setSocials] = useState(() => {
     const map = {};
     ALL_PLATFORMS.forEach(p => {
       const found = socialAccounts.find(s => s.platform === p);
-      const demo = DEMO_HANDLES[p] || {};
       map[p] = {
-        handle: found?.handle || demo.handle || '',
-        url: found?.url || demo.url || '',
-        is_visible: found?.is_visible ?? demo.is_visible ?? true,
+        handle:     found?.handle || '',
+        url:        found?.url || '',
+        is_visible: found?.is_visible ?? true,
       };
     });
     return map;
   });
 
   const [modules, setModules] = useState({
-    carousel_enabled: dashboardModules?.carousel_enabled ?? false,
-    spotify_url: dashboardModules?.spotify_url || '',
-    spotify_enabled: dashboardModules?.spotify_enabled ?? false,
-    reels_enabled: dashboardModules?.reels_enabled ?? false,
+    carousel_enabled:      dashboardModules?.carousel_enabled      ?? false,
+    spotify_url:           dashboardModules?.spotify_url           || '',
+    spotify_enabled:       dashboardModules?.spotify_enabled       ?? false,
+    reels_enabled:         dashboardModules?.reels_enabled         ?? false,
     collab_badges_enabled: dashboardModules?.collab_badges_enabled ?? true,
   });
+
+  // Local carousel slides (start from existing Supabase images)
+  const [slides, setSlides] = useState(
+    carouselImages.map(img => ({ id: img.id, url: img.image_url, caption: img.caption || '', isExisting: true }))
+  );
+
+  useEffect(() => {
+    setForm({
+      name:          profile?.name          || 'Core Forge',
+      username:      profile?.username      || 'core.forge.in',
+      bio:           profile?.bio           || 'Maker - Developer - Creator\nBuilding products at the intersection of tech & design.',
+      tagline:       profile?.tagline       || 'Building things that matter',
+      location:      profile?.location      || 'India',
+      niches:        profile?.niche_tags    || ['Technology', 'Programming', 'Design'],
+      avatarPreview: profile?.avatar_url    || null,
+      coverPreview:  profile?.cover_url     || null,
+    });
+  }, [profile]);
+
+  useEffect(() => {
+    const nextSocials = {};
+    ALL_PLATFORMS.forEach(p => {
+      const found = socialAccounts.find(s => s.platform === p);
+      nextSocials[p] = {
+        handle: found?.handle || '',
+        url: found?.url || '',
+        is_visible: found?.is_visible ?? true,
+      };
+    });
+    setSocials(nextSocials);
+  }, [socialAccounts]);
+
+  useEffect(() => {
+    setModules({
+      carousel_enabled:      dashboardModules?.carousel_enabled      ?? false,
+      spotify_url:           dashboardModules?.spotify_url           || '',
+      spotify_enabled:       dashboardModules?.spotify_enabled       ?? false,
+      reels_enabled:         dashboardModules?.reels_enabled         ?? false,
+      collab_badges_enabled: dashboardModules?.collab_badges_enabled ?? true,
+    });
+  }, [dashboardModules]);
+
+  useEffect(() => {
+    setSlides(carouselImages.map(img => ({
+      id: img.id,
+      url: img.image_url,
+      caption: img.caption || '',
+      isExisting: true,
+    })));
+  }, [carouselImages]);
+
+  // Check connected OAuth platforms
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('oauth_tokens')
+      .select('platform')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        if (data) setConnectedPlatforms(data.map(r => r.platform));
+      });
+  }, [user?.id]);
 
   const handlePhoto = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setAvatarFile(file);
     const reader = new FileReader();
     reader.onload = ev => setForm(f => ({ ...f, avatarPreview: ev.target.result }));
     reader.readAsDataURL(file);
+  };
+
+  const handleCover = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverFile(file);
+    const reader = new FileReader();
+    reader.onload = ev => setForm(f => ({ ...f, coverPreview: ev.target.result }));
+    reader.readAsDataURL(file);
+  };
+
+  const uploadImageAndGetUrl = async (file, folder) => {
+    if (!file || !user?.id) return null;
+    const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
+    const filePath = `${user.id}/${folder}_${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('creator-assets')
+      .upload(filePath, file, { upsert: true, contentType: file.type || 'image/jpeg' });
+
+    if (uploadError) return null;
+    const { data } = supabase.storage.from('creator-assets').getPublicUrl(filePath);
+    return data?.publicUrl || null;
+  };
+
+  const handleCarouselAdd = (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        setSlides(prev => [
+          ...prev,
+          {
+            id: `local_${Date.now()}_${Math.random()}`,
+            url: ev.target.result,
+            caption: '',
+            isExisting: false,
+            file,
+          },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    // Reset input so same file can be re-added
+    e.target.value = '';
+  };
+
+  const removeSlide = (id) => {
+    setSlides(prev => prev.filter(s => s.id !== id));
+  };
+
+  const updateSlideCaption = (id, caption) => {
+    setSlides(prev => prev.map(s => s.id === id ? { ...s, caption } : s));
   };
 
   const toggleNiche = (niche) => {
@@ -84,17 +213,71 @@ export default function Setup() {
     }));
   };
 
+  const handleOAuthConnect = (platform) => {
+    const cfg = OAUTH_PLATFORMS[platform];
+    if (!cfg) return;
+    if (!cfg.isConfigured()) {
+      alert(`To connect ${platform}, set valid OAuth values in .env and restart the app.`);
+      return;
+    }
+    const url = cfg.getURL();
+    if (!url) {
+      alert(`OAuth URL could not be generated for ${platform}. Check .env and restart the app.`);
+      return;
+    }
+    window.location.href = url;
+  };
+
+  const handleOAuthDisconnect = async (platform) => {
+    if (!user?.id) return;
+    await disconnectPlatform(user.id, platform);
+    setConnectedPlatforms(prev => prev.filter(p => p !== platform));
+  };
+
+  const uploadCarouselSlide = async (slide) => {
+    if (!slide?.file || !user?.id) return slide?.url || null;
+    const ext = (slide.file.name?.split('.').pop() || 'jpg').toLowerCase();
+    const filePath = `${user.id}/carousel_${Date.now()}_${Math.floor(Math.random() * 9999)}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('creator-assets')
+      .upload(filePath, slide.file, { upsert: true, contentType: slide.file.type || 'image/jpeg' });
+    if (uploadError) return null;
+    const { data } = supabase.storage.from('creator-assets').getPublicUrl(filePath);
+    return data?.publicUrl || null;
+  };
+
+  const normalizeSocialInput = (value) => {
+    const v = value.trim();
+    if (!v) return { handle: '', url: '' };
+
+    if (v.startsWith('http://') || v.startsWith('https://')) {
+      try {
+        const u = new URL(v);
+        const cleaned = u.pathname.replace(/^\/+|\/+$/g, '').split('/')[0] || '';
+        return { handle: cleaned, url: v };
+      } catch {
+        return { handle: v.replace(/^@/, ''), url: '' };
+      }
+    }
+    return { handle: v.replace(/^@/, ''), url: '' };
+  };
+
   const saveAll = async () => {
     setSaving(true);
+    setSaveError('');
     try {
+      const uploadedAvatarUrl = await uploadImageAndGetUrl(avatarFile, 'avatar');
+      const uploadedCoverUrl = await uploadImageAndGetUrl(coverFile, 'cover');
+
       await updateProfile({
-        name: form.name,
-        username: form.username.toLowerCase().replace(/\s/g, '_'),
-        bio: form.bio,
-        tagline: form.tagline,
-        location: form.location,
+        name:       form.name,
+        username:   form.username.toLowerCase().replace(/\s/g, '_'),
+        bio:        form.bio,
+        tagline:    form.tagline,
+        location:   form.location,
         niche_tags: form.niches,
-        avatar_url: form.avatarPreview,
+        avatar_url: uploadedAvatarUrl || form.avatarPreview || null,
+        cover_url:  uploadedCoverUrl || form.coverPreview || null,
       });
 
       if (user) {
@@ -102,10 +285,10 @@ export default function Setup() {
         const rows = ALL_PLATFORMS
           .filter(p => socials[p].handle)
           .map(p => ({
-            user_id: user.id,
-            platform: p,
-            handle: socials[p].handle,
-            url: socials[p].url,
+            user_id:    user.id,
+            platform:   p,
+            handle:     socials[p].handle,
+            url:        socials[p].url || null,
             is_visible: socials[p].is_visible,
           }));
         if (rows.length) {
@@ -117,12 +300,44 @@ export default function Setup() {
           user_id: user.id,
           ...modules,
         }, { onConflict: 'user_id' });
+
+        // Carousel: delete removed existing slides
+        const existingIds = slides.filter(s => s.isExisting).map(s => s.id);
+        const removedExisting = carouselImages.filter(img => !existingIds.includes(img.id));
+        for (const img of removedExisting) {
+          await supabase.from('carousel_images').delete().eq('id', img.id);
+        }
+
+        // Insert new local slides and upload to storage
+        const newSlides = slides.filter(s => !s.isExisting);
+        for (const slide of newSlides) {
+          const uploadedUrl = await uploadCarouselSlide(slide);
+          if (!uploadedUrl) continue;
+          await supabase.from('carousel_images').insert({
+            user_id:   user.id,
+            image_url: uploadedUrl,
+            caption:   slide.caption,
+            order:     slides.indexOf(slide),
+          });
+        }
+
+        // Update captions and order of existing slides
+        for (const slide of slides.filter(s => s.isExisting)) {
+          await supabase
+            .from('carousel_images')
+            .update({ caption: slide.caption, order: slides.indexOf(slide) })
+            .eq('id', slide.id);
+        }
       }
 
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setTimeout(() => setSaved(false), 2500);
+      dispatch({ type: 'SET_DASHBOARD_MODULES', payload: { user_id: user.id, ...modules } });
+      setAvatarFile(null);
+      setCoverFile(null);
+      await refetch();
     } catch (e) {
-      // silently handle
+      setSaveError(e?.message || 'Failed to save profile changes');
     }
     setSaving(false);
   };
@@ -131,21 +346,35 @@ export default function Setup() {
     <main className="screen">
       <div className={styles.content}>
 
-        {/* Header */}
+        {/* ── HEADER ── */}
         <div className={styles.header}>
-          <h1 className="text-title">Setup</h1>
+          <h1 className={styles.headerTitle}>Setup</h1>
           <button className={styles.menuBtn} onClick={() => setMenuOpen(true)} aria-label="Settings menu">
-            <Menu size={24} />
+            <Menu size={20} />
           </button>
         </div>
 
-        {/* Profile Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Profile</h2>
+        {/* ── PROFILE SECTION ── */}
+        <div className={styles.sectionCard}>
+          <p className={styles.sectionTitle}>Profile</p>
+
+          {/* Cover / background image */}
+          <div className={styles.coverPicker} onClick={() => coverFileRef.current?.click()}>
+            {form.coverPreview ? (
+              <img src={form.coverPreview} alt="Cover" className={styles.coverImg} />
+            ) : (
+              <div className={styles.coverPlaceholder}>
+                <Camera size={18} />
+                <span>Upload cover photo</span>
+              </div>
+            )}
+            <div className={styles.coverEditBadge}><Camera size={11} /></div>
+            <input ref={coverFileRef} type="file" accept="image/*" hidden onChange={handleCover} />
+          </div>
 
           <div className={styles.avatarPicker} onClick={() => fileRef.current?.click()}>
-            <Avatar src={form.avatarPreview} name={form.name} size={72} />
-            <div className={styles.cameraBadge}><Camera size={14} /></div>
+            <Avatar src={form.avatarPreview} name={form.name} size={80} />
+            <div className={styles.cameraBadge}><Camera size={13} /></div>
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={handlePhoto} />
           </div>
 
@@ -158,7 +387,7 @@ export default function Setup() {
           <div className={styles.formGroup}>
             <label className={styles.label}>Username</label>
             <div className={styles.usernameWrap}>
-              <span className={styles.prefix}>ourcreatorhub.com/</span>
+              <span className={styles.prefix}>creatorhub.com/</span>
               <input
                 className={styles.usernameInput}
                 placeholder="janesmith"
@@ -176,7 +405,7 @@ export default function Setup() {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>Bio</label>
-            <textarea className={`input-field ${styles.textarea}`} placeholder="Tell brands about yourself..."
+            <textarea className={`input-field ${styles.textarea}`} placeholder="Tell brands about yourself…"
               value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} rows={3} />
           </div>
 
@@ -200,63 +429,117 @@ export default function Setup() {
               ))}
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Social Accounts Section */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Social Accounts</h2>
+        {/* ── SOCIAL ACCOUNTS ── */}
+        <div className={styles.sectionCard}>
+          <p className={styles.sectionTitle}>Social Accounts</p>
           {ALL_PLATFORMS.map(platform => {
-            const config = getSocialConfig(platform);
+            const config    = getSocialConfig(platform);
+            const isOAuth   = !!OAUTH_PLATFORMS[platform];
+            const isConnected = connectedPlatforms.includes(platform);
+
             return (
               <div key={platform} className={styles.socialRow}>
                 <div className={styles.socialLeft}>
-                  <SocialIcon platform={platform} size={20} />
+                  <div className={styles.socialIconWrap}>
+                    <SocialIcon platform={platform} size={18} />
+                  </div>
                   <div className={styles.socialInfo}>
                     <p className={styles.socialName}>{config?.label}</p>
                     <input
                       className={styles.socialInput}
                       placeholder={`@${platform}handle`}
                       value={socials[platform]?.handle || ''}
-                      onChange={e => setSocials(s => ({ ...s, [platform]: { ...s[platform], handle: e.target.value } }))}
+                      onChange={e => {
+                        const normalized = normalizeSocialInput(e.target.value);
+                        setSocials(s => ({ ...s, [platform]: { ...s[platform], ...normalized } }));
+                      }}
                     />
                   </div>
                 </div>
-                <Toggle
-                  checked={socials[platform]?.is_visible ?? true}
-                  onChange={v => setSocials(s => ({ ...s, [platform]: { ...s[platform], is_visible: v } }))}
-                  id={`social_${platform}`}
-                />
+                <div className={styles.socialRight}>
+                  {isOAuth ? (
+                    isConnected ? (
+                      <button
+                        className={`${styles.oauthBtn} ${styles.oauthBtnDisconnect}`}
+                        onClick={() => handleOAuthDisconnect(platform)}
+                      >
+                        <Unlink size={10} /> Unlink
+                      </button>
+                    ) : (
+                      <button
+                        className={`${styles.oauthBtn} ${styles.oauthBtnConnect}`}
+                        onClick={() => handleOAuthConnect(platform)}
+                      >
+                        <Plus size={10} /> Connect
+                      </button>
+                    )
+                  ) : (
+                    <Toggle
+                      checked={socials[platform]?.is_visible ?? true}
+                      onChange={v => setSocials(s => ({ ...s, [platform]: { ...s[platform], is_visible: v } }))}
+                      id={`social_${platform}`}
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
-        </section>
+        </div>
 
-        {/* Dashboard Modules */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Dashboard Modules</h2>
+        {/* ── DASHBOARD MODULES ── */}
+        <div className={styles.sectionCard}>
+          <p className={styles.sectionTitle}>Dashboard Modules</p>
 
           <div className={styles.moduleRow}>
             <div className={styles.moduleInfo}>
               <p className={styles.moduleTitle}>Image Carousel</p>
-              <p className={styles.moduleDesc}>Featured work gallery</p>
+              <p className={styles.moduleDesc}>Featured work slideshow</p>
             </div>
-            <Toggle
-              checked={modules.carousel_enabled}
-              onChange={v => setModules(m => ({ ...m, carousel_enabled: v }))}
-              id="carousel_toggle"
-            />
+            <Toggle checked={modules.carousel_enabled} onChange={v => setModules(m => ({ ...m, carousel_enabled: v }))} id="carousel_toggle" />
           </div>
+
+          {/* Carousel image uploader */}
+          {modules.carousel_enabled && (
+            <div className={styles.carouselSection}>
+              <div className={styles.carouselScrollArea}>
+                {slides.map(slide => (
+                  <div key={slide.id} className={styles.carouselSlide}>
+                    <img src={slide.url} alt={slide.caption} className={styles.carouselSlideImg} />
+                    <button className={styles.carouselRemoveBtn} onClick={() => removeSlide(slide.id)}>
+                      <X size={11} />
+                    </button>
+                    <input
+                      style={{ fontSize: 11, background: 'none', color: 'var(--text-secondary)', textAlign: 'center', width: '100%' }}
+                      placeholder="Caption…"
+                      value={slide.caption}
+                      onChange={e => updateSlideCaption(slide.id, e.target.value)}
+                    />
+                  </div>
+                ))}
+                <div className={styles.addSlideBtn} onClick={() => carouselFileRef.current?.click()}>
+                  <div className={styles.addSlidePlus}><Plus size={16} /></div>
+                  Add photo
+                  <input
+                    ref={carouselFileRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={handleCarouselAdd}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className={styles.moduleRow}>
             <div className={styles.moduleInfo}>
               <p className={styles.moduleTitle}>Spotify Playlist</p>
-              <p className={styles.moduleDesc}>Show your vibe</p>
+              <p className={styles.moduleDesc}>Show your creative vibe</p>
             </div>
-            <Toggle
-              checked={modules.spotify_enabled}
-              onChange={v => setModules(m => ({ ...m, spotify_enabled: v }))}
-              id="spotify_toggle"
-            />
+            <Toggle checked={modules.spotify_enabled} onChange={v => setModules(m => ({ ...m, spotify_enabled: v }))} id="spotify_toggle" />
           </div>
 
           {modules.spotify_enabled && (
@@ -273,40 +556,42 @@ export default function Setup() {
           <div className={styles.moduleRow}>
             <div className={styles.moduleInfo}>
               <p className={styles.moduleTitle}>Instagram Reels</p>
-              <p className={styles.moduleDesc}>Preview strip</p>
+              <p className={styles.moduleDesc}>Preview strip on dashboard</p>
             </div>
-            <Toggle
-              checked={modules.reels_enabled}
-              onChange={v => setModules(m => ({ ...m, reels_enabled: v }))}
-              id="reels_toggle"
-            />
+            <Toggle checked={modules.reels_enabled} onChange={v => setModules(m => ({ ...m, reels_enabled: v }))} id="reels_toggle" />
           </div>
 
           <div className={styles.moduleRow}>
             <div className={styles.moduleInfo}>
               <p className={styles.moduleTitle}>Collab Badges</p>
-              <p className={styles.moduleDesc}>Brand partnerships</p>
+              <p className={styles.moduleDesc}>Brand partnership logos</p>
             </div>
-            <Toggle
-              checked={modules.collab_badges_enabled}
-              onChange={v => setModules(m => ({ ...m, collab_badges_enabled: v }))}
-              id="badges_toggle"
-            />
+            <Toggle checked={modules.collab_badges_enabled} onChange={v => setModules(m => ({ ...m, collab_badges_enabled: v }))} id="badges_toggle" />
           </div>
-        </section>
+        </div>
 
-        {/* Save button */}
+        {/* ── SAVE ── */}
         <button
           className={`btn btn-primary btn-full ${styles.saveBtn}`}
           onClick={saveAll}
           disabled={saving}
         >
-          {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Changes'}
+          {saving ? 'Saving…' : 'Save Changes'}
         </button>
+        {saveError && (
+          <p style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>{saveError}</p>
+        )}
 
       </div>
 
-      {/* Hamburger Menu Sheet */}
+      {/* ── SAVED TOAST ── */}
+      {saved && (
+        <div className={styles.savedToast}>
+          <Check size={14} /> Saved successfully
+        </div>
+      )}
+
+      {/* ── MENU SHEET ── */}
       <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Settings">
         <div className={styles.menuSheet}>
           <button className={styles.menuItem} onClick={() => {}}>
@@ -316,7 +601,7 @@ export default function Setup() {
 
           <button className={styles.menuItem} onClick={() => { toggleTheme(); }}>
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            <span>{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
             <span className={styles.menuBadge}>{theme}</span>
           </button>
 

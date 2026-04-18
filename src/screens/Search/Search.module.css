@@ -26,7 +26,7 @@
 }
 
 .searchBar:focus-within {
-  border-color: var(--cane);
+  border-color: var(--brand);
 }
 
 .searchIcon {
@@ -53,13 +53,14 @@
 /* Creators grid */
 .creatorsGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
 .creatorCard {
   padding: 0;
-  overflow: visible;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .creatorCardInner {
@@ -67,6 +68,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .creatorInfo {
@@ -92,7 +94,7 @@
 .followerCount {
   font-size: 13px;
   font-weight: 700;
-  color: var(--cane);
+  color: var(--brand);
   white-space: nowrap;
 }
 
@@ -102,11 +104,11 @@
 }
 
 .collabPill {
-  background-color: rgba(201, 169, 110, 0.1);
+  background-color: var(--brand-gradient-soft);
   border-top: 1px solid var(--border-light);
   padding: 6px 12px;
   font-size: 11px;
-  color: var(--cane);
+  color: var(--brand);
   font-weight: 500;
 }
 
@@ -144,7 +146,7 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  background-color: var(--cane);
+  background: var(--brand-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -195,8 +197,8 @@
 }
 
 .sortActive {
-  background-color: rgba(201, 169, 110, 0.15);
-  color: var(--cane);
+  background-color: var(--brand-gradient-soft);
+  color: var(--brand);
 }
 
 .emptyState {

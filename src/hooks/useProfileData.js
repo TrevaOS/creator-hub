@@ -8,7 +8,14 @@ export function useProfileData() {
   const { socialAccounts, dashboardModules, carouselImages, collabBrands, loading, dispatch } = useProfile();
 
   const fetchAll = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      dispatch({ type: 'SET_SOCIAL_ACCOUNTS', payload: [] });
+      dispatch({ type: 'SET_DASHBOARD_MODULES', payload: null });
+      dispatch({ type: 'SET_CAROUSEL_IMAGES', payload: [] });
+      dispatch({ type: 'SET_COLLAB_BRANDS', payload: [] });
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
     dispatch({ type: 'SET_LOADING', payload: true });
 
     const [socials, modules, images, brands] = await Promise.all([

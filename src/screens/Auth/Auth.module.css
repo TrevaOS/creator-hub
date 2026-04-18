@@ -1,85 +1,181 @@
 .screen {
   min-height: 100vh;
-  background-color: var(--bg-primary);
+  background: var(--bg-primary);
   display: flex;
   flex-direction: column;
-  padding: 0 24px 40px;
-  justify-content: center;
+  overflow: hidden;
+  position: relative;
 }
 
-.logoSection {
-  text-align: center;
-  margin-bottom: 40px;
+/* ── HERO ── */
+.hero {
+  position: relative;
+  padding: 56px 24px 36px;
+  background: linear-gradient(160deg, #0f0528 0%, #0a1628 50%, #001018 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  overflow: hidden;
 }
 
-.logo {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, var(--cane), var(--cane-dark));
-  border-radius: 24px;
+.heroGlow1 {
+  position: absolute;
+  top: -60px;
+  left: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,0.4) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.heroGlow2 {
+  position: absolute;
+  bottom: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6,182,212,0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.logoMark {
+  width: 72px;
+  height: 72px;
+  background: var(--brand-gradient);
+  border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--black);
-  margin: 0 auto 16px;
-  box-shadow: 0 8px 24px rgba(201, 169, 110, 0.4);
+  font-size: 26px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.03em;
+  box-shadow: 0 8px 28px rgba(124,58,237,0.45);
+  margin-bottom: 18px;
 }
 
 .appName {
-  font-size: var(--font-display);
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 6px;
+  font-size: 2rem;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 8px;
 }
 
-.tagline {
+.heroTagline {
   font-size: var(--font-body);
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  line-height: 1.4;
+  max-width: 220px;
+}
+
+/* Social proof pills */
+.heroPills {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.heroPill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  white-space: nowrap;
+}
+
+/* ── FORM AREA ── */
+.formArea {
+  flex: 1;
+  background: var(--bg-primary);
+  border-radius: 28px 28px 0 0;
+  margin-top: -20px;
+  padding: 28px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  z-index: 5;
+}
+
+.formTitle {
+  font-size: var(--font-title);
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.formSubtitle {
+  font-size: var(--font-caption);
   color: var(--text-secondary);
+  margin-top: 2px;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.formTitle {
-  font-size: var(--font-title);
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  gap: 12px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .fieldLabel {
   font-size: var(--font-caption);
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .error {
-  color: #E53935;
+  color: #EF4444;
   font-size: var(--font-caption);
   padding: 10px 14px;
-  background-color: rgba(229, 57, 53, 0.08);
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.15);
   border-radius: var(--radius-sm);
 }
 
+.submitBtn {
+  min-height: 52px !important;
+  font-size: var(--font-body) !important;
+  border-radius: var(--radius-md) !important;
+  margin-top: 4px;
+}
+
+.switchBtn {
+  font-size: var(--font-caption) !important;
+  color: var(--text-secondary) !important;
+  min-height: 40px !important;
+}
+
+.switchBtn span {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* ── DIVIDER ── */
 .divider {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 16px 0;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   font-size: var(--font-caption);
 }
 
@@ -88,9 +184,15 @@
   content: '';
   flex: 1;
   height: 1px;
-  background-color: var(--border-color);
+  background: var(--border-color);
 }
 
+/* ── DEMO BUTTON ── */
 .demoBtn {
+  min-height: 50px !important;
   font-size: var(--font-body) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--bg-card) !important;
+  border: 1.5px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
 }

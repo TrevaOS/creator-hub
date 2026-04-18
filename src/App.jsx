@@ -10,6 +10,7 @@ import Deals from './screens/Deals/Deals';
 import DealDetail from './screens/Deals/DealDetail';
 import DealChat from './screens/Deals/DealChat';
 import Setup from './screens/Setup/Setup';
+import OAuthCallback from './screens/OAuthCallback/OAuthCallback';
 
 const TABBED_ROUTES = ['/dashboard', '/analytics', '/search', '/deals', '/setup'];
 
@@ -26,7 +27,7 @@ function ProtectedRoute({ children }) {
     }}>
       <div style={{
         width: 48, height: 48,
-        border: '3px solid var(--cane)',
+        border: '3px solid var(--brand)',
         borderTopColor: 'transparent',
         borderRadius: '50%',
         animation: 'spin 0.8s linear infinite',
@@ -34,14 +35,14 @@ function ProtectedRoute({ children }) {
     </div>
   );
 
-  const isDemo = !user && localStorage.getItem('ch_onboarded');
-  if (!user && !isDemo) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/auth" replace />;
   return children;
 }
 
 function AppShell() {
   const location = useLocation();
-  const showTabBar = TABBED_ROUTES.some(r => location.pathname.startsWith(r));
+  const isDealSubRoute = location.pathname.startsWith('/deals/chat/') || location.pathname.startsWith('/deals/');
+  const showTabBar = TABBED_ROUTES.some(r => location.pathname.startsWith(r)) && !isDealSubRoute;
 
   return (
     <>
@@ -56,6 +57,9 @@ function AppShell() {
         <Route path="/deals/:id" element={<ProtectedRoute><DealDetail /></ProtectedRoute>} />
         <Route path="/deals/chat/:dealId" element={<ProtectedRoute><DealChat /></ProtectedRoute>} />
         <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
+
+        {/* OAuth callbacks — no auth guard needed, handles redirect from platform */}
+        <Route path="/oauth/:platform" element={<OAuthCallback />} />
 
         <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

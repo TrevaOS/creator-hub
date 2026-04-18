@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   location TEXT,
   niche_tags TEXT[] DEFAULT '{}',
   avatar_url TEXT,
+  cover_url  TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -186,6 +187,61 @@ CREATE POLICY "Users can view messages for their deals" ON public.messages
 
 CREATE POLICY "Users can send messages" ON public.messages
   FOR INSERT WITH CHECK (auth.uid() = sender_id);
+
+-- =============================================
+-- OAUTH TOKENS TABLE
+-- Stores Instagram & YouTube access tokens per user
+-- =============================================
+CREATE TABLE IF NOT EXISTS public.oauth_tokens (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL CHECK (platform IN ('instagram','youtube','twitter','tiktok','linkedin')),
+  access_token TEXT NOT NULL,
+  refresh_token TEXT,
+  platform_user_id TEXT,
+  expires_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, platform)
+);
+
+ALTER TABLE public.oauth_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Only the owner can read/write their own tokens
+CREATE POLICY "Users can manage own oauth tokens" ON public.oauth_tokens
+  FOR ALL USING (auth.uid() = user_id);
+
+-- =============================================
+-- STORAGE BUCKET (PROFILE/ASSET IMAGES)
+-- =============================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('creator-assets', 'creator-assets', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Public can view creator assets" ON storage.objects;
+CREATE POLICY "Public can view creator assets" ON storage.objects
+  FOR SELECT USING (bucket_id = 'creator-assets');
+
+DROP POLICY IF EXISTS "Users can upload own creator assets" ON storage.objects;
+CREATE POLICY "Users can upload own creator assets" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'creator-assets'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+DROP POLICY IF EXISTS "Users can update own creator assets" ON storage.objects;
+CREATE POLICY "Users can update own creator assets" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'creator-assets'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+DROP POLICY IF EXISTS "Users can delete own creator assets" ON storage.objects;
+CREATE POLICY "Users can delete own creator assets" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'creator-assets'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
 
 -- =============================================
 -- SEED DATA — Sample Deals

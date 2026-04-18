@@ -6,16 +6,24 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('ch_theme') || 'light';
   });
+  const [accentTheme, setAccentTheme] = useState(() => {
+    return localStorage.getItem('ch_accent_theme') || 'default';
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('ch_theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-accent', accentTheme);
+    localStorage.setItem('ch_accent_theme', accentTheme);
+  }, [accentTheme]);
+
   const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light');
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, accentTheme, setAccentTheme }}>
       {children}
     </ThemeContext.Provider>
   );

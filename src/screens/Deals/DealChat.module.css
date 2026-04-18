@@ -38,7 +38,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: var(--cane);
+  background-color: var(--brand-2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,7 +122,7 @@
 }
 
 .bubbleMe {
-  background-color: var(--cane);
+  background-color: var(--brand-2);
   border-bottom-right-radius: 4px;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .textInput:focus {
-  border-color: var(--cane);
+  border-color: var(--brand);
 }
 
 .sendBtn {
@@ -215,6 +215,15 @@
 }
 
 .sendActive {
-  background-color: var(--cane);
+  background-color: var(--brand-2);
   color: var(--black);
+}
+
+.emptyState {
+  padding: 14px;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
 }

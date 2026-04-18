@@ -1,85 +1,178 @@
-import { useState } from 'react';
-import { Share2, Download, MapPin, Play, Music, ExternalLink, LayoutGrid, PlayCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  Share2, Download, MapPin, Play, Music, ExternalLink,
+  LayoutGrid, PlayCircle, ChevronLeft, ChevronRight,
+  Check, Zap, Settings2, Palette, Moon, Sun, X,
+  Maximize2, Minimize2, GripVertical,
+} from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
+import { useTheme } from '../../store/ThemeContext';
 import { useProfileData } from '../../hooks/useProfileData';
+import { supabase } from '../../services/supabase';
 import Avatar from '../../components/Avatar';
-import Chip from '../../components/Chip';
-import Card from '../../components/Card';
 import SocialIcon from '../../components/SocialIcon';
 import Skeleton from '../../components/Skeleton';
+import BottomSheet from '../../components/BottomSheet';
+import Toggle from '../../components/Toggle';
 import { generateMediaKit } from '../../services/pdfExport';
 import styles from './Dashboard.module.css';
 
-// Real mock data based on @core.forge.in (Instagram) and @DrBro (YouTube)
-const DEMO_PROFILE = {
-  name: 'Core Forge',
-  username: 'core.forge.in',
-  tagline: 'Building things that matter',
-  bio: 'Maker • Developer • Creator\nBuilding products at the intersection of tech & design.',
-  location: 'India',
-  niche_tags: ['Technology', 'Programming', 'Design'],
-  avatar_url: null,
+/* ── DEMO FALLBACKS ─────────────────────────────────────────── */
+const EMPTY_POSTS = [];
+const EMPTY_YT_VIDEOS = [];
+
+const GRADIENTS = [
+  'linear-gradient(135deg,#1a0533,#0d0d2b)',
+  'linear-gradient(135deg,#0a1628,#0f3460)',
+  'linear-gradient(135deg,#16213e,#1a472a)',
+  'linear-gradient(135deg,#0f0c29,#302b63)',
+  'linear-gradient(135deg,#0d0d2b,#4a0e8f)',
+  'linear-gradient(135deg,#0a1628,#1a0533)',
+  'linear-gradient(135deg,#16213e,#0f3460)',
+  'linear-gradient(135deg,#1a0533,#16213e)',
+  'linear-gradient(135deg,#0f0c29,#0a1628)',
+];
+
+/* ── THEME PRESETS ──────────────────────────────────────────── */
+const THEMES = [
+  { id: 'default',  label: 'Default',  color: '#7C3AED' },
+  { id: 'slate',    label: 'Slate',    color: '#475569' },
+  { id: 'stone',    label: 'Stone',    color: '#78716c' },
+  { id: 'ocean',    label: 'Ocean',    color: '#0ea5e9' },
+  { id: 'forest',   label: 'Forest',   color: '#16a34a' },
+  { id: 'lavender', label: 'Lavender', color: '#a855f7' },
+  { id: 'midnight', label: 'Midnight', color: '#1e293b' },
+  { id: 'sunset',   label: 'Sunset',   color: '#f97316' },
+  { id: 'rose',     label: 'Rose',     color: '#e11d48' },
+  { id: 'noir',     label: 'Noir',     color: '#1c1c1e' },
+];
+
+/* ── SOCIAL CARD ACTION LABELS ──────────────────────────────── */
+const PLATFORM_ACTION = {
+  instagram: 'Follow',
+  youtube:   'Subscribe',
+  twitter:   'Follow',
+  linkedin:  'Connect',
+  tiktok:    'Follow',
+  spotify:   'Listen',
+  pinterest: 'Follow',
 };
 
-const DEMO_SOCIALS = [
-  { platform: 'instagram', handle: 'core.forge.in', url: 'https://www.instagram.com/core.forge.in/', is_visible: true },
-  { platform: 'youtube', handle: 'DrBro', url: 'https://www.youtube.com/@DrBro', is_visible: true },
-];
+/* ── LIVE DATA FETCHERS ─────────────────────────────────────── */
+async function fetchInstagramPosts(userId) {
+  if (!userId) return null;
+  try {
+    const { data } = await supabase.from('oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'instagram').single();
+    if (!data?.access_token) return null;
+    const fields = 'id,media_type,thumbnail_url,media_url,like_count,timestamp,caption';
+    const res = await fetch(`https://graph.instagram.com/me/media?fields=${fields}&limit=12&access_token=${data.access_token}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data || null;
+  } catch { return null; }
+}
 
-// Instagram-style post grid mock (placeholder tiles with gradient)
-const DEMO_POSTS = [
-  { id: 'p1', type: 'image', thumb: null, likes: 312, caption: 'Building in public 🔨' },
-  { id: 'p2', type: 'reel', thumb: null, likes: 841, caption: 'How I built this app' },
-  { id: 'p3', type: 'image', thumb: null, likes: 524, caption: 'Design system 101' },
-  { id: 'p4', type: 'reel', thumb: null, likes: 1203, caption: 'React tips & tricks' },
-  { id: 'p5', type: 'image', thumb: null, likes: 289, caption: 'Weekend project' },
-  { id: 'p6', type: 'reel', thumb: null, likes: 672, caption: 'Shipping fast' },
-  { id: 'p7', type: 'image', thumb: null, likes: 445, caption: 'UI inspiration' },
-  { id: 'p8', type: 'image', thumb: null, likes: 389, caption: 'Code review session' },
-  { id: 'p9', type: 'reel', thumb: null, likes: 956, caption: 'Tutorial: Build this' },
-];
+async function fetchInstagramProfile(userId) {
+  if (!userId) return null;
+  try {
+    const { data } = await supabase.from('oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'instagram').single();
+    if (!data?.access_token) return null;
+    const fields = 'username,name,biography,profile_picture_url,followers_count,media_count,website';
+    const res = await fetch(`https://graph.instagram.com/me?fields=${fields}&access_token=${data.access_token}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
 
-const DEMO_YT_VIDEOS = [
-  { id: 'v1', title: 'Building a Full Stack App in 1 Hour', views: '24K', thumb: null },
-  { id: 'v2', title: 'React Best Practices 2024', views: '18K', thumb: null },
-  { id: 'v3', title: 'How I Landed My First Client', views: '31K', thumb: null },
-  { id: 'v4', title: 'My Dev Setup Tour', views: '14K', thumb: null },
-];
+async function fetchYouTubeVideos(userId) {
+  if (!userId) return null;
+  try {
+    const { data } = await supabase.from('oauth_tokens').select('access_token').eq('user_id', userId).eq('platform', 'youtube').single();
+    if (!data?.access_token) return null;
+    const chRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true&access_token=${data.access_token}`);
+    if (!chRes.ok) return null;
+    const chJson = await chRes.json();
+    const channel = chJson.items?.[0];
+    const vRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&order=date&access_token=${data.access_token}`);
+    const vJson = vRes.ok ? await vRes.json() : { items: [] };
+    return {
+      channel,
+      videos: vJson.items?.map(item => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        thumb: item.snippet.thumbnails?.medium?.url || null,
+        views: '—',
+      })) || [],
+    };
+  } catch { return null; }
+}
 
-const POST_GRADIENTS = [
-  'linear-gradient(135deg, #1a1a2e, #16213e)',
-  'linear-gradient(135deg, #2d1b69, #11998e)',
-  'linear-gradient(135deg, #3a3a3a, #c9a96e)',
-  'linear-gradient(135deg, #0f3460, #533483)',
-  'linear-gradient(135deg, #1a472a, #2d6a4f)',
-  'linear-gradient(135deg, #4a0e0e, #c9a96e)',
-  'linear-gradient(135deg, #1b1b2f, #e43f5a)',
-  'linear-gradient(135deg, #2c3e50, #3498db)',
-  'linear-gradient(135deg, #1a1a1a, #525252)',
-];
-
+/* ══════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+══════════════════════════════════════════════════════════════ */
 export default function Dashboard() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const { theme, toggleTheme, accentTheme, setAccentTheme } = useTheme();
   const { socialAccounts, dashboardModules, carouselImages, collabBrands, loading } = useProfileData();
-  const [exporting, setExporting] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [postTab, setPostTab] = useState('posts'); // 'posts' | 'reels' | 'youtube'
 
-  // Use real profile data if available, fall back to demo
-  const displayProfile = (profile?.name) ? profile : DEMO_PROFILE;
+  const [exporting, setExporting]     = useState(false);
+  const [copied, setCopied]           = useState(false);
+  const [postTab, setPostTab]         = useState('posts');
+  const [carouselIdx, setCarouselIdx] = useState(0);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [editMode, setEditMode]       = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState(accentTheme || 'default');
+
+  // Card sizes: 'half' = spans 1 col, 'full' = spans 2 cols
+  const [cardSizes, setCardSizes] = useState({});
+
+  // Live data from connected accounts
+  const [igPosts, setIgPosts]     = useState(null);
+  const [igProfile, setIgProfile] = useState(null);
+  const [ytData, setYtData]       = useState(null);
+  const [connectedPlatforms, setConnectedPlatforms] = useState([]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from('oauth_tokens').select('platform').eq('user_id', user.id)
+      .then(({ data }) => { if (data) setConnectedPlatforms(data.map(r => r.platform)); });
+    fetchInstagramProfile(user.id).then(p => p && setIgProfile(p));
+    fetchInstagramPosts(user.id).then(p => p && setIgPosts(p));
+    fetchYouTubeVideos(user.id).then(d => d && setYtData(d));
+  }, [user?.id]);
+
+  useEffect(() => {
+    setSelectedTheme(accentTheme || 'default');
+  }, [accentTheme]);
+
+  const displayProfile = profile || {};
   const displaySocials = socialAccounts.filter(s => s.is_visible && s.handle).length > 0
     ? socialAccounts.filter(s => s.is_visible && s.handle)
-    : DEMO_SOCIALS;
+    : [];
+
+  const instagramSocial = displaySocials.find(s => s.platform === 'instagram');
+  const youtubeSocial   = displaySocials.find(s => s.platform === 'youtube');
+
+  const livePosts = igPosts
+    ? igPosts.map(p => ({ id: p.id, type: p.media_type === 'VIDEO' ? 'reel' : 'image', thumb: p.thumbnail_url || p.media_url, likes: p.like_count || 0, caption: p.caption || '' }))
+    : EMPTY_POSTS;
+
+  const displayPosts     = postTab === 'reels' ? livePosts.filter(p => p.type === 'reel') : livePosts;
+  const displayYtVideos  = ytData?.videos?.length ? ytData.videos : EMPTY_YT_VIDEOS;
+  const followers        = igProfile?.followers_count ? formatK(igProfile.followers_count) : '0';
+  const postsCount       = igProfile?.media_count ?? 0;
+  const engagement       = '0%';
+  const featuredImages   = carouselImages.length > 0 ? carouselImages : [];
+
+  const toggleCardSize = (key) => {
+    setCardSizes(prev => ({ ...prev, [key]: prev[key] === 'full' ? 'half' : 'full' }));
+  };
+
+  const cardSize = (key) => cardSizes[key] || 'half';
 
   const shareProfile = async () => {
     const url = `https://ourcreatorhub.com/${displayProfile?.username || 'creator'}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback silent
-    }
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch { /* silent */ }
   };
 
   const downloadKit = async () => {
@@ -93,8 +186,8 @@ export default function Dashboard() {
       <main className="screen">
         <div className="screen-content">
           <div className={styles.skeletonCard}>
-            <Skeleton width={72} height={72} borderRadius="50%" />
-            <Skeleton height={20} width="50%" style={{ margin: '12px 0 8px' }} />
+            <Skeleton width={80} height={80} borderRadius="50%" />
+            <Skeleton height={22} width="50%" style={{ margin: '14px 0 8px' }} />
             <Skeleton height={14} width="70%" />
           </div>
         </div>
@@ -102,68 +195,84 @@ export default function Dashboard() {
     );
   }
 
-  const spotifyId = dashboardModules?.spotify_url?.match(/playlist\/([a-zA-Z0-9]+)/)?.[1];
-
-  const instagramSocial = displaySocials.find(s => s.platform === 'instagram');
-  const youtubeSocial = displaySocials.find(s => s.platform === 'youtube');
-
-  const displayPosts = postTab === 'reels'
-    ? DEMO_POSTS.filter(p => p.type === 'reel')
-    : DEMO_POSTS;
-
   return (
     <main className="screen">
       <div className={styles.screenContent}>
 
-        {/* Profile Header Card */}
-        <Card elevated className={styles.profileCard}>
-          <div className={styles.profileCardInner}>
-            <div className={styles.avatarWrap}>
-              <Avatar
-                src={displayProfile?.avatar_url}
-                name={displayProfile?.name || 'Creator'}
-                size={80}
-              />
+        {/* ── HERO ── */}
+        <div className={styles.hero}>
+          <div
+            className={styles.heroBanner}
+            style={displayProfile?.cover_url ? {
+              backgroundImage: `url(${displayProfile.cover_url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            } : undefined}
+          />
+          <div
+            className={styles.heroBannerOverlay}
+            style={displayProfile?.cover_url ? {
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.58) 100%)',
+            } : undefined}
+          />
+
+          {/* Top actions */}
+          <div className={styles.heroActions}>
+            <button className={styles.heroIconBtn} onClick={() => setEditMode(e => !e)} aria-label="Edit mode">
+              {editMode ? <Check size={15} color="#7C3AED" /> : <GripVertical size={15} />}
+            </button>
+            <button className={styles.heroIconBtn} onClick={() => setCustomizeOpen(true)} aria-label="Customize">
+              <Palette size={15} />
+            </button>
+            <button className={styles.heroIconBtn} onClick={shareProfile} aria-label="Share">
+              {copied ? <Check size={15} /> : <Share2 size={15} />}
+            </button>
+            <button className={styles.heroIconBtn} onClick={downloadKit} disabled={exporting} aria-label="Media Kit">
+              <Download size={15} />
+            </button>
+          </div>
+
+          <div className={styles.heroContent}>
+            {/* Avatar */}
+            <div className={styles.avatarRing}>
+              <div className={styles.avatarRingInner}>
+                <Avatar src={displayProfile?.avatar_url} name={displayProfile?.name || 'C'} size={76} />
+              </div>
               {instagramSocial && (
-                <div className={styles.igBadge}>
-                  <SocialIcon platform="instagram" size={14} />
+                <div className={styles.platformBadge}>
+                  <SocialIcon platform="instagram" size={10} />
                 </div>
               )}
             </div>
 
             <h1 className={styles.profileName}>{displayProfile?.name || 'Your Name'}</h1>
-            <p className={styles.handle}>@{displayProfile?.username || 'creator'}</p>
-
+            <div className={styles.handleRow}>
+              <span className={styles.handle}>@{displayProfile?.username || 'creator'}</span>
+              {connectedPlatforms.includes('instagram') && (
+                <div className={styles.verifiedBadge}><Check size={8} color="white" /></div>
+              )}
+            </div>
             {displayProfile?.tagline && (
               <p className={styles.tagline}>{displayProfile.tagline}</p>
             )}
 
-            {/* Stats row */}
+            {/* Stats */}
             <div className={styles.statsRow}>
               <div className={styles.statItem}>
-                <span className={styles.statNum}>12.4K</span>
+                <span className={styles.statNum}>{followers}</span>
                 <span className={styles.statLabel}>Followers</span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
-                <span className={styles.statNum}>284</span>
+                <span className={styles.statNum}>{postsCount}</span>
                 <span className={styles.statLabel}>Posts</span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
-                <span className={styles.statNum}>4.8%</span>
+                <span className={styles.statNum}>{engagement}</span>
                 <span className={styles.statLabel}>Engagement</span>
               </div>
             </div>
-
-            {/* Niche tags */}
-            {displayProfile?.niche_tags?.length > 0 && (
-              <div className={styles.chipRow}>
-                {displayProfile.niche_tags.map(tag => (
-                  <Chip key={tag} label={tag} variant="filled" size="sm" />
-                ))}
-              </div>
-            )}
 
             {/* Location */}
             {displayProfile?.location && (
@@ -173,205 +282,293 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Bio */}
-            {displayProfile?.bio && (
-              <p className={styles.bio}>{displayProfile.bio}</p>
-            )}
-
-            {/* Social icons */}
-            {displaySocials.length > 0 && (
-              <div className={styles.socialsRow}>
-                {displaySocials.map(s => (
-                  <a
-                    key={s.platform}
-                    href={s.url || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.socialBtn}
-                    aria-label={s.platform}
-                  >
-                    <SocialIcon platform={s.platform} size={20} />
-                  </a>
-                ))}
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className={styles.actionRow}>
-              <button className={`btn btn-outline ${styles.actionBtn}`} onClick={shareProfile}>
-                <Share2 size={16} />
+            {/* CTA */}
+            <div className={styles.ctaRow}>
+              <button className={styles.ctaShare} onClick={shareProfile}>
+                <Share2 size={14} />
                 {copied ? 'Copied!' : 'Share'}
               </button>
-              <button
-                className={`btn btn-primary ${styles.actionBtn}`}
-                onClick={downloadKit}
-                disabled={exporting}
-              >
-                <Download size={16} />
-                {exporting ? '...' : 'Media Kit'}
+              <button className={styles.ctaKit} onClick={downloadKit} disabled={exporting}>
+                <Download size={14} />
+                {exporting ? 'Exporting...' : 'Media Kit'}
               </button>
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* Content Grid — Instagram Posts + Reels */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>Content</h2>
-            {instagramSocial && (
-              <a
-                href={instagramSocial.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.viewAllLink}
-              >
-                View on Instagram <ExternalLink size={12} />
-              </a>
-            )}
-          </div>
-
-          {/* Tab switcher */}
-          <div className={styles.contentTabs}>
-            <button
-              className={`${styles.contentTab} ${postTab === 'posts' ? styles.contentTabActive : ''}`}
-              onClick={() => setPostTab('posts')}
-            >
-              <LayoutGrid size={14} />
-              Posts
+        {/* ── EDIT MODE BANNER ── */}
+        {editMode && (
+          <div className={styles.editBanner}>
+            <GripVertical size={14} />
+            <span>Edit mode — tap cards to resize</span>
+            <button className={styles.editBannerDone} onClick={() => setEditMode(false)}>
+              <Check size={13} /> Done
             </button>
-            <button
-              className={`${styles.contentTab} ${postTab === 'reels' ? styles.contentTabActive : ''}`}
-              onClick={() => setPostTab('reels')}
-            >
-              <Play size={14} />
-              Reels
-            </button>
-            {youtubeSocial && (
-              <button
-                className={`${styles.contentTab} ${postTab === 'youtube' ? styles.contentTabActive : ''}`}
-                onClick={() => setPostTab('youtube')}
-              >
-                <PlayCircle size={14} />
-                YouTube
-              </button>
-            )}
           </div>
+        )}
 
-          {postTab !== 'youtube' ? (
-            /* Instagram-style 3-col grid */
-            <div className={styles.postsGrid}>
-              {displayPosts.map((post, idx) => (
-                <div key={post.id} className={styles.postTile} style={{ background: POST_GRADIENTS[idx % POST_GRADIENTS.length] }}>
-                  {post.type === 'reel' && (
-                    <div className={styles.reelIndicator}>
-                      <Play size={10} fill="white" color="white" />
-                    </div>
-                  )}
-                  <div className={styles.postOverlay}>
-                    <span className={styles.postLikes}>♥ {post.likes >= 1000 ? `${(post.likes / 1000).toFixed(1)}K` : post.likes}</span>
-                  </div>
+        {/* ── CARD GRID ── */}
+        <div className={styles.cardGrid}>
+
+          {/* Bio card */}
+          {displayProfile?.bio && (
+            <div
+              className={`${styles.card} ${cardSize('bio') === 'full' ? styles.cardFull : ''}`}
+            >
+              {editMode && <EditHandle onToggle={() => toggleCardSize('bio')} isFull={cardSize('bio') === 'full'} />}
+              <p className={styles.bioText}>{displayProfile.bio}</p>
+              {displayProfile?.niche_tags?.length > 0 && (
+                <div className={styles.chipRow}>
+                  {displayProfile.niche_tags.map(tag => (
+                    <span key={tag} className={styles.nicheChip}>{tag}</span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            /* YouTube videos list */
-            <div className={styles.ytList}>
-              {DEMO_YT_VIDEOS.map((vid, idx) => (
-                <a
-                  key={vid.id}
-                  href={youtubeSocial?.url || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.ytCard}
-                >
-                  <div className={styles.ytThumb} style={{ background: POST_GRADIENTS[(idx + 2) % POST_GRADIENTS.length] }}>
-                    <div className={styles.ytPlayBtn}>
-                      <Play size={18} fill="white" color="white" />
-                    </div>
-                  </div>
-                  <div className={styles.ytInfo}>
-                    <p className={styles.ytTitle}>{vid.title}</p>
-                    <p className={styles.ytViews}>{vid.views} views</p>
-                  </div>
-                </a>
-              ))}
+              )}
             </div>
           )}
-        </section>
 
-        {/* Pinned Carousel */}
-        {dashboardModules?.carousel_enabled && carouselImages.length > 0 && (
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Featured Work</h2>
-            </div>
-            <div className="scroll-x">
-              {carouselImages.map(img => (
-                <div key={img.id} className={styles.carouselTile}>
-                  <img
-                    src={img.image_url}
-                    alt={img.caption || 'Featured work'}
-                    loading="lazy"
-                    className={styles.carouselImg}
-                  />
-                  {img.caption && <p className={styles.carouselCaption}>{img.caption}</p>}
+          {/* Social link cards */}
+          {displaySocials.map((s, idx) => {
+            const key = `social_${s.platform}`;
+            const isFull = cardSize(key) === 'full';
+            const action = PLATFORM_ACTION[s.platform] || 'Follow';
+            return (
+              <div
+                key={s.platform}
+                className={`${styles.card} ${styles.socialCard} ${isFull ? styles.cardFull : ''}`}
+              >
+                {editMode && <EditHandle onToggle={() => toggleCardSize(key)} isFull={isFull} />}
+                <div className={styles.socialCardIcon}>
+                  <SocialIcon platform={s.platform} size={22} />
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Spotify Card */}
-        {dashboardModules?.spotify_enabled && dashboardModules.spotify_url && (
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>My Playlist</h2>
-            </div>
-            <Card outlined className={styles.spotifyCard}>
-              <div className={styles.spotifyInner}>
-                <div className={styles.spotifyIcon}>
-                  <SocialIcon platform="spotify" size={32} />
-                </div>
-                <div className={styles.spotifyInfo}>
-                  <p className={styles.spotifyLabel}>Spotify Playlist</p>
-                  <p className={styles.spotifyName}>My Creator Mix</p>
+                <div className={styles.socialCardInfo}>
+                  <p className={styles.socialCardHandle}>@{s.handle}</p>
+                  {isFull && s.url && (
+                    <p className={styles.socialCardUrl}>
+                      {s.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                    </p>
+                  )}
                 </div>
                 <a
-                  href={dashboardModules.spotify_url}
+                  href={s.url || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`btn btn-primary ${styles.spotifyBtn}`}
+                  className={styles.socialCardBtn}
                 >
-                  <Music size={14} />
-                  Listen
+                  {action}
                 </a>
               </div>
-            </Card>
-          </section>
-        )}
+            );
+          })}
 
-        {/* Collab Badges */}
-        {collabBrands.length > 0 && (
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Worked With</h2>
-            </div>
-            <div className="scroll-x">
-              {collabBrands.map(brand => (
-                <div key={brand.id} className={styles.brandBadge}>
-                  {brand.brand_logo_url ? (
-                    <img src={brand.brand_logo_url} alt={brand.brand_name} loading="lazy" className={styles.brandLogo} />
-                  ) : (
-                    <span className={styles.brandInitial}>{brand.brand_name[0]}</span>
+          {/* Content / posts card */}
+          {(() => {
+            const key = 'content';
+            const isFull = cardSize(key) === 'full';
+            return (
+              <div className={`${styles.card} ${styles.cardFull}`}>
+                {editMode && <EditHandle onToggle={() => toggleCardSize(key)} isFull={isFull} />}
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Content</h2>
+                  {instagramSocial && (
+                    <a href={instagramSocial.url} target="_blank" rel="noopener noreferrer" className={styles.cardLink}>
+                      View <ExternalLink size={11} />
+                    </a>
                   )}
-                  <span className={styles.brandName}>{brand.brand_name}</span>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
 
+                <div className={styles.contentTabs}>
+                  <button className={`${styles.contentTab} ${postTab === 'posts' ? styles.contentTabActive : ''}`} onClick={() => setPostTab('posts')}>
+                    <LayoutGrid size={12} /> Posts
+                  </button>
+                  <button className={`${styles.contentTab} ${postTab === 'reels' ? styles.contentTabActive : ''}`} onClick={() => setPostTab('reels')}>
+                    <Play size={12} /> Reels
+                  </button>
+                  {youtubeSocial && (
+                    <button className={`${styles.contentTab} ${postTab === 'youtube' ? styles.contentTabActive : ''}`} onClick={() => setPostTab('youtube')}>
+                      <PlayCircle size={12} /> YouTube
+                    </button>
+                  )}
+                </div>
+
+                {postTab !== 'youtube' ? (
+                  <div className={styles.postsGrid}>
+                    {displayPosts.map((post, idx) => (
+                      <div key={post.id} className={styles.postTile} style={{ background: post.thumb ? undefined : GRADIENTS[idx % GRADIENTS.length] }}>
+                        {post.thumb && <img src={post.thumb} alt={post.caption} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} loading="lazy" />}
+                        {post.type === 'reel' && <div className={styles.reelIndicator}><Play size={9} fill="white" color="white" /></div>}
+                        <div className={styles.postOverlay}>
+                          <span className={styles.postLikes}>♥ {post.likes >= 1000 ? `${(post.likes / 1000).toFixed(1)}K` : post.likes}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.ytList}>
+                    {displayYtVideos.map((vid, idx) => (
+                      <a key={vid.id} href={youtubeSocial?.url || '#'} target="_blank" rel="noopener noreferrer" className={styles.ytCard}>
+                        <div className={styles.ytThumb} style={{ background: vid.thumb ? undefined : GRADIENTS[(idx + 2) % GRADIENTS.length] }}>
+                          {vid.thumb && <img src={vid.thumb} alt={vid.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                          <div className={styles.ytPlayBtn}><Play size={14} fill="white" color="white" /></div>
+                        </div>
+                        <div className={styles.ytInfo}>
+                          <p className={styles.ytTitle}>{vid.title}</p>
+                          <p className={styles.ytViews}>{vid.views} views</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Featured Work carousel */}
+          {dashboardModules?.carousel_enabled && featuredImages.length > 0 && (() => {
+            const key = 'carousel';
+            return (
+              <div className={`${styles.card} ${styles.cardFull}`}>
+                {editMode && <EditHandle onToggle={() => toggleCardSize(key)} isFull={true} />}
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Featured Work</h2>
+                </div>
+                <div className={styles.carouselWrap}>
+                  <img src={featuredImages[carouselIdx]?.image_url} alt={featuredImages[carouselIdx]?.caption || 'Featured'} className={styles.carouselImg} />
+                  {featuredImages.length > 1 && (
+                    <div className={styles.carouselNav}>
+                      <button className={styles.carouselNavBtn} onClick={() => setCarouselIdx(i => (i - 1 + featuredImages.length) % featuredImages.length)}><ChevronLeft size={16} /></button>
+                      <button className={styles.carouselNavBtn} onClick={() => setCarouselIdx(i => (i + 1) % featuredImages.length)}><ChevronRight size={16} /></button>
+                    </div>
+                  )}
+                  <div className={styles.carouselDots}>
+                    {featuredImages.map((_, i) => (
+                      <div key={i} className={`${styles.dot} ${i === carouselIdx ? styles.dotActive : ''}`} onClick={() => setCarouselIdx(i)} />
+                    ))}
+                  </div>
+                </div>
+                {featuredImages[carouselIdx]?.caption && (
+                  <p className={styles.carouselCaption}>{featuredImages[carouselIdx].caption}</p>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Spotify */}
+          {dashboardModules?.spotify_enabled && dashboardModules.spotify_url && (() => {
+            const key = 'spotify';
+            const isFull = cardSize(key) === 'full';
+            return (
+              <div className={`${styles.card} ${styles.spotifyCard} ${isFull ? styles.cardFull : ''}`}>
+                {editMode && <EditHandle onToggle={() => toggleCardSize(key)} isFull={isFull} />}
+                <SocialIcon platform="spotify" size={32} />
+                <div className={styles.spotifyInfo}>
+                  <p className={styles.spotifyLabel}>My Playlist</p>
+                  <p className={styles.spotifyName}>Creator Mix</p>
+                </div>
+                <a href={dashboardModules.spotify_url} target="_blank" rel="noopener noreferrer" className={styles.spotifyBtn}>
+                  <Music size={12} /> Listen
+                </a>
+              </div>
+            );
+          })()}
+
+          {/* Collab brands */}
+          {collabBrands.length > 0 && (
+            <div className={`${styles.card} ${styles.cardFull}`}>
+              {editMode && <EditHandle onToggle={() => toggleCardSize('brands')} isFull={true} />}
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Worked With</h2>
+              </div>
+              <div className={styles.brandsRow}>
+                {collabBrands.map(brand => (
+                  <div key={brand.id} className={styles.brandBadge}>
+                    {brand.brand_logo_url
+                      ? <img src={brand.brand_logo_url} alt={brand.brand_name} loading="lazy" className={styles.brandLogo} />
+                      : <span className={styles.brandInitial}>{brand.brand_name[0]}</span>
+                    }
+                    <span className={styles.brandName}>{brand.brand_name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Connect banner */}
+          {connectedPlatforms.length === 0 && (
+            <div className={`${styles.card} ${styles.cardFull} ${styles.connectCard}`}>
+              <p className={styles.connectTitle}><Zap size={14} style={{ display:'inline', marginRight:4 }} />Connect accounts</p>
+              <p className={styles.connectSub}>Link Instagram or YouTube to show live posts</p>
+              <div className={styles.connectRow}>
+                <a href="/setup" className={styles.connectBtn}><SocialIcon platform="instagram" size={13} /> Instagram</a>
+                <a href="/setup" className={styles.connectBtn}><SocialIcon platform="youtube" size={13} /> YouTube</a>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
+
+      {/* ── CUSTOMIZE SHEET ── */}
+      <BottomSheet open={customizeOpen} onClose={() => setCustomizeOpen(false)} title="Customize">
+        <div className={styles.customizeSheet}>
+
+          <p className={styles.customizeSection}>Theme</p>
+          <div className={styles.themeGrid}>
+            {THEMES.map(t => (
+              <button
+                key={t.id}
+                className={`${styles.themeBtn} ${selectedTheme === t.id ? styles.themeBtnActive : ''}`}
+                onClick={() => setSelectedTheme(t.id)}
+              >
+                <span className={styles.themeSwatch} style={{ background: t.color }} />
+                <span className={styles.themeLabel}>{t.label}</span>
+                {selectedTheme === t.id && <Check size={12} className={styles.themeCheck} />}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.customizeDivider} />
+
+          <div className={styles.customizeRow}>
+            <div className={styles.customizeRowLeft}>
+              {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+              <span>Dark Mode</span>
+            </div>
+            <Toggle checked={theme === 'dark'} onChange={toggleTheme} id="dark_toggle" />
+          </div>
+
+          <div className={styles.customizeDivider} />
+
+          <button
+            className={`btn btn-primary btn-full`}
+            style={{ marginTop: 8 }}
+            onClick={() => {
+              setAccentTheme(selectedTheme);
+              setCustomizeOpen(false);
+            }}
+          >
+            Save Changes
+          </button>
+        </div>
+      </BottomSheet>
     </main>
   );
 }
+
+/* ── EDIT HANDLE COMPONENT ──────────────────────────────────── */
+function EditHandle({ onToggle, isFull }) {
+  return (
+    <div className={styles.editHandle}>
+      <button className={styles.editHandleBtn} onClick={onToggle} title={isFull ? 'Make half-width' : 'Make full-width'}>
+        {isFull ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+      </button>
+    </div>
+  );
+}
+
+function formatK(n) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+

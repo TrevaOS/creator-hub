@@ -30,7 +30,7 @@ export default function Deals() {
   async function fetchDeals() {
     setLoading(true);
     const { data } = await supabase.from('deals').select('*').eq('status', 'open').order('created_at', { ascending: false });
-    setDeals(data?.length ? data : MOCK_DEALS);
+    setDeals(data || []);
     setLoading(false);
   }
 
@@ -337,12 +337,3 @@ function AcceptedDealCard({ acceptedDeal, onChat, onView }) {
     </Card>
   );
 }
-
-// Fallback mock data when Supabase is not connected
-const MOCK_DEALS = [
-  { id: '1', brand_name: 'StyleCo', brand_logo: 'https://api.dicebear.com/7.x/initials/svg?seed=StyleCo', category: 'Fashion', location: 'Mumbai, India', niche_tags: ['fashion', 'lifestyle'], requirement: 'Min 10K followers on Instagram.', deliverables: '2 Reels + 3 Stories', platform: 'instagram', payout_min: 15000, payout_max: 25000, status: 'open' },
-  { id: '2', brand_name: 'TechGear Pro', brand_logo: 'https://api.dicebear.com/7.x/initials/svg?seed=TechGearPro', category: 'Technology', location: 'Bangalore, India', niche_tags: ['tech', 'gadgets'], requirement: 'YouTube channel with 5K+ subs.', deliverables: '1 Video Review + Community Post', platform: 'youtube', payout_min: 20000, payout_max: 40000, status: 'open' },
-  { id: '3', brand_name: 'FitLife', brand_logo: 'https://api.dicebear.com/7.x/initials/svg?seed=FitLife', category: 'Fitness', location: 'Delhi, India', niche_tags: ['fitness', 'health'], requirement: 'Active fitness creator.', deliverables: '4 Stories + 1 Reel', platform: 'instagram', payout_min: 8000, payout_max: 12000, status: 'open' },
-  { id: '4', brand_name: 'GourmetBites', brand_logo: 'https://api.dicebear.com/7.x/initials/svg?seed=GourmetBites', category: 'Food', location: 'Chennai, India', niche_tags: ['food', 'cooking'], requirement: 'Food content creator.', deliverables: '2 Videos + 5 Posts', platform: 'instagram,youtube', payout_min: 10000, payout_max: 18000, status: 'open' },
-  { id: '5', brand_name: 'TravelEscape', brand_logo: 'https://api.dicebear.com/7.x/initials/svg?seed=TravelEscape', category: 'Travel', location: 'Hyderabad, India', niche_tags: ['travel', 'adventure'], requirement: 'Travel vlogger.', deliverables: '1 Vlog + 3 Reels', platform: 'youtube,instagram', payout_min: 25000, payout_max: 50000, status: 'open' },
-];

@@ -117,9 +117,7 @@ export default function Search() {
                         <span className={styles.collabDeliverable}>{c.deliverable}</span>
                       </div>
                       <div className={styles.collabPlatformIcon}>
-                        <span style={{ fontSize: 18 }}>
-                          {c.platform === 'instagram' ? '📸' : '▶️'}
-                        </span>
+                        <Avatar name={c.platform === 'instagram' ? 'IG' : 'YT'} size={30} />
                       </div>
                     </div>
                   </Card>
@@ -179,9 +177,10 @@ function CreatorCard({ creator }) {
       </div>
       {creator.collabs > 0 && (
         <div className={styles.collabPill}>
-          🤝 {creator.collabs} collabs
+          {creator.collabs} collabs
         </div>
       )}
     </Card>
   );
 }
+

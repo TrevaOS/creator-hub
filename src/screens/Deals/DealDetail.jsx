@@ -6,11 +6,6 @@ import { supabase } from '../../services/supabase';
 import Chip from '../../components/Chip';
 import styles from './DealDetail.module.css';
 
-const MOCK_DEALS = {
-  '1': { id: '1', brand_name: 'StyleCo', brand_logo: null, category: 'Fashion', location: 'Mumbai, India', niche_tags: ['fashion', 'lifestyle'], requirement: 'Minimum 10K followers on Instagram. Fashion-focused content preferred. Must have a clean feed aesthetic and engage with your audience regularly.', deliverables: '2 Reels + 3 Stories', platform: 'instagram', payout_min: 15000, payout_max: 25000, status: 'open', timeline: '2 weeks', brief: 'We are StyleCo, India\'s fastest growing sustainable fashion brand. We want to collaborate with creators who genuinely love fashion and sustainability. We\'ll send you our latest collection and you can style it your way.' },
-  '2': { id: '2', brand_name: 'TechGear Pro', brand_logo: null, category: 'Technology', location: 'Bangalore, India', niche_tags: ['tech', 'gadgets'], requirement: 'YouTube channel with 5K+ subscribers. Tech review experience needed. Honest and detailed reviews preferred.', deliverables: '1 Video Review + Community Post', platform: 'youtube', payout_min: 20000, payout_max: 40000, status: 'open', timeline: '3 weeks', brief: 'TechGear Pro creates premium tech accessories. We\'re launching our new wireless earbuds and need creators to give honest reviews. You get to keep the product after.' },
-};
-
 export default function DealDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -26,7 +21,7 @@ export default function DealDetail() {
 
   async function fetchDeal() {
     const { data } = await supabase.from('deals').select('*').eq('id', id).single();
-    setDeal(data || MOCK_DEALS[id] || null);
+    setDeal(data || null);
     setLoading(false);
   }
 

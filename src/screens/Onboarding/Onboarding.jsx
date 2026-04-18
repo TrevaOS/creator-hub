@@ -14,7 +14,6 @@ export default function Onboarding() {
   const TOTAL = 3;
 
   const complete = () => {
-    localStorage.setItem('ch_onboarded', 'true');
     navigate('/dashboard', { replace: true });
   };
 
