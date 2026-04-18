@@ -1,66 +1,125 @@
-import { useState, useMemo } from 'react';
-import { Search as SearchIcon, SlidersHorizontal } from 'lucide-react';
-import Avatar from '../../components/Avatar';
+import { useMemo, useState } from 'react';
+import { Search as SearchIcon, Play, Image as ImageIcon, Heart, MessageCircle, Eye } from 'lucide-react';
 import Chip from '../../components/Chip';
 import Card from '../../components/Card';
 import styles from './Search.module.css';
 
-const FILTER_TABS = ['All', 'Creators', 'Brands', 'Deals'];
+const FILTER_TABS = ['All', 'Creators', 'Brands', 'Reels', 'Posts'];
 
-const TRENDING_NICHES = ['Fashion', 'Fitness', 'Food', 'Travel', 'Tech', 'Gaming', 'Beauty', 'Finance', 'Music', 'Art'];
+const TRENDING_TOPICS = ['Streetwear', 'Travel', 'Fitness', 'Gaming', 'Beauty', 'Food'];
 
-const FEATURED_CREATORS = [
-  { id: 1, name: 'Priya Sharma', niche: 'Fashion', followers: '145K', avatar: null, collabs: 12 },
-  { id: 2, name: 'Rahul Verma', niche: 'Tech', followers: '89K', avatar: null, collabs: 8 },
-  { id: 3, name: 'Aisha Khan', niche: 'Fitness', followers: '210K', avatar: null, collabs: 20 },
-  { id: 4, name: 'Dev Nair', niche: 'Food', followers: '67K', avatar: null, collabs: 5 },
-  { id: 5, name: 'Meera Joshi', niche: 'Travel', followers: '182K', avatar: null, collabs: 15 },
-  { id: 6, name: 'Arjun Singh', niche: 'Gaming', followers: '320K', avatar: null, collabs: 3 },
-];
-
-const RECENT_COLLABS = [
-  { creator: 'Priya Sharma', brand: 'StyleCo', deliverable: '2 Reels + 3 Stories', platform: 'instagram' },
-  { creator: 'Rahul Verma', brand: 'TechGear Pro', deliverable: '1 Video Review', platform: 'youtube' },
-  { creator: 'Aisha Khan', brand: 'FitLife', deliverable: '4 Stories + 1 Reel', platform: 'instagram' },
+const PREVIEW_FEED = [
+  {
+    id: 1,
+    type: 'Reel',
+    creator: '@priya.style',
+    title: 'Summer streetwear fit checks',
+    cover:
+      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80',
+    views: '128K',
+    likes: '12.9K',
+    comments: '420',
+    tags: ['Fashion', 'Streetwear'],
+    mentions: [
+      { brand: 'StyleCo', influencer: 'Priya Sharma', status: 'Active collab' },
+      { brand: 'UrbanShine', influencer: 'Priya Sharma', status: 'Mentioned in caption' },
+    ],
+  },
+  {
+    id: 2,
+    type: 'Post',
+    creator: '@dev.bytes',
+    title: 'Desk setup breakdown for creators',
+    cover:
+      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+    views: '64K',
+    likes: '8.1K',
+    comments: '188',
+    tags: ['Tech', 'Productivity'],
+    mentions: [
+      { brand: 'TechGear Pro', influencer: 'Dev Nair', status: 'Paid campaign' },
+      { brand: 'FocusLabs', influencer: 'Dev Nair', status: 'Organic mention' },
+    ],
+  },
+  {
+    id: 3,
+    type: 'Reel',
+    creator: '@aisha.fit',
+    title: '30-min home workout challenge',
+    cover:
+      'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80',
+    views: '214K',
+    likes: '22.5K',
+    comments: '960',
+    tags: ['Fitness', 'Health'],
+    mentions: [
+      { brand: 'FitLife', influencer: 'Aisha Khan', status: 'Ambassador' },
+      { brand: 'HydroMax', influencer: 'Aisha Khan', status: 'Story + Reel mention' },
+    ],
+  },
+  {
+    id: 4,
+    type: 'Post',
+    creator: '@meera.travels',
+    title: '3-day Goa itinerary for creators',
+    cover:
+      'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=900&q=80',
+    views: '92K',
+    likes: '10.4K',
+    comments: '302',
+    tags: ['Travel', 'Lifestyle'],
+    mentions: [{ brand: 'FlyNest', influencer: 'Meera Joshi', status: 'Sponsored post' }],
+  },
 ];
 
 export default function Search() {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-  const [sortBy, setSortBy] = useState('followers');
+  const [openMentionsId, setOpenMentionsId] = useState(null);
 
-  const isSearching = query.trim().length > 0;
+  const feed = useMemo(() => {
+    return PREVIEW_FEED.filter((item) => {
+      const q = query.trim().toLowerCase();
+      const inSearch =
+        !q ||
+        item.creator.toLowerCase().includes(q) ||
+        item.title.toLowerCase().includes(q) ||
+        item.tags.some((tag) => tag.toLowerCase().includes(q)) ||
+        item.mentions.some(
+          (m) =>
+            m.brand.toLowerCase().includes(q) || m.influencer.toLowerCase().includes(q),
+        );
 
-  const filteredCreators = useMemo(() => {
-    if (!isSearching) return FEATURED_CREATORS;
-    return FEATURED_CREATORS.filter(c =>
-      c.name.toLowerCase().includes(query.toLowerCase()) ||
-      c.niche.toLowerCase().includes(query.toLowerCase())
-    );
-  }, [query, isSearching]);
+      const inFilter =
+        activeFilter === 'All' ||
+        (activeFilter === 'Reels' && item.type === 'Reel') ||
+        (activeFilter === 'Posts' && item.type === 'Post') ||
+        (activeFilter === 'Creators' && item.creator) ||
+        (activeFilter === 'Brands' && item.mentions.length > 0);
+
+      return inSearch && inFilter;
+    });
+  }, [activeFilter, query]);
 
   return (
     <main className="screen">
       <div className={styles.content}>
-
-        {/* Search bar */}
         <div className={styles.searchBarWrap}>
           <div className={styles.searchBar}>
             <SearchIcon size={18} className={styles.searchIcon} />
             <input
               type="search"
               className={styles.searchInput}
-              placeholder="Search creators, brands, niches..."
+              placeholder="Search reels, posts, creators, brands..."
               value={query}
-              onChange={e => setQuery(e.target.value)}
-              aria-label="Search"
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search feed"
             />
           </div>
         </div>
 
-        {/* Filter chips */}
         <div className={`scroll-x ${styles.filterRow}`}>
-          {FILTER_TABS.map(tab => (
+          {FILTER_TABS.map((tab) => (
             <Chip
               key={tab}
               label={tab}
@@ -71,116 +130,89 @@ export default function Search() {
           ))}
         </div>
 
-        {!isSearching ? (
-          <>
-            {/* Trending niches */}
-            <section className={styles.section}>
-              <h2 className="section-title" style={{ marginBottom: 12 }}>Trending Niches</h2>
-              <div className={`scroll-x`}>
-                {TRENDING_NICHES.map(niche => (
-                  <Chip
-                    key={niche}
-                    label={`# ${niche}`}
-                    variant="ghost"
-                    onClick={() => setQuery(niche)}
-                  />
-                ))}
-              </div>
-            </section>
+        <section className={styles.topicSection}>
+          <h2 className="section-title">Trending Topics</h2>
+          <div className={`scroll-x ${styles.topicRow}`}>
+            {TRENDING_TOPICS.map((topic) => (
+              <Chip key={topic} label={`# ${topic}`} variant="ghost" onClick={() => setQuery(topic)} />
+            ))}
+          </div>
+        </section>
 
-            {/* Featured Creators grid */}
-            <section className={styles.section}>
-              <h2 className="section-title" style={{ marginBottom: 12 }}>Featured Creators</h2>
-              <div className={styles.creatorsGrid}>
-                {FEATURED_CREATORS.map(creator => (
-                  <CreatorCard key={creator.id} creator={creator} />
-                ))}
-              </div>
-            </section>
-
-            {/* Recent Collabs */}
-            <section className={styles.section}>
-              <h2 className="section-title" style={{ marginBottom: 12 }}>Recent Collabs</h2>
-              <div className={styles.collabList}>
-                {RECENT_COLLABS.map((c, i) => (
-                  <Card key={i} outlined className={styles.collabCard}>
-                    <div className={styles.collabInner}>
-                      <div className={styles.collabAvatars}>
-                        <Avatar name={c.creator} size={36} />
-                        <span className={styles.collabX}>×</span>
-                        <div className={styles.brandIcon}>
-                          {c.brand[0]}
-                        </div>
-                      </div>
-                      <div className={styles.collabInfo}>
-                        <p className={styles.collabNames}>{c.creator} × {c.brand}</p>
-                        <span className={styles.collabDeliverable}>{c.deliverable}</span>
-                      </div>
-                      <div className={styles.collabPlatformIcon}>
-                        <Avatar name={c.platform === 'instagram' ? 'IG' : 'YT'} size={30} />
-                      </div>
+        <section className={styles.feedSection}>
+          <h2 className="section-title">Instagram Preview Feed</h2>
+          <div className={styles.feedGrid}>
+            {feed.map((item) => {
+              const mentionsOpen = openMentionsId === item.id;
+              const isReel = item.type === 'Reel';
+              return (
+                <Card key={item.id} elevated className={styles.feedCard}>
+                  <div className={styles.coverWrap}>
+                    <img src={item.cover} alt={item.title} className={styles.coverImage} loading="lazy" />
+                    <div className={styles.coverOverlay}>
+                      <span className={styles.typeBadge}>
+                        {isReel ? <Play size={12} /> : <ImageIcon size={12} />}
+                        {item.type}
+                      </span>
+                      <span className={styles.creatorBadge}>{item.creator}</span>
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </section>
-          </>
-        ) : (
-          <>
-            {/* Sort bar */}
-            <div className={styles.sortBar}>
-              <SlidersHorizontal size={14} />
-              <span>Sort by:</span>
-              {['followers', 'collabs', 'location'].map(s => (
-                <button
-                  key={s}
-                  className={`${styles.sortBtn} ${sortBy === s ? styles.sortActive : ''}`}
-                  onClick={() => setSortBy(s)}
-                >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
-                </button>
-              ))}
-            </div>
+                  </div>
 
-            {/* Search results */}
-            {filteredCreators.length === 0 ? (
-              <div className={styles.emptyState}>
-                <p>No results for "{query}"</p>
-              </div>
-            ) : (
-              <div className={styles.creatorsGrid}>
-                {filteredCreators.map(creator => (
-                  <CreatorCard key={creator.id} creator={creator} />
-                ))}
-              </div>
-            )}
-          </>
-        )}
+                  <div className={styles.feedBody}>
+                    <p className={styles.feedTitle}>{item.title}</p>
+
+                    <div className={styles.metricRow}>
+                      <span>
+                        <Eye size={12} />
+                        {item.views}
+                      </span>
+                      <span>
+                        <Heart size={12} />
+                        {item.likes}
+                      </span>
+                      <span>
+                        <MessageCircle size={12} />
+                        {item.comments}
+                      </span>
+                    </div>
+
+                    <div className={styles.tagRow}>
+                      {item.tags.map((tag) => (
+                        <span key={tag} className={styles.tagPill}>
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className={styles.mentionBtn}
+                      onClick={() => setOpenMentionsId(mentionsOpen ? null : item.id)}
+                    >
+                      {mentionsOpen ? 'Hide' : 'Show'} brand × influencer mentions ({item.mentions.length})
+                    </button>
+
+                    {mentionsOpen && (
+                      <div className={styles.mentionsList}>
+                        {item.mentions.map((mention, idx) => (
+                          <div key={`${mention.brand}-${idx}`} className={styles.mentionItem}>
+                            <p className={styles.mentionLine}>
+                              <strong>{mention.brand}</strong> × {mention.influencer}
+                            </p>
+                            <span className={styles.mentionStatus}>{mention.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {feed.length === 0 && <div className={styles.emptyState}>No preview results found.</div>}
+        </section>
       </div>
     </main>
   );
 }
-
-function CreatorCard({ creator }) {
-  return (
-    <Card elevated className={styles.creatorCard} onClick={() => {}}>
-      <div className={styles.creatorCardInner}>
-        <Avatar name={creator.name} size={52} />
-        <div className={styles.creatorInfo}>
-          <p className={styles.creatorName}>{creator.name}</p>
-          <Chip label={creator.niche} variant="ghost" size="sm" />
-        </div>
-        <div className={styles.creatorStats}>
-          <p className={styles.followerCount}>{creator.followers}</p>
-          <p className={styles.followerLabel}>followers</p>
-        </div>
-      </div>
-      {creator.collabs > 0 && (
-        <div className={styles.collabPill}>
-          {creator.collabs} collabs
-        </div>
-      )}
-    </Card>
-  );
-}
-

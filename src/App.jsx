@@ -11,6 +11,7 @@ import DealDetail from './screens/Deals/DealDetail';
 import DealChat from './screens/Deals/DealChat';
 import Setup from './screens/Setup/Setup';
 import OAuthCallback from './screens/OAuthCallback/OAuthCallback';
+import AdminDashboard from './screens/AdminDashboard/AdminDashboard';
 
 const TABBED_ROUTES = ['/dashboard', '/analytics', '/search', '/deals', '/setup'];
 
@@ -60,6 +61,7 @@ function AppShell() {
 
         {/* OAuth callbacks — no auth guard needed, handles redirect from platform */}
         <Route path="/oauth/:platform" element={<OAuthCallback />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
         <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
