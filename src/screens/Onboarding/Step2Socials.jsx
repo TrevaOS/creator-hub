@@ -8,7 +8,7 @@ import styles from './Steps.module.css';
 const PLATFORMS = getAllPlatforms();
 
 export default function Step2Socials({ onNext, onBack }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [handles, setHandles] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -19,7 +19,8 @@ export default function Step2Socials({ onNext, onBack }) {
         const rows = Object.entries(handles)
           .filter(([, h]) => h.trim())
           .map(([platform, handle]) => ({
-            user_id: user.id,
+            user_id:            user.id,
+            creator_profile_id: profile?.profile_id ?? null,
             platform,
             handle: handle.trim(),
             is_visible: true,

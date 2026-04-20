@@ -285,11 +285,12 @@ export default function Setup() {
         const rows = ALL_PLATFORMS
           .filter(p => socials[p].handle)
           .map(p => ({
-            user_id:    user.id,
-            platform:   p,
-            handle:     socials[p].handle,
-            url:        socials[p].url || null,
-            is_visible: socials[p].is_visible,
+            user_id:            user.id,
+            creator_profile_id: profile?.profile_id ?? null,
+            platform:           p,
+            handle:             socials[p].handle,
+            url:                socials[p].url || null,
+            is_visible:         socials[p].is_visible,
           }));
         if (rows.length) {
           await supabase.from('creator_social_accounts').upsert(rows, { onConflict: 'user_id,platform' });
@@ -298,6 +299,7 @@ export default function Setup() {
         // Upsert modules
         await supabase.from('creator_dashboard_modules').upsert({
           user_id: user.id,
+          creator_profile_id: profile?.profile_id ?? null,
           ...modules,
         }, { onConflict: 'user_id' });
 
@@ -314,10 +316,11 @@ export default function Setup() {
           const uploadedUrl = await uploadCarouselSlide(slide);
           if (!uploadedUrl) continue;
           await supabase.from('creator_carousel_images').insert({
-            user_id:   user.id,
-            image_url: uploadedUrl,
-            caption:   slide.caption,
-            order:     slides.indexOf(slide),
+            user_id:            user.id,
+            creator_profile_id: profile?.profile_id ?? null,
+            image_url:          uploadedUrl,
+            caption:            slide.caption,
+            order:              slides.indexOf(slide),
           });
         }
 

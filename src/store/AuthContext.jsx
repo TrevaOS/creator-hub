@@ -85,6 +85,7 @@ export function AuthProvider({ children }) {
       if (data) {
         const mapped = {
           ...data,
+          profile_id: data.id,
           id: data.auth_user_id,
           name: data.display_name,
           location: data.base_city,
@@ -179,7 +180,7 @@ export function AuthProvider({ children }) {
       .select()
       .single();
     if (error) throw error;
-    const mapped = { ...data, id: data.auth_user_id, name: data.display_name, location: data.base_city };
+    const mapped = { ...data, profile_id: data.id, id: data.auth_user_id, name: data.display_name, location: data.base_city };
     dispatch({ type: 'UPDATE_PROFILE', payload: mapped });
     return mapped;
   };

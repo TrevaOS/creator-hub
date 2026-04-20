@@ -12,8 +12,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp }    = useAuth();
   const navigate              = useNavigate();
-  const DEFAULT_EMAIL = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL || 'admin@creatorhub.dev';
-  const DEFAULT_PASSWORD = import.meta.env.VITE_DEFAULT_LOGIN_PASSWORD || 'CreatorHub@123';
+  const DEFAULT_EMAIL = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL || '';
+  const DEFAULT_PASSWORD = import.meta.env.VITE_DEFAULT_LOGIN_PASSWORD || '';
 
   const submit = async (e) => {
     e.preventDefault();
@@ -145,14 +145,16 @@ export default function Auth() {
             : <>Already have an account? <span>&nbsp;Sign In</span></>}
         </button>
 
-        <button
-          type="button"
-          className={`btn btn-secondary btn-full ${styles.switchBtn}`}
-          onClick={useDefaultAccess}
-          disabled={loading}
-        >
-          Use Default Access
-        </button>
+        {DEFAULT_EMAIL && DEFAULT_PASSWORD && (
+          <button
+            type="button"
+            className={`btn btn-secondary btn-full ${styles.switchBtn}`}
+            onClick={useDefaultAccess}
+            disabled={loading}
+          >
+            Use Default Access
+          </button>
+        )}
 
       </div>
     </main>

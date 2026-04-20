@@ -44,7 +44,7 @@ export function getInstagramAuthURL() {
 }
 
 /** Called from the /oauth/instagram callback page with `code` from URL. */
-export async function exchangeInstagramCode(code, userId) {
+export async function exchangeInstagramCode(code, userId, profileId = null) {
   // Exchange code for token via your backend proxy
   const res = await fetch('/api/oauth/instagram', {
     method: 'POST',
@@ -54,13 +54,13 @@ export async function exchangeInstagramCode(code, userId) {
   if (!res.ok) throw new Error('Instagram token exchange failed');
   const { access_token, user_id: ig_user_id } = await res.json();
 
-  // Store long-lived token in Supabase
   await supabase.from('creator_oauth_tokens').upsert({
-    user_id:      userId,
-    platform:     'instagram',
+    user_id:            userId,
+    creator_profile_id: profileId,
+    platform:           'instagram',
     access_token,
     platform_user_id: String(ig_user_id),
-    expires_at:   new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days
+    expires_at:   new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at:   new Date().toISOString(),
   }, { onConflict: 'user_id,platform' });
 
@@ -95,7 +95,7 @@ export function getYouTubeAuthURL() {
 }
 
 /** Called from the /oauth/youtube callback page with `code` from URL. */
-export async function exchangeYouTubeCode(code, userId) {
+export async function exchangeYouTubeCode(code, userId, profileId = null) {
   const res = await fetch('/api/oauth/youtube', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -105,8 +105,9 @@ export async function exchangeYouTubeCode(code, userId) {
   const { access_token, refresh_token, expires_in } = await res.json();
 
   await supabase.from('creator_oauth_tokens').upsert({
-    user_id:       userId,
-    platform:      'youtube',
+    user_id:            userId,
+    creator_profile_id: profileId,
+    platform:           'youtube',
     access_token,
     refresh_token,
     expires_at:    new Date(Date.now() + expires_in * 1000).toISOString(),
