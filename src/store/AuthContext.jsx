@@ -129,7 +129,7 @@ export function AuthProvider({ children }) {
       return { user: demoUser };
     }
 
-    const cleanUsername = await assertUsernameAvailable(username || email.split('@')[0]);
+    const cleanUsername = normalizeUsername(username || email.split('@')[0]);
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
@@ -194,7 +194,7 @@ export function AuthProvider({ children }) {
 
     const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
     if ('username' in dbUpdates) {
-      dbUpdates.username = await assertUsernameAvailable(dbUpdates.username, state.user.id);
+      dbUpdates.username = dbUpdates.username.trim().toLowerCase().replace(/\s+/g, '_');
     }
     if ('name' in dbUpdates) { dbUpdates.display_name = dbUpdates.name; delete dbUpdates.name; }
     if ('location' in dbUpdates) { dbUpdates.base_city = dbUpdates.location; delete dbUpdates.location; }

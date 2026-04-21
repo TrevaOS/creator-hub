@@ -119,19 +119,44 @@ export async function createCreatorProfileViaFunction({ authUserId, displayName,
   }
 
   const functionUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/create-creator-profile`;
-  const response = await fetch(functionUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ auth_user_id: authUserId, display_name: displayName, username }),
-  });
+  console.log('[createCreatorProfile] calling', functionUrl, { authUserId, displayName, username });
 
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.error || 'Failed to call creator profile function');
+  let response;
+  try {
+    response = await fetch(functionUrl, {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'apikey': supabaseAnonKey,
+      },
+      body: JSON.stringify({ auth_user_id: authUserId, display_name: displayName, username }),
+    });
+  } catch (networkErr) {
+    console.error('[createCreatorProfile] network error (fetch threw):', networkErr);
+    throw new Error(`Network error calling creator profile function: ${networkErr.message}`);
   }
-  return result;
+
+  console.log('[createCreatorProfile] response status:', response.status);
+
+  let result;
+  try {
+    result = await response.json();
+  } catch (err) {
+    const text = await response.text().catch(() => 'Unable to read response');
+    throw new Error(`Creator function returned ${response.status}: ${text}`);
+  }
+
+  console.log('[createCreatorProfile] response body:', result);
+
+  if (!response.ok) {
+    throw new Error(result?.error || `Failed to call creator profile function (${response.status})`);
+  }
+
+  return result.data || result;
 }
 
 export default supabase;

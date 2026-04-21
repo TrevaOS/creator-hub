@@ -5,30 +5,23 @@
  * 2) Add a secret named `SUPABASE_SERVICE_ROLE_KEY` in the Supabase Functions secrets UI.
  * 3) The frontend should call `/functions/v1/create-creator-profile` after signup.
  */
-import { serve } from 'jsr:std/server';
-import { createClient } from 'jsr:@supabase/supabase-js';
+import { serve } from 'https://deno.land/std@0.203.0/http/server.ts';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables.');
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPABASE_REST_URL') || Deno.env.get('VITE_SUPABASE_URL') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_KEY') || Deno.env.get('SERVICE_ROLE_KEY') || '';
 
 serve(async (req: Request) => {
   const corsHeaders = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info, x-client-env, x-client-user-agent, x-application-name, x-application-version',
+    'Access-Control-Expose-Headers': 'Content-Type, Authorization, apikey',
+    'Access-Control-Max-Age': '86400',
   };
 
   if (req.method === 'OPTIONS') {
-    return new Response(JSON.stringify({}), {
+    return new Response(null, {
       status: 204,
       headers: corsHeaders,
     });
@@ -37,6 +30,15 @@ serve(async (req: Request) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Only POST requests are allowed' }), {
       status: 405,
+      headers: corsHeaders,
+    });
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response(JSON.stringify({
+      error: 'Missing Supabase function secrets. Set SUPABASE_URL (or SUPABASE_REST_URL/VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_KEY/SERVICE_ROLE_KEY).',
+    }), {
+      status: 500,
       headers: corsHeaders,
     });
   }
@@ -54,24 +56,57 @@ serve(async (req: Request) => {
       });
     }
 
-    const { data, error } = await supabase
-      .from('creator_profiles')
-      .insert({
-        auth_user_id: authUserId,
-        display_name: displayName,
-        username,
-      })
-      .select()
-      .single();
+    const checkRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/creator_profiles?username=eq.${encodeURIComponent(username)}&select=id`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+      },
+    });
 
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message, details: error.details }), {
+    if (!checkRes.ok) {
+      const checkError = await checkRes.json().catch(() => null);
+      const message = checkError?.message || checkError?.error_description || 'Unable to verify username availability';
+      return new Response(JSON.stringify({ error: `Username check failed: ${message}` }), {
         status: 500,
         headers: corsHeaders,
       });
     }
 
-    return new Response(JSON.stringify({ data }), {
+    const existingUsers = await checkRes.json();
+    if (Array.isArray(existingUsers) && existingUsers.length > 0) {
+      return new Response(JSON.stringify({ error: 'Username already exists. Please choose a different username.' }), {
+        status: 409,
+        headers: corsHeaders,
+      });
+    }
+
+    const insertRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/creator_profiles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({
+        auth_user_id: authUserId,
+        display_name: displayName,
+        username,
+      }),
+    });
+
+    const result = await insertRes.json();
+    if (!insertRes.ok) {
+      const message = result?.message || result?.error_description || JSON.stringify(result);
+      return new Response(JSON.stringify({ error: `Supabase REST insert failed: ${message}` }), {
+        status: 500,
+        headers: corsHeaders,
+      });
+    }
+
+    return new Response(JSON.stringify({ data: result }), {
       status: 200,
       headers: corsHeaders,
     });
