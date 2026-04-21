@@ -63,7 +63,7 @@ export default function OAuthCallback() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const icon = platform === 'instagram' ? '📸' : platform === 'youtube' ? '▶️' : '🔗';
+  const icon = platform === 'instagram' ? 'Instagram' : platform === 'youtube' ? 'YouTube' : 'Platform';
 
   return (
     <main className={styles.screen}>
@@ -78,7 +78,7 @@ export default function OAuthCallback() {
           )}
         </div>
 
-        <p className={styles.platformName}>{icon} {capitalize(platform || 'Platform')}</p>
+        <p className={styles.platformName}>{icon}</p>
 
         <h2 className={styles.title}>
           {status === 'connecting' && 'Connecting...'}

@@ -3,10 +3,10 @@ import { LayoutDashboard, BarChart2, Search, Handshake, Settings } from 'lucide-
 import styles from './TabBar.module.css';
 
 const TABS = [
-  { path: '/dashboard', label: 'Profile',   Icon: LayoutDashboard },
-  { path: '/analytics', label: 'Analytics', Icon: BarChart2 },
-  { path: '/search',    label: 'Search',    Icon: Search },
   { path: '/deals',     label: 'Deals',     Icon: Handshake },
+  { path: '/analytics', label: 'Analytics', Icon: BarChart2 },
+  { path: '/dashboard', label: 'Profile',   Icon: LayoutDashboard },
+  { path: '/search',    label: 'Search',    Icon: Search },
   { path: '/setup',     label: 'Setup',     Icon: Settings },
 ];
 
@@ -21,7 +21,7 @@ export default function TabBar() {
         return (
           <button
             key={path}
-            className={`${styles.tab} ${active ? styles.active : ''}`}
+            className={`${styles.tab} ${path === '/dashboard' ? styles.centerTab : ''} ${active ? styles.active : ''}`}
             onClick={() => navigate(path)}
             aria-label={label}
             aria-current={active ? 'page' : undefined}

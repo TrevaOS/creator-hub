@@ -13,6 +13,20 @@
   padding-top: 4px;
 }
 
+.headerActions {
+  position: sticky;
+  top: 56px;
+  z-index: 12;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.saveBtnInline {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border-radius: var(--radius-full) !important;
+}
+
 .headerTitle {
   font-size: var(--font-title);
   font-weight: 800;

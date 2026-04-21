@@ -16,7 +16,10 @@ import AdminDashboard from './screens/AdminDashboard/AdminDashboard';
 const TABBED_ROUTES = ['/dashboard', '/analytics', '/search', '/deals', '/setup'];
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+  const DEFAULT_ACCESS_EMAIL = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL?.toLowerCase() || '';
+  const isDefaultAccess = Boolean(DEFAULT_ACCESS_EMAIL && user?.email?.toLowerCase() === DEFAULT_ACCESS_EMAIL);
 
   if (loading) return (
     <div style={{
@@ -37,6 +40,13 @@ function ProtectedRoute({ children }) {
   );
 
   if (!user) return <Navigate to="/auth" replace />;
+  const profileComplete = Boolean(
+    profile?.name?.trim() &&
+    profile?.username?.trim() &&
+    profile?.bio?.trim() &&
+    profile?.location?.trim()
+  );
+  if (!profileComplete && !isDefaultAccess && location.pathname !== '/setup') return <Navigate to="/setup" replace />;
   return children;
 }
 

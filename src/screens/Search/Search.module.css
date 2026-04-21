@@ -1,15 +1,15 @@
 .content {
-  padding: 16px 16px calc(var(--tab-bar-height) + 16px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 12px calc(var(--tab-bar-height) + 20px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .searchBarWrap {
   position: sticky;
   top: 0;
   z-index: 20;
-  background-color: var(--bg-primary);
+  background: var(--bg-primary);
   padding-bottom: 6px;
 }
 
@@ -17,186 +17,71 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(180deg, #101727, #0a1120);
-  border: 1px solid #1f2a42;
-  border-radius: 16px;
-  min-height: 48px;
-  padding: 0 14px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
 }
 
 .searchIcon {
-  color: #8ba1ca;
+  color: var(--text-secondary);
 }
 
 .searchInput {
   flex: 1;
-  font-size: 15px;
-  color: #f3f7ff;
   background: none;
+  color: var(--text-primary);
+  font-size: 14px;
 }
 
 .searchInput::placeholder {
-  color: #8ba1ca;
+  color: var(--text-tertiary);
 }
 
 .filterRow {
   gap: 8px;
-  padding-bottom: 2px;
 }
 
-.topicSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.topicRow {
-  gap: 8px;
-}
-
-.feedSection {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.feedGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-.feedCard {
-  overflow: hidden;
-  padding: 0;
-  border: 1px solid #1e2840;
-  background: linear-gradient(160deg, #0d1526, #090f1b);
-}
-
-.coverWrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-}
-
-.coverImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.coverOverlay {
-  position: absolute;
-  inset: auto 10px 10px 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.typeBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #f7fbff;
-  background: rgba(8, 11, 18, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.creatorBadge {
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #dce8ff;
-  background: rgba(9, 16, 29, 0.82);
-  border: 1px solid rgba(70, 130, 255, 0.28);
-}
-
-.feedBody {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-}
-
-.feedTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: #ecf3ff;
-}
-
-.metricRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #b6c8ea;
-  font-size: 12px;
-}
-
-.metricRow span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tagRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tagPill {
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-size: 11px;
-  color: #92b8ff;
-  background: rgba(29, 62, 115, 0.35);
-  border: 1px solid rgba(80, 142, 255, 0.28);
-}
-
-.mentionBtn {
-  border-radius: 10px;
-  border: 1px solid #2a3858;
-  background: #0f1a2f;
-  color: #c8d9fb;
-  font-size: 12px;
-  font-weight: 600;
-  min-height: 36px;
-  padding: 0 10px;
-  width: 100%;
-}
-
-.mentionsList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mentionItem {
-  border: 1px solid #2c3a58;
-  background: rgba(14, 21, 35, 0.88);
-  border-radius: 10px;
-  padding: 8px 10px;
-}
-
-.mentionLine {
-  font-size: 12px;
-  color: #e7efff;
-}
-
-.mentionStatus {
-  font-size: 11px;
-  color: #8db6ff;
-}
-
-.emptyState {
-  text-align: center;
-  color: var(--text-secondary);
-  border: 1px dashed var(--border-color);
+.suggestions {
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 22px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.suggestionItem {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.suggestionItem:last-child {
+  border-bottom: none;
+}
+
+.gridSection {
+  margin-top: 2px;
+}
+
+.gridFeed {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.gridTile {
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, #d9d9d9, #cfcfcf);
+}
+
+.gridTile:nth-child(5n) {
+  aspect-ratio: 1 / 1.35;
 }

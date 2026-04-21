@@ -66,10 +66,10 @@ export default function Auth() {
         <p className={styles.heroTagline}>Your creator brand, amplified.</p>
 
         <div className={styles.heroPills}>
-          <span className={styles.heroPill}>📸 Instagram</span>
-          <span className={styles.heroPill}>▶️ YouTube</span>
-          <span className={styles.heroPill}>💼 Deals</span>
-          <span className={styles.heroPill}>📊 Analytics</span>
+          <span className={styles.heroPill}>Instagram</span>
+          <span className={styles.heroPill}>YouTube</span>
+          <span className={styles.heroPill}>Deals</span>
+          <span className={styles.heroPill}>Analytics</span>
         </div>
       </div>
 

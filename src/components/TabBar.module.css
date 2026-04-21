@@ -32,6 +32,15 @@
   position: relative;
 }
 
+.centerTab .iconWrap {
+  width: 48px;
+  height: 36px;
+}
+
+.centerTab.active .iconWrap {
+  background: rgba(124,58,237,0.18);
+}
+
 .tab.active {
   color: var(--brand);
 }

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Share2, Download, MapPin, Play, Music, ExternalLink,
-  LayoutGrid, PlayCircle, ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight,
   Check, Zap, Settings2, Palette, Moon, Sun, X,
   Maximize2, Minimize2, GripVertical,
 } from 'lucide-react';
@@ -117,7 +117,6 @@ export default function Dashboard() {
 
   const [exporting, setExporting]     = useState(false);
   const [copied, setCopied]           = useState(false);
-  const [postTab, setPostTab]         = useState('posts');
   const [carouselIdx, setCarouselIdx] = useState(0);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [editMode, setEditMode]       = useState(false);
@@ -157,18 +156,65 @@ export default function Dashboard() {
     ? igPosts.map(p => ({ id: p.id, type: p.media_type === 'VIDEO' ? 'reel' : 'image', thumb: p.thumbnail_url || p.media_url, likes: p.like_count || 0, caption: p.caption || '' }))
     : EMPTY_POSTS;
 
-  const displayPosts     = postTab === 'reels' ? livePosts.filter(p => p.type === 'reel') : livePosts;
-  const displayYtVideos  = ytData?.videos?.length ? ytData.videos : EMPTY_YT_VIDEOS;
   const followers        = igProfile?.followers_count ? formatK(igProfile.followers_count) : '0';
   const postsCount       = igProfile?.media_count ?? 0;
   const engagement       = '0%';
   const featuredImages   = carouselImages.length > 0 ? carouselImages : [];
+  const dragCardRef = useRef(null);
+  const defaultOrder = ['bio', ...displaySocials.map((s) => `social_${s.platform}`), 'carousel', 'spotify', 'brands', 'connect'];
+  const [cardOrder, setCardOrder] = useState(() => {
+    try {
+      const raw = localStorage.getItem('creator_hub_card_order');
+      return raw ? JSON.parse(raw) : defaultOrder;
+    } catch {
+      return defaultOrder;
+    }
+  });
+
+  useEffect(() => {
+    setCardOrder((prev) => {
+      const merged = [...prev.filter((id) => defaultOrder.includes(id)), ...defaultOrder.filter((id) => !prev.includes(id))];
+      return merged;
+    });
+  }, [displaySocials.length]);
+
+  useEffect(() => {
+    localStorage.setItem('creator_hub_card_order', JSON.stringify(cardOrder));
+  }, [cardOrder]);
 
   const toggleCardSize = (key) => {
     setCardSizes(prev => ({ ...prev, [key]: prev[key] === 'full' ? 'half' : 'full' }));
   };
 
   const cardSize = (key) => cardSizes[key] || 'half';
+
+  const getCardOrder = (id) => {
+    const idx = cardOrder.indexOf(id);
+    return idx === -1 ? cardOrder.length + 1 : idx;
+  };
+
+  const onCardDrop = (targetId) => {
+    const sourceId = dragCardRef.current;
+    if (!sourceId || sourceId === targetId) return;
+    setCardOrder((prev) => {
+      const arr = [...prev];
+      const from = arr.indexOf(sourceId);
+      const to = arr.indexOf(targetId);
+      if (from < 0 || to < 0) return prev;
+      arr.splice(from, 1);
+      arr.splice(to, 0, sourceId);
+      return arr;
+    });
+    dragCardRef.current = null;
+  };
+
+  const cardDragProps = (id) => ({
+    draggable: true,
+    onDragStart: () => { dragCardRef.current = id; },
+    onDragOver: (e) => e.preventDefault(),
+    onDrop: () => onCardDrop(id),
+    style: { order: getCardOrder(id) },
+  });
 
   const shareProfile = async () => {
     const url = `https://creator.treva.in/${displayProfile?.username || 'creator'}`;
@@ -313,6 +359,7 @@ export default function Dashboard() {
           {/* Bio card */}
           {displayProfile?.bio && (
             <div
+              {...cardDragProps('bio')}
               className={`${styles.card} ${cardSize('bio') === 'full' ? styles.cardFull : ''}`}
             >
               {editMode && <EditHandle onToggle={() => toggleCardSize('bio')} isFull={cardSize('bio') === 'full'} />}
@@ -334,6 +381,7 @@ export default function Dashboard() {
             const action = PLATFORM_ACTION[s.platform] || 'Follow';
             return (
               <div
+                {...cardDragProps(key)}
                 key={s.platform}
                 className={`${styles.card} ${styles.socialCard} ${isFull ? styles.cardFull : ''}`}
               >
@@ -349,85 +397,27 @@ export default function Dashboard() {
                     </p>
                   )}
                 </div>
-                <a
-                  href={s.url || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.socialCardBtn}
-                >
-                  {action}
-                </a>
-              </div>
-            );
-          })}
-
-          {/* Content / posts card */}
-          {(() => {
-            const key = 'content';
-            const isFull = cardSize(key) === 'full';
-            return (
-              <div className={`${styles.card} ${styles.cardFull}`}>
-                {editMode && <EditHandle onToggle={() => toggleCardSize(key)} isFull={isFull} />}
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.cardTitle}>Content</h2>
-                  {instagramSocial && (
-                    <a href={instagramSocial.url} target="_blank" rel="noopener noreferrer" className={styles.cardLink}>
-                      View <ExternalLink size={11} />
-                    </a>
-                  )}
-                </div>
-
-                <div className={styles.contentTabs}>
-                  <button className={`${styles.contentTab} ${postTab === 'posts' ? styles.contentTabActive : ''}`} onClick={() => setPostTab('posts')}>
-                    <LayoutGrid size={12} /> Posts
-                  </button>
-                  <button className={`${styles.contentTab} ${postTab === 'reels' ? styles.contentTabActive : ''}`} onClick={() => setPostTab('reels')}>
-                    <Play size={12} /> Reels
-                  </button>
-                  {youtubeSocial && (
-                    <button className={`${styles.contentTab} ${postTab === 'youtube' ? styles.contentTabActive : ''}`} onClick={() => setPostTab('youtube')}>
-                      <PlayCircle size={12} /> YouTube
-                    </button>
-                  )}
-                </div>
-
-                {postTab !== 'youtube' ? (
-                  <div className={styles.postsGrid}>
-                    {displayPosts.map((post, idx) => (
-                      <div key={post.id} className={styles.postTile} style={{ background: post.thumb ? undefined : GRADIENTS[idx % GRADIENTS.length] }}>
-                        {post.thumb && <img src={post.thumb} alt={post.caption} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} loading="lazy" />}
-                        {post.type === 'reel' && <div className={styles.reelIndicator}><Play size={9} fill="white" color="white" /></div>}
-                        <div className={styles.postOverlay}>
-                          <span className={styles.postLikes}>♥ {post.likes >= 1000 ? `${(post.likes / 1000).toFixed(1)}K` : post.likes}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                {s.url ? (
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.socialCardBtn}
+                  >
+                    {action}
+                  </a>
                 ) : (
-                  <div className={styles.ytList}>
-                    {displayYtVideos.map((vid, idx) => (
-                      <a key={vid.id} href={youtubeSocial?.url || '#'} target="_blank" rel="noopener noreferrer" className={styles.ytCard}>
-                        <div className={styles.ytThumb} style={{ background: vid.thumb ? undefined : GRADIENTS[(idx + 2) % GRADIENTS.length] }}>
-                          {vid.thumb && <img src={vid.thumb} alt={vid.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                          <div className={styles.ytPlayBtn}><Play size={14} fill="white" color="white" /></div>
-                        </div>
-                        <div className={styles.ytInfo}>
-                          <p className={styles.ytTitle}>{vid.title}</p>
-                          <p className={styles.ytViews}>{vid.views} views</p>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+                  <span className={`${styles.socialCardBtn} ${styles.socialCardBtnDisabled}`}>{action}</span>
                 )}
               </div>
             );
-          })()}
+          })}
 
           {/* Featured Work carousel */}
           {dashboardModules?.carousel_enabled && featuredImages.length > 0 && (() => {
             const key = 'carousel';
             return (
-              <div className={`${styles.card} ${styles.cardFull}`}>
+              <div {...cardDragProps(key)} className={`${styles.card} ${styles.cardFull}`}>
                 {editMode && <EditHandle onToggle={() => toggleCardSize(key)} isFull={true} />}
                 <div className={styles.cardHeader}>
                   <h2 className={styles.cardTitle}>Featured Work</h2>
@@ -458,7 +448,7 @@ export default function Dashboard() {
             const key = 'spotify';
             const isFull = cardSize(key) === 'full';
             return (
-              <div className={`${styles.card} ${styles.spotifyCard} ${isFull ? styles.cardFull : ''}`}>
+              <div {...cardDragProps(key)} className={`${styles.card} ${styles.spotifyCard} ${isFull ? styles.cardFull : ''}`}>
                 {editMode && <EditHandle onToggle={() => toggleCardSize(key)} isFull={isFull} />}
                 <SocialIcon platform="spotify" size={32} />
                 <div className={styles.spotifyInfo}>
@@ -474,7 +464,7 @@ export default function Dashboard() {
 
           {/* Collab brands */}
           {collabBrands.length > 0 && (
-            <div className={`${styles.card} ${styles.cardFull}`}>
+            <div {...cardDragProps('brands')} className={`${styles.card} ${styles.cardFull}`}>
               {editMode && <EditHandle onToggle={() => toggleCardSize('brands')} isFull={true} />}
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Worked With</h2>
@@ -495,7 +485,7 @@ export default function Dashboard() {
 
           {/* Connect banner */}
           {connectedPlatforms.length === 0 && (
-            <div className={`${styles.card} ${styles.cardFull} ${styles.connectCard}`}>
+            <div {...cardDragProps('connect')} className={`${styles.card} ${styles.cardFull} ${styles.connectCard}`}>
               <p className={styles.connectTitle}><Zap size={14} style={{ display:'inline', marginRight:4 }} />Connect accounts</p>
               <p className={styles.connectSub}>Link Instagram or YouTube to show live posts</p>
               <div className={styles.connectRow}>

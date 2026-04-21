@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   AreaChart, Area,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Download, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Download, Zap, Activity } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { supabase } from '../../services/supabase';
 import SocialIcon from '../../components/SocialIcon';
@@ -18,12 +18,12 @@ const PLATFORM_DATA = {
     totalFollowers: '12.5K',
     engagementRate: 4.2,
     stats: [
-      { label: 'Reach',       value: '125K', delta: 12, icon: '👁️' },
-      { label: 'Impressions', value: '340K', delta: 8,  icon: '📊' },
-      { label: 'Likes',       value: '18.5K',delta: 15, icon: '❤️' },
-      { label: 'Comments',    value: '1.2K', delta: 7,  icon: '💬' },
-      { label: 'Saves',       value: '4.3K', delta: 22, icon: '🔖' },
-      { label: 'Shares',      value: '890',  delta: -3, icon: '↗️' },
+      { label: 'Reach',       value: '125K', delta: 12 },
+      { label: 'Impressions', value: '340K', delta: 8 },
+      { label: 'Likes',       value: '18.5K',delta: 15 },
+      { label: 'Comments',    value: '1.2K', delta: 7 },
+      { label: 'Saves',       value: '4.3K', delta: 22 },
+      { label: 'Shares',      value: '890',  delta: -3 },
     ],
     growth: [
       { month: 'Nov', followers: 9800  },
@@ -43,12 +43,12 @@ const PLATFORM_DATA = {
     totalFollowers: '8.2K',
     engagementRate: 6.8,
     stats: [
-      { label: 'Views',       value: '120K',   delta: 20, icon: '▶️' },
-      { label: 'Watch Time',  value: '3.2K hrs',delta: 18, icon: '⏱️' },
-      { label: 'Likes',       value: '8.4K',   delta: 12, icon: '👍' },
-      { label: 'Comments',    value: '620',    delta: 5,  icon: '💬' },
-      { label: 'Subscribers', value: '+1.2K',  delta: 28, icon: '🔔' },
-      { label: 'Shares',      value: '340',    delta: 9,  icon: '↗️' },
+      { label: 'Views',       value: '120K',   delta: 20 },
+      { label: 'Watch Time',  value: '3.2K hrs',delta: 18 },
+      { label: 'Likes',       value: '8.4K',   delta: 12 },
+      { label: 'Comments',    value: '620',    delta: 5 },
+      { label: 'Subscribers', value: '+1.2K',  delta: 28 },
+      { label: 'Shares',      value: '340',    delta: 9 },
     ],
     growth: [
       { month: 'Nov', followers: 7200 },
@@ -68,12 +68,12 @@ const PLATFORM_DATA = {
     totalFollowers: '3.6K',
     engagementRate: 2.1,
     stats: [
-      { label: 'Impressions',   value: '42K',  delta: 5,  icon: '👁️' },
-      { label: 'Retweets',      value: '890',  delta: -2, icon: '🔄' },
-      { label: 'Likes',         value: '3.4K', delta: 11, icon: '❤️' },
-      { label: 'Replies',       value: '240',  delta: 3,  icon: '💬' },
-      { label: 'Profile Visits',value: '5.1K', delta: 14, icon: '👤' },
-      { label: 'Link Clicks',   value: '780',  delta: -6, icon: '🔗' },
+      { label: 'Impressions',   value: '42K',  delta: 5 },
+      { label: 'Retweets',      value: '890',  delta: -2 },
+      { label: 'Likes',         value: '3.4K', delta: 11 },
+      { label: 'Replies',       value: '240',  delta: 3 },
+      { label: 'Profile Visits',value: '5.1K', delta: 14 },
+      { label: 'Link Clicks',   value: '780',  delta: -6 },
     ],
     growth: [
       { month: 'Nov', followers: 3200 },
@@ -92,12 +92,12 @@ const PLATFORM_DATA = {
     totalFollowers: '15.6K',
     engagementRate: 8.6,
     stats: [
-      { label: 'Views',     value: '280K', delta: 35, icon: '▶️' },
-      { label: 'Likes',     value: '24K',  delta: 40, icon: '❤️' },
-      { label: 'Comments',  value: '1.8K', delta: 18, icon: '💬' },
-      { label: 'Shares',    value: '3.2K', delta: 25, icon: '↗️' },
-      { label: 'Followers', value: '+3.4K',delta: 55, icon: '👥' },
-      { label: 'Watch Time',value: '89%',  delta: 6,  icon: '⏱️' },
+      { label: 'Views',     value: '280K', delta: 35 },
+      { label: 'Likes',     value: '24K',  delta: 40 },
+      { label: 'Comments',  value: '1.8K', delta: 18 },
+      { label: 'Shares',    value: '3.2K', delta: 25 },
+      { label: 'Followers', value: '+3.4K',delta: 55 },
+      { label: 'Watch Time',value: '89%',  delta: 6 },
     ],
     growth: [
       { month: 'Nov', followers: 6000  },
@@ -282,7 +282,7 @@ export default function Analytics() {
           {data.stats.map(stat => (
             <div key={stat.label} className={styles.statCard}>
               <div className={styles.statTop}>
-                <span className={styles.statIcon}>{stat.icon}</span>
+                <span className={styles.statIcon}><Activity size={16} /></span>
                 <span className={`${styles.statDelta} ${stat.delta >= 0 ? styles.up : styles.down}`}>
                   {stat.delta >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                   {Math.abs(stat.delta)}%
@@ -365,12 +365,12 @@ export default function Analytics() {
                     <img src={post.thumb} alt="" className={styles.postThumbImg} />
                   )}
                   <div className={styles.postStatsBadges}>
-                    <span>❤️ {post.likes}</span>
-                    <span>💬 {post.comments}</span>
+                    <span>{post.likes}</span>
+                    <span>{post.comments}</span>
                   </div>
                 </div>
                 <div className={styles.postStats}>
-                  <span>👁️ {post.reach} reach</span>
+                  <span>{post.reach} reach</span>
                 </div>
               </div>
             ))}

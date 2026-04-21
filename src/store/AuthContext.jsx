@@ -32,6 +32,22 @@ function authReducer(state, action) {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  const normalizeUsername = (value) => value?.trim()?.toLowerCase()?.replace(/\s+/g, '_') || '';
+
+  async function assertUsernameAvailable(username, excludeUserId = null) {
+    const clean = normalizeUsername(username);
+    if (!clean) throw new Error('Username is required');
+    const { data, error } = await supabase
+      .from('creator_profiles')
+      .select('auth_user_id')
+      .eq('username', clean)
+      .limit(1);
+    if (error) throw error;
+    const takenByAnother = (data || []).some((row) => row.auth_user_id !== excludeUserId);
+    if (takenByAnother) throw new Error('Username already exists. Please choose a different username.');
+    return clean;
+  }
+
   useEffect(() => {
     if (isDemoMode) {
       const saved = localStorage.getItem('creator_hub_demo_user');
@@ -113,6 +129,7 @@ export function AuthProvider({ children }) {
       return { user: demoUser };
     }
 
+    const cleanUsername = await assertUsernameAvailable(username || email.split('@')[0]);
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
@@ -120,7 +137,7 @@ export function AuthProvider({ children }) {
       await supabase.from('creator_profiles').insert({
         auth_user_id: data.user.id,
         display_name: username || email.split('@')[0],
-        username: (username || email.split('@')[0]).toLowerCase().replace(/\s/g, '_'),
+        username: cleanUsername,
       });
     }
     return data;
@@ -170,13 +187,15 @@ export function AuthProvider({ children }) {
     }
 
     const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+    if ('username' in dbUpdates) {
+      dbUpdates.username = await assertUsernameAvailable(dbUpdates.username, state.user.id);
+    }
     if ('name' in dbUpdates) { dbUpdates.display_name = dbUpdates.name; delete dbUpdates.name; }
     if ('location' in dbUpdates) { dbUpdates.base_city = dbUpdates.location; delete dbUpdates.location; }
 
     const { data, error } = await supabase
       .from('creator_profiles')
-      .update(dbUpdates)
-      .eq('auth_user_id', state.user.id)
+      .upsert({ auth_user_id: state.user.id, ...dbUpdates }, { onConflict: 'auth_user_id' })
       .select()
       .single();
     if (error) throw error;

@@ -25,6 +25,13 @@ const NICHE_OPTIONS = [
   'Finance', 'Education', 'Comedy', 'Health', 'Sports',
 ];
 
+const LOCATION_OPTIONS = [
+  'Andheri', 'Bandra', 'Colaba', 'Churchgate', 'Dadar', 'Fort',
+  'Juhu', 'Lower Parel', 'Powai', 'Thane', 'Vashi', 'Worli',
+  'Mumbai', 'Delhi', 'Bengaluru', 'Hyderabad', 'Chennai', 'Pune',
+  'Kolkata', 'Jaipur', 'Goa', 'Other',
+];
+
 const ALL_PLATFORMS = getAllPlatforms();
 
 // Platforms that support OAuth one-click connect
@@ -49,15 +56,18 @@ export default function Setup() {
   const [saveError, setSaveError] = useState('');
 
   const [form, setForm] = useState({
-    name:          profile?.name          || 'Core Forge',
-    username:      profile?.username      || 'core.forge.in',
-    bio:           profile?.bio           || 'Maker • Developer • Creator\nBuilding products at the intersection of tech & design.',
-    tagline:       profile?.tagline       || 'Building things that matter',
-    location:      profile?.location      || 'India',
-    niches:        profile?.niche_tags    || ['Technology', 'Programming', 'Design'],
+    name:          profile?.name          || '',
+    username:      profile?.username      || '',
+    bio:           profile?.bio           || '',
+    tagline:       profile?.tagline       || '',
+    location:      profile?.location      || '',
+    niches:        profile?.niche_tags    || [],
     avatarPreview: profile?.avatar_url    || null,
     coverPreview:  profile?.cover_url     || null,
   });
+  const [customLocation, setCustomLocation] = useState(
+    LOCATION_OPTIONS.includes(profile?.location) ? '' : profile?.location || ''
+  );
 
   const [socials, setSocials] = useState(() => {
     const map = {};
@@ -87,15 +97,18 @@ export default function Setup() {
 
   useEffect(() => {
     setForm({
-      name:          profile?.name          || 'Core Forge',
-      username:      profile?.username      || 'core.forge.in',
-      bio:           profile?.bio           || 'Maker - Developer - Creator\nBuilding products at the intersection of tech & design.',
-      tagline:       profile?.tagline       || 'Building things that matter',
-      location:      profile?.location      || 'India',
-      niches:        profile?.niche_tags    || ['Technology', 'Programming', 'Design'],
+      name:          profile?.name          || '',
+      username:      profile?.username      || '',
+      bio:           profile?.bio           || '',
+      tagline:       profile?.tagline       || '',
+      location:      profile?.location      || '',
+      niches:        profile?.niche_tags    || [],
       avatarPreview: profile?.avatar_url    || null,
       coverPreview:  profile?.cover_url     || null,
     });
+    setCustomLocation(
+      LOCATION_OPTIONS.includes(profile?.location) ? '' : profile?.location || ''
+    );
   }, [profile]);
 
   useEffect(() => {
@@ -204,6 +217,11 @@ export default function Setup() {
     setSlides(prev => prev.map(s => s.id === id ? { ...s, caption } : s));
   };
 
+  const selectedLocation = LOCATION_OPTIONS.includes(form.location)
+    ? form.location
+    : (form.location ? 'Other' : '');
+  const showCustomLocation = selectedLocation === 'Other';
+
   const toggleNiche = (niche) => {
     setForm(f => ({
       ...f,
@@ -262,10 +280,31 @@ export default function Setup() {
     return { handle: v.replace(/^@/, ''), url: '' };
   };
 
+  const buildSocialUrl = (platform, handle) => {
+    const clean = (handle || '').trim().replace(/^@/, '');
+    if (!clean) return '';
+    const map = {
+      instagram: `https://instagram.com/${clean}`,
+      youtube: `https://youtube.com/@${clean}`,
+      twitter: `https://x.com/${clean}`,
+      linkedin: `https://www.linkedin.com/in/${clean}`,
+      tiktok: `https://www.tiktok.com/@${clean}`,
+      spotify: `https://open.spotify.com/user/${clean}`,
+      pinterest: `https://pinterest.com/${clean}`,
+    };
+    return map[platform] || '';
+  };
+
   const saveAll = async () => {
     setSaving(true);
     setSaveError('');
     try {
+      if (!form.name.trim() || !form.username.trim() || !form.bio.trim() || !form.location.trim()) {
+        throw new Error('Name, username, bio, and location are required.');
+      }
+      if (selectedLocation === 'Other' && !customLocation.trim()) {
+        throw new Error('Please enter a valid custom location or choose one of the predefined areas.');
+      }
       const uploadedAvatarUrl = await uploadImageAndGetUrl(avatarFile, 'avatar');
       const uploadedCoverUrl = await uploadImageAndGetUrl(coverFile, 'cover');
 
@@ -289,8 +328,8 @@ export default function Setup() {
             creator_profile_id: profile?.profile_id ?? null,
             platform:           p,
             handle:             socials[p].handle,
-            url:                socials[p].url || null,
-            is_visible:         socials[p].is_visible,
+            url:                socials[p].url || buildSocialUrl(p, socials[p].handle) || null,
+            is_visible:         Boolean(socials[p].url || socials[p].handle) && socials[p].is_visible,
           }));
         if (rows.length) {
           await supabase.from('creator_social_accounts').upsert(rows, { onConflict: 'user_id,platform' });
@@ -356,6 +395,15 @@ export default function Setup() {
             <Menu size={20} />
           </button>
         </div>
+        <div className={styles.headerActions}>
+          <button
+            className={`btn btn-primary ${styles.saveBtnInline}`}
+            onClick={saveAll}
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
 
         {/* ── PROFILE SECTION ── */}
         <div className={styles.sectionCard}>
@@ -414,8 +462,38 @@ export default function Setup() {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>Location</label>
-            <input className="input-field" placeholder="Mumbai, India" value={form.location}
-              onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
+            <select
+              className="input-field"
+              value={selectedLocation}
+              onChange={e => {
+                const value = e.target.value;
+                if (value === 'Other') {
+                  setForm(f => ({ ...f, location: 'Other' }));
+                  setCustomLocation(form.location && form.location !== 'Other' ? form.location : '');
+                } else {
+                  setForm(f => ({ ...f, location: value }));
+                  setCustomLocation('');
+                }
+              }}
+            >
+              <option value="" disabled>Choose location area</option>
+              {LOCATION_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+            {showCustomLocation && (
+              <input
+                className="input-field"
+                placeholder="Enter custom location"
+                value={customLocation}
+                onChange={e => {
+                  const value = e.target.value;
+                  setCustomLocation(value);
+                  setForm(f => ({ ...f, location: value }));
+                }}
+                style={{ marginTop: 8 }}
+              />
+            )}
           </div>
 
           <div className={styles.formGroup}>
@@ -456,7 +534,15 @@ export default function Setup() {
                       value={socials[platform]?.handle || ''}
                       onChange={e => {
                         const normalized = normalizeSocialInput(e.target.value);
-                        setSocials(s => ({ ...s, [platform]: { ...s[platform], ...normalized } }));
+                        setSocials(s => ({
+                          ...s,
+                          [platform]: {
+                            ...s[platform],
+                            ...normalized,
+                            url: normalized.url || buildSocialUrl(platform, normalized.handle),
+                            is_visible: Boolean(normalized.handle),
+                          },
+                        }));
                       }}
                     />
                   </div>
@@ -481,6 +567,7 @@ export default function Setup() {
                   ) : (
                     <Toggle
                       checked={socials[platform]?.is_visible ?? true}
+                      disabled={!socials[platform]?.url}
                       onChange={v => setSocials(s => ({ ...s, [platform]: { ...s[platform], is_visible: v } }))}
                       id={`social_${platform}`}
                     />
@@ -574,13 +661,6 @@ export default function Setup() {
         </div>
 
         {/* ── SAVE ── */}
-        <button
-          className={`btn btn-primary btn-full ${styles.saveBtn}`}
-          onClick={saveAll}
-          disabled={saving}
-        >
-          {saving ? 'Saving…' : 'Save Changes'}
-        </button>
         {saveError && (
           <p style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>{saveError}</p>
         )}

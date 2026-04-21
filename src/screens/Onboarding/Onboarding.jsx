@@ -22,8 +22,6 @@ export default function Onboarding() {
     else complete();
   };
 
-  const skip = () => complete();
-
   return (
     <main className={styles.container}>
       {/* Progress dots */}
@@ -32,11 +30,6 @@ export default function Onboarding() {
           <span key={i} className={`${styles.dot} ${i + 1 <= step ? styles.dotActive : ''}`} />
         ))}
       </div>
-
-      {/* Skip button */}
-      <button className={styles.skipBtn} onClick={skip}>
-        Skip for now
-      </button>
 
       {/* Steps */}
       <div className={styles.stepWrap}>

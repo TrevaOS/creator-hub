@@ -11,6 +11,13 @@ const NICHE_OPTIONS = [
   'Finance', 'Education', 'Comedy', 'Health', 'Sports',
 ];
 
+const LOCATION_OPTIONS = [
+  'Andheri', 'Bandra', 'Colaba', 'Churchgate', 'Dadar', 'Fort',
+  'Juhu', 'Lower Parel', 'Powai', 'Thane', 'Vashi', 'Worli',
+  'Mumbai', 'Delhi', 'Bengaluru', 'Hyderabad', 'Chennai', 'Pune',
+  'Kolkata', 'Jaipur', 'Goa', 'Other',
+];
+
 export default function Step3Profile({ onNext, onBack }) {
   const { user, updateProfile } = useAuth();
   const fileRef = useRef(null);
@@ -22,6 +29,11 @@ export default function Step3Profile({ onNext, onBack }) {
     niches: [],
     avatarPreview: null,
   });
+  const [customLocation, setCustomLocation] = useState('');
+  const selectedLocation = LOCATION_OPTIONS.includes(form.location)
+    ? form.location
+    : (form.location ? 'Other' : '');
+  const showCustomLocation = selectedLocation === 'Other';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,6 +57,7 @@ export default function Step3Profile({ onNext, onBack }) {
   const save = async () => {
     if (!form.name.trim()) { setError('Name is required'); return; }
     if (!form.username.trim()) { setError('Username is required'); return; }
+    if (showCustomLocation && !customLocation.trim()) { setError('Please enter a valid location or choose a predefined area.'); return; }
     setSaving(true);
     try {
       if (user) {
@@ -115,12 +128,38 @@ export default function Step3Profile({ onNext, onBack }) {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Location</label>
-          <input
+          <select
             className="input-field"
-            placeholder="Mumbai, India"
-            value={form.location}
-            onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
-          />
+            value={selectedLocation}
+            onChange={e => {
+              const value = e.target.value;
+              if (value === 'Other') {
+                setForm(f => ({ ...f, location: 'Other' }));
+                setCustomLocation(form.location && form.location !== 'Other' ? form.location : '');
+              } else {
+                setForm(f => ({ ...f, location: value }));
+                setCustomLocation('');
+              }
+            }}
+          >
+            <option value="" disabled>Choose location area</option>
+            {LOCATION_OPTIONS.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+          {showCustomLocation && (
+            <input
+              className="input-field"
+              placeholder="Enter custom location"
+              value={customLocation}
+              onChange={e => {
+                const value = e.target.value;
+                setCustomLocation(value);
+                setForm(f => ({ ...f, location: value }));
+              }}
+              style={{ marginTop: 8 }}
+            />
+          )}
         </div>
 
         <div className={styles.formGroup}>
