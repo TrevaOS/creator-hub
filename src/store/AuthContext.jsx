@@ -134,12 +134,22 @@ export function AuthProvider({ children }) {
     if (error) throw error;
 
     if (data.user) {
-      await supabase.from('creator_profiles').insert({
-        auth_user_id: data.user.id,
-        display_name: username || email.split('@')[0],
-        username: cleanUsername,
-      });
+      const { data: profileData, error: profileError } = await supabase
+        .from('creator_profiles')
+        .insert({
+          auth_user_id: data.user.id,
+          display_name: username || email.split('@')[0],
+          username: cleanUsername,
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        await supabase.auth.signOut();
+        throw profileError;
+      }
     }
+
     return data;
   };
 

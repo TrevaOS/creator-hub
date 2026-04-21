@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/AuthContext';
+import { supabaseConfigError } from '../../services/supabase';
 import styles from './Auth.module.css';
 
 export default function Auth() {
@@ -84,6 +85,7 @@ export default function Auth() {
               ? 'Sign in to your creator profile'
               : 'Start building your creator brand today'}
           </p>
+          {supabaseConfigError && <p className={styles.error}>{supabaseConfigError}</p>}
         </div>
 
         <form className={styles.form} onSubmit={submit}>

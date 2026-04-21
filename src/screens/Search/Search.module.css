@@ -1,5 +1,5 @@
 .content {
-  padding: 12px 12px calc(var(--tab-bar-height) + 20px + env(safe-area-inset-bottom, 0px));
+  padding: 16px 12px calc(var(--tab-bar-height) + 20px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -10,7 +10,19 @@
   top: 0;
   z-index: 20;
   background: var(--bg-primary);
-  padding-bottom: 6px;
+  padding: 10px 0 6px;
+}
+
+.searchBar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
 }
 
 .searchBar {

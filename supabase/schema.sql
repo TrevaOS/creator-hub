@@ -20,3 +20,24 @@
 --   Storage bucket      → creator-assets (same name)
 --
 -- On signup, also insert into org_users with role_type = 'creator'.
+--
+-- Required DB setup for client-side Supabase access:
+--   1) Ensure `creator_profiles`, `creator_social_accounts`, `creator_dashboard_modules`,
+--      `creator_carousel_images`, `creator_collab_brands`, `creator_hub_deals`,
+--      `creator_hub_accepted_deals`, `creator_hub_messages`, and `creator_oauth_tokens`
+--      exist in the public schema.
+--   2) Add unique constraints for upsert operations:
+--      CREATE UNIQUE INDEX IF NOT EXISTS idx_creator_social_accounts_user_platform
+--        ON public.creator_social_accounts(user_id, platform);
+--      CREATE UNIQUE INDEX IF NOT EXISTS idx_creator_oauth_tokens_user_platform
+--        ON public.creator_oauth_tokens(user_id, platform);
+--   3) If Row Level Security (RLS) is enabled, add policies allowing authenticated users
+--      to select/insert/update their own creator data. Example:
+--      ALTER TABLE public.creator_profiles ENABLE ROW LEVEL SECURITY;
+--      CREATE POLICY "Allow creator profile insert" ON public.creator_profiles
+--        FOR INSERT USING (auth.role() = 'authenticated');
+--      CREATE POLICY "Allow creator profile select/update" ON public.creator_profiles
+--        FOR SELECT, UPDATE USING (auth.uid() = auth_user_id);
+--      Repeat similar policies for creator_social_accounts, creator_dashboard_modules,
+--      creator_carousel_images, creator_collab_brands, creator_hub_deals, creator_hub_accepted_deals,
+--      creator_hub_messages, and creator_oauth_tokens.
