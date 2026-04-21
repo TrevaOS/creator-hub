@@ -113,4 +113,25 @@ export const supabase = isSupabaseEnabled
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createNoopSupabaseClient();
 
+export async function createCreatorProfileViaFunction({ authUserId, displayName, username }) {
+  if (!isSupabaseEnabled) {
+    throw new Error('Supabase is not enabled');
+  }
+
+  const functionUrl = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/create-creator-profile`;
+  const response = await fetch(functionUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ auth_user_id: authUserId, display_name: displayName, username }),
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || 'Failed to call creator profile function');
+  }
+  return result;
+}
+
 export default supabase;

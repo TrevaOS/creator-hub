@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { isDemoMode, supabase } from '../services/supabase';
+import { isDemoMode, supabase, createCreatorProfileViaFunction } from '../services/supabase';
 
 const AuthContext = createContext(null);
 
@@ -134,17 +134,13 @@ export function AuthProvider({ children }) {
     if (error) throw error;
 
     if (data.user) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('creator_profiles')
-        .insert({
-          auth_user_id: data.user.id,
-          display_name: username || email.split('@')[0],
+      try {
+        await createCreatorProfileViaFunction({
+          authUserId: data.user.id,
+          displayName: username || email.split('@')[0],
           username: cleanUsername,
-        })
-        .select()
-        .single();
-
-      if (profileError) {
+        });
+      } catch (profileError) {
         await supabase.auth.signOut();
         throw profileError;
       }
