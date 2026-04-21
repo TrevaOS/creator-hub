@@ -5,8 +5,8 @@
  * 2) Add a secret named `SUPABASE_SERVICE_ROLE_KEY` in the Supabase Functions secrets UI.
  * 3) The frontend should call `/functions/v1/create-creator-profile` after signup.
  */
-import { serve } from 'std/server';
-import { createClient } from '@supabase/supabase-js';
+import { serve } from 'jsr:std/server';
+import { createClient } from 'jsr:@supabase/supabase-js';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
