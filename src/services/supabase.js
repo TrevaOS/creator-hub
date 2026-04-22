@@ -14,25 +14,31 @@ function parseBool(value) {
   return String(value || '').trim().toLowerCase() === 'true';
 }
 
-const supabaseUrl = readEnv('VITE_SUPABASE_URL', 'VITE_PUBLIC_SUPABASE_URL');
+// Browser apps always expose Supabase URL + anon key in shipped JS.
+// These fallback values prevent accidental "demo mode" deploys when CI forgets env vars.
+const FALLBACK_SUPABASE_URL = 'https://ibdpadsrjvuptpetvpki.supabase.co';
+const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZHBhZHNyanZ1cHRwZXR2cGtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NjY2OTIsImV4cCI6MjA4ODQ0MjY5Mn0.zXtIH0thuJaN69RCboKJlAQB1EvbZvniymNJ86gaPx8';
+
+const supabaseUrl = readEnv('VITE_SUPABASE_URL', 'VITE_PUBLIC_SUPABASE_URL') || FALLBACK_SUPABASE_URL;
 const supabaseAnonKey = readEnv(
   'VITE_SUPABASE_ANON_KEY',
   'VITE_SUPABASE_KEY',
   'VITE_SUPABASE_PUBLISHABLE_KEY',
   'VITE_PUBLIC_SUPABASE_ANON_KEY',
-);
+) || FALLBACK_SUPABASE_ANON_KEY;
 const disableSupabase = parseBool(import.meta.env.VITE_DISABLE_SUPABASE);
+const allowDemoMode = parseBool(import.meta.env.VITE_ALLOW_DEMO_MODE);
 
 const hasValidUrl = typeof supabaseUrl === 'string' && supabaseUrl.startsWith('https://');
 const hasValidAnonKey = typeof supabaseAnonKey === 'string' && supabaseAnonKey.length > 20;
 
 export const isSupabaseEnabled = hasValidUrl && hasValidAnonKey;
-export const isDemoMode = !isSupabaseEnabled || disableSupabase;
+export const isDemoMode = allowDemoMode && (!isSupabaseEnabled || disableSupabase);
 export const supabaseConfigError = isSupabaseEnabled
   ? null
-  : `Supabase not configured. Running in demo mode. Missing/invalid: ${
+  : `Supabase env missing/invalid: ${
       !hasValidUrl ? 'VITE_SUPABASE_URL' : 'VITE_SUPABASE_ANON_KEY'
-    }`;
+    }. Configure build env vars in Cloudflare and redeploy.`;
 
 function createNoopQueryBuilder() {
   const state = { single: false, action: 'select' };
