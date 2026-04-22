@@ -193,19 +193,55 @@ export default function Setup() {
     });
     if (!orgUser?.id) return;
 
-    const { data: tickets } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .eq('raised_by', orgUser.id)
-      .order('created_at', { ascending: false });
+    const profileName = String(profile?.name || profile?.username || user?.email || '').trim();
 
-    const ticketIds = (tickets || []).map((ticket) => ticket.id);
+    const [ticketsByOrgUser, ticketsByName, sentMessages] = await Promise.all([
+      supabase
+        .from('support_tickets')
+        .select('*')
+        .eq('raised_by', orgUser.id)
+        .order('created_at', { ascending: false }),
+      profileName
+        ? supabase
+            .from('support_tickets')
+            .select('*')
+            .eq('raised_by', profileName)
+            .order('created_at', { ascending: false })
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from('ticket_messages')
+        .select('ticket_id,sender_id')
+        .eq('sender_id', orgUser.id),
+    ]);
+
+    const mergedTicketsRaw = [...(ticketsByOrgUser.data || []), ...(ticketsByName.data || [])];
+    const uniqueTicketMap = new Map();
+    mergedTicketsRaw.forEach((ticket) => uniqueTicketMap.set(Number(ticket.id), ticket));
+
+    const messageTicketIds = (sentMessages.data || []).map((row) => Number(row.ticket_id));
+    const knownTicketIds = [...new Set([...Array.from(uniqueTicketMap.keys()), ...messageTicketIds])];
+
+    if (knownTicketIds.length > 0) {
+      const missingIds = knownTicketIds.filter((id) => !uniqueTicketMap.has(id));
+      if (missingIds.length > 0) {
+        const { data: missingTickets } = await supabase
+          .from('support_tickets')
+          .select('*')
+          .in('id', missingIds);
+        (missingTickets || []).forEach((ticket) => uniqueTicketMap.set(Number(ticket.id), ticket));
+      }
+    }
+
+    const tickets = Array.from(uniqueTicketMap.values()).sort(
+      (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+    );
+
     let ticketMessages = [];
-    if (ticketIds.length > 0) {
+    if (knownTicketIds.length > 0) {
       const { data: msgs } = await supabase
         .from('ticket_messages')
         .select('*')
-        .in('ticket_id', ticketIds)
+        .in('ticket_id', knownTicketIds)
         .order('created_at', { ascending: true });
       ticketMessages = msgs || [];
     }
