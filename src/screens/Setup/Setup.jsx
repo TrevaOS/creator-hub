@@ -11,6 +11,7 @@ import {
   isInstagramOAuthConfigured,
   isYouTubeOAuthConfigured,
 } from '../../services/oauth';
+import { addSupportTicket } from '../../services/adminStore';
 import Avatar from '../../components/Avatar';
 import BottomSheet from '../../components/BottomSheet';
 import Toggle from '../../components/Toggle';
@@ -54,6 +55,10 @@ export default function Setup() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
   const [saveError, setSaveError] = useState('');
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportForm, setSupportForm] = useState({ title: '', details: '', severity: 'Medium' });
+  const [supportSaving, setSupportSaving] = useState(false);
+  const [supportMessage, setSupportMessage] = useState('');
 
   const [form, setForm] = useState({
     name:          profile?.name          || '',
@@ -384,6 +389,29 @@ export default function Setup() {
     setSaving(false);
   };
 
+  const submitSupportTicket = async (e) => {
+    e.preventDefault();
+    setSupportSaving(true);
+    setSupportMessage('');
+    try {
+      await addSupportTicket({
+        source: 'App',
+        title: supportForm.title.trim() || 'Support request',
+        raisedBy: profile?.name || profile?.username || 'Creator',
+        severity: supportForm.severity,
+        status: 'Open',
+        details: supportForm.details || '',
+        createdAt: new Date().toISOString(),
+      });
+      setSupportMessage('Your issue has been sent to the admin dashboard.');
+      setSupportForm({ title: '', details: '', severity: 'Medium' });
+      setSupportOpen(false);
+    } catch (err) {
+      setSupportMessage(err?.message || 'Unable to submit support request.');
+    }
+    setSupportSaving(false);
+  };
+
   return (
     <main className="screen">
       <div className={styles.content}>
@@ -438,7 +466,7 @@ export default function Setup() {
           <div className={styles.formGroup}>
             <label className={styles.label}>Username</label>
             <div className={styles.usernameWrap}>
-              <span className={styles.prefix}>creatorhub.com/</span>
+              <span className={styles.prefix}>creatorhub.treva.in/</span>
               <input
                 className={styles.usernameInput}
                 placeholder="janesmith"
@@ -693,7 +721,7 @@ export default function Setup() {
             <span>Notifications</span>
           </button>
 
-          <button className={styles.menuItem} onClick={() => {}}>
+          <button className={styles.menuItem} onClick={() => { setSupportOpen(true); setMenuOpen(false); }}>
             <HelpCircle size={20} />
             <span>Help & Support</span>
           </button>
@@ -707,6 +735,47 @@ export default function Setup() {
             <LogOut size={20} />
             <span>Logout</span>
           </button>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={supportOpen} onClose={() => setSupportOpen(false)} title="Help & Support">
+        <div className={styles.supportSheet}>
+          <p className={styles.supportIntro}>Raise an issue or feedback and it will appear in your admin dashboard.</p>
+          <div className={styles.formGroup}>
+            <label className={styles.fieldLabel}>Issue summary</label>
+            <input
+              className="input-field"
+              value={supportForm.title}
+              onChange={(e) => setSupportForm((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="Describe the problem briefly"
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.fieldLabel}>Details</label>
+            <textarea
+              className="input-field"
+              rows={4}
+              value={supportForm.details}
+              onChange={(e) => setSupportForm((prev) => ({ ...prev, details: e.target.value }))}
+              placeholder="What happened, when, and what you expected"
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.fieldLabel}>Severity</label>
+            <select
+              className="input-field"
+              value={supportForm.severity}
+              onChange={(e) => setSupportForm((prev) => ({ ...prev, severity: e.target.value }))}
+            >
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+          </div>
+          <button className={`btn btn-primary btn-full ${styles.supportSubmit}`} onClick={submitSupportTicket} disabled={supportSaving}>
+            {supportSaving ? 'Submitting…' : 'Send request'}
+          </button>
+          {supportMessage && <p className={styles.supportMessage}>{supportMessage}</p>}
         </div>
       </BottomSheet>
     </main>

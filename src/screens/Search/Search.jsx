@@ -1,33 +1,50 @@
 import { useMemo, useState } from 'react';
-import { Search as SearchIcon, Hash, UserRound, Flame } from 'lucide-react';
+import { Search as SearchIcon, Hash, UserRound, Flame, Video, Users, Briefcase } from 'lucide-react';
 import Chip from '../../components/Chip';
 import styles from './Search.module.css';
 
 const SEARCH_TYPES = [
-  { key: 'accounts', label: 'Accounts', icon: UserRound },
-  { key: 'hashtags', label: 'Hashtags', icon: Hash },
-  { key: 'trending', label: 'Trending', icon: Flame },
+  { key: 'reels', label: 'Reels', icon: Video },
+  { key: 'influencers', label: 'Influencers', icon: Users },
+  { key: 'brands', label: 'Brand collabs', icon: Briefcase },
 ];
 
-const SUGGESTIONS = {
-  accounts: ['spacex', 'nasa', 'adobe', 'github', 'openai'],
-  hashtags: ['space', 'creatorhub', 'buildinpublic', 'reels', 'design'],
-  trending: ['space station', 'mobile ui', 'creator analytics', 'fashion grid', 'ai tools'],
-};
+const REEL_RESULTS = [
+  { id: 'r1', title: 'Street style edit for launch', creator: '@nikita.k', likes: '18.4k', views: '152k', platform: 'Instagram' },
+  { id: 'r2', title: '5 travel looks in 15 seconds', creator: '@travelwitharun', likes: '29.6k', views: '224k', platform: 'Instagram' },
+  { id: 'r3', title: 'Home workout routine reel', creator: '@fitlaura', likes: '22.0k', views: '190k', platform: 'Instagram' },
+];
 
-const GRID_ITEMS = Array.from({ length: 18 }, (_, i) => ({ id: i + 1 }));
+const INFLUENCER_RESULTS = [
+  { id: 'i1', name: 'Aisha Kumar', handle: '@aisha.influencer', niche: 'Fashion', followers: '98k', recent: 'StyleCo campaign' },
+  { id: 'i2', name: 'Rohan Patel', handle: '@rohancreates', niche: 'Tech', followers: '54k', recent: 'Gadget launch reel' },
+  { id: 'i3', name: 'Meera Joshi', handle: '@meera_moves', niche: 'Fitness', followers: '120k', recent: 'Wellness collab' },
+];
+
+const BRAND_RESULTS = [
+  { id: 'b1', brand: 'StyleCo', campaign: 'Summer collection reels', budget: '₹45K', platform: 'Instagram' },
+  { id: 'b2', brand: 'SoundWave', campaign: 'New launch unboxing', budget: '₹35K', platform: 'YouTube' },
+  { id: 'b3', brand: 'FuelX', campaign: 'Fitness partnership', budget: '₹28K', platform: 'Instagram' },
+];
 
 export default function Search() {
   const [query, setQuery] = useState('');
-  const [activeType, setActiveType] = useState('accounts');
-  const [focused, setFocused] = useState(false);
+  const [activeType, setActiveType] = useState('reels');
 
-  const activeSuggestions = useMemo(() => {
-    const list = SUGGESTIONS[activeType] || [];
-    const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((item) => item.toLowerCase().includes(q));
-  }, [activeType, query]);
+  const filteredReels = useMemo(() => REEL_RESULTS.filter((item) => {
+    const q = query.toLowerCase();
+    return !q || [item.title, item.creator, item.platform].some((value) => value.toLowerCase().includes(q));
+  }), [query]);
+
+  const filteredInfluencers = useMemo(() => INFLUENCER_RESULTS.filter((item) => {
+    const q = query.toLowerCase();
+    return !q || [item.name, item.handle, item.niche, item.recent].some((value) => value.toLowerCase().includes(q));
+  }), [query]);
+
+  const filteredBrands = useMemo(() => BRAND_RESULTS.filter((item) => {
+    const q = query.toLowerCase();
+    return !q || [item.brand, item.campaign, item.platform].some((value) => value.toLowerCase().includes(q));
+  }), [query]);
 
   return (
     <main className="screen">
@@ -38,11 +55,10 @@ export default function Search() {
             <input
               type="search"
               className={styles.searchInput}
-              placeholder="Search"
+              placeholder="Search reels, influencers, brands"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setFocused(true)}
-              aria-label="Search"
+              aria-label="Search influencers and reels"
             />
           </div>
         </div>
@@ -63,23 +79,59 @@ export default function Search() {
           })}
         </div>
 
-        {focused && (
-          <section className={styles.suggestions}>
-            {activeSuggestions.map((item) => (
-              <button key={item} className={styles.suggestionItem} onClick={() => setQuery(item)}>
-                <SearchIcon size={14} />
-                <span>{item}</span>
-              </button>
-            ))}
-          </section>
-        )}
+        <section className={styles.resultSection}>
+          {activeType === 'reels' && (
+            <div className={styles.resultGrid}>
+              {filteredReels.map((item) => (
+                <article key={item.id} className={styles.resultCard}>
+                  <div className={styles.resultHero} />
+                  <div className={styles.resultBody}>
+                    <p className={styles.resultLabel}>Instagram Reel</p>
+                    <h3 className={styles.resultTitle}>{item.title}</h3>
+                    <p className={styles.resultMeta}>{item.creator} • {item.platform}</p>
+                    <div className={styles.resultStats}>
+                      <span>{item.likes} likes</span>
+                      <span>{item.views} views</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
 
-        <section className={styles.gridSection}>
-          <div className={styles.gridFeed}>
-            {GRID_ITEMS.map((item) => (
-              <div key={item.id} className={styles.gridTile} />
-            ))}
-          </div>
+          {activeType === 'influencers' && (
+            <div className={styles.resultList}>
+              {filteredInfluencers.map((item) => (
+                <article key={item.id} className={styles.listItem}>
+                  <div>
+                    <h3>{item.name}</h3>
+                    <p className={styles.listMeta}>{item.handle} · {item.niche}</p>
+                  </div>
+                  <div className={styles.listRight}>
+                    <span>{item.followers}</span>
+                    <small>{item.recent}</small>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {activeType === 'brands' && (
+            <div className={styles.resultList}>
+              {filteredBrands.map((item) => (
+                <article key={item.id} className={styles.listItem}>
+                  <div>
+                    <h3>{item.brand}</h3>
+                    <p className={styles.listMeta}>{item.campaign}</p>
+                  </div>
+                  <div className={styles.listRight}>
+                    <span>{item.budget}</span>
+                    <small>{item.platform}</small>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>

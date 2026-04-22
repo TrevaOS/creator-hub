@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Filter, ChevronRight, MessageCircle, CheckCircle, Zap } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
-import { supabase } from '../../services/supabase';
+import { isSupabaseEnabled, supabase } from '../../services/supabase';
+import { loadAdminData } from '../../services/adminStore';
 import Card from '../../components/Card';
 import Chip from '../../components/Chip';
 import BottomSheet from '../../components/BottomSheet';
@@ -29,8 +30,27 @@ export default function Deals() {
 
   async function fetchDeals() {
     setLoading(true);
-    const { data } = await supabase.from('creator_hub_deals').select('*').eq('status', 'open').order('created_at', { ascending: false });
-    setDeals(data || []);
+    let result = [];
+    if (isSupabaseEnabled) {
+      const { data } = await supabase.from('creator_hub_deals').select('*').eq('status', 'open').order('created_at', { ascending: false });
+      if (Array.isArray(data)) {
+        result = data;
+      }
+    }
+
+    const adminData = await loadAdminData();
+    const localDeals = adminData.deals || [];
+    if (localDeals.length > 0) {
+      const merged = [...result];
+      for (const localDeal of localDeals) {
+        if (!merged.some((remote) => remote.id === localDeal.id)) {
+          merged.push(localDeal);
+        }
+      }
+      result = merged;
+    }
+
+    setDeals(result);
     setLoading(false);
   }
 
@@ -210,6 +230,11 @@ export default function Deals() {
 function DealCard({ deal, isAccepted, onPress, onAccept, onChat }) {
   const platforms = deal.platform?.split(',') || [];
 
+  const brandName = deal.brand_name || deal.brand || deal.creator || 'Brand';
+  const category = deal.category || deal.type || deal.niche || '';
+  const payoutMin = deal.payout_min ?? deal.payout ?? 0;
+  const payoutMax = deal.payout_max ?? deal.payout ?? payoutMin;
+
   return (
     <Card elevated className={styles.dealCard} onClick={onPress}>
       <div className={styles.dealCardInner}>
@@ -217,35 +242,37 @@ function DealCard({ deal, isAccepted, onPress, onAccept, onChat }) {
         <div className={styles.dealBrandRow}>
           <div className={styles.dealBrandLogo}>
             {deal.brand_logo ? (
-              <img src={deal.brand_logo} alt={deal.brand_name} loading="lazy" className={styles.brandLogoImg} />
+              <img src={deal.brand_logo} alt={brandName} loading="lazy" className={styles.brandLogoImg} />
             ) : (
-              <span className={styles.brandInitial}>{deal.brand_name?.[0]}</span>
+              <span className={styles.brandInitial}>{brandName?.[0]}</span>
             )}
           </div>
           <div className={styles.dealBrandInfo}>
-            <p className={styles.dealBrandName}>{deal.brand_name}</p>
-            {deal.category && <p className={styles.dealCategory}>{deal.category}</p>}
+            <p className={styles.dealBrandName}>{brandName}</p>
+            {category && <p className={styles.dealCategory}>{category}</p>}
           </div>
           <div className={styles.dealPayout}>
             <span className={styles.payoutBadge}>
-              ₹{(deal.payout_min / 1000).toFixed(0)}K–{(deal.payout_max / 1000).toFixed(0)}K
+              ₹{(payoutMin / 1000).toFixed(0)}K–{(payoutMax / 1000).toFixed(0)}K
             </span>
           </div>
         </div>
 
         {/* Niche chips */}
-        {deal.niche_tags?.length > 0 && (
+        {(deal.niche_tags?.length > 0 ? deal.niche_tags : category ? [category] : []).length > 0 && (
           <div className={styles.dealChips}>
-            {deal.niche_tags.slice(0, 3).map(tag => (
+            {(deal.niche_tags?.length > 0 ? deal.niche_tags : [category]).slice(0, 3).map(tag => (
               <Chip key={tag} label={tag} variant="ghost" size="sm" />
             ))}
           </div>
         )}
 
         {/* Deliverables */}
-        {deal.deliverables && (
+        {deal.deliverables ? (
           <p className={styles.dealDeliverables}>{deal.deliverables}</p>
-        )}
+        ) : deal.type ? (
+          <p className={styles.dealDeliverables}>{deal.type}</p>
+        ) : null}
 
         {/* Footer meta */}
         <div className={styles.dealMeta}>

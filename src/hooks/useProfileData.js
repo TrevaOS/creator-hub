@@ -37,5 +37,5 @@ export function useProfileData() {
     fetchAll();
   }, [fetchAll]);
 
-  return { socialAccounts, dashboardModules, carouselImages, collabBrands, loading, refetch: fetchAll };
+  return { socialAccounts, dashboardModules, carouselImages, collabBrands, loading, dispatch, refetch: fetchAll };
 }

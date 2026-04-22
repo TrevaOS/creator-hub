@@ -30,11 +30,11 @@
 }
 
 .trackChecked {
-  background-color: var(--cane);
+  background-color: #16a34a;
 }
 
 .toggle:has(.input:checked) .track {
-  background-color: var(--cane);
+  background-color: #16a34a;
 }
 
 .input {

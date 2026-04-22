@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
-import { supabase } from '../../services/supabase';
+import { isSupabaseEnabled, supabase } from '../../services/supabase';
+import { loadAdminData } from '../../services/adminStore';
 import Chip from '../../components/Chip';
 import styles from './DealDetail.module.css';
 
@@ -20,8 +21,16 @@ export default function DealDetail() {
   }, [id]);
 
   async function fetchDeal() {
-    const { data } = await supabase.from('creator_hub_deals').select('*').eq('id', id).single();
-    setDeal(data || null);
+    let result = null;
+    if (isSupabaseEnabled) {
+      const { data } = await supabase.from('creator_hub_deals').select('*').eq('id', id).single();
+      result = data || null;
+    }
+    if (!result) {
+      const adminData = await loadAdminData();
+      result = (adminData.deals || []).find((item) => String(item.id) === String(id)) || null;
+    }
+    setDeal(result);
     setLoading(false);
   }
 
@@ -53,12 +62,15 @@ export default function DealDetail() {
     </main>
   );
 
-  const platforms = deal.platform?.split(',') || [];
+  const brandName = deal.brand_name || deal.brand || deal.creator || 'Brand';
+  const category = deal.category || deal.type || deal.niche || '';
+  const platforms = (deal.platform || deal.platforms || '').toString().split(',').map((p) => p.trim()).filter(Boolean);
+  const payoutMin = deal.payout_min ?? deal.payout ?? 0;
+  const payoutMax = deal.payout_max ?? deal.payout ?? payoutMin;
 
   return (
     <main className={styles.screen}>
       {/* Top bar */}
-      <div className={styles.topBar}>
         <button className={styles.backBtn} onClick={() => navigate(-1)} aria-label="Go back">
           <ArrowLeft size={24} />
         </button>
@@ -70,12 +82,12 @@ export default function DealDetail() {
         {/* Brand section */}
         <div className={styles.brandSection}>
           <div className={styles.brandLogo}>
-            {deal.brand_name?.[0]}
+            {brandName?.[0]}
           </div>
           <div>
-            <h1 className={styles.brandName}>{deal.brand_name}</h1>
+            <h1 className={styles.brandName}>{brandName}</h1>
             <div className={styles.metaRow}>
-              {deal.category && <span className={styles.category}>{deal.category}</span>}
+              {category && <span className={styles.category}>{category}</span>}
               {deal.location && (
                 <span className={styles.location}>
                   <MapPin size={10} /> {deal.location}
@@ -84,22 +96,22 @@ export default function DealDetail() {
             </div>
           </div>
           <div className={styles.payoutBadge}>
-            ₹{(deal.payout_min / 1000).toFixed(0)}K–{(deal.payout_max / 1000).toFixed(0)}K
+            ₹{(payoutMin / 1000).toFixed(0)}K–{(payoutMax / 1000).toFixed(0)}K
           </div>
         </div>
 
         {/* Niche tags */}
-        {deal.niche_tags?.length > 0 && (
+        {((deal.niche_tags?.length > 0 ? deal.niche_tags : category ? [category] : []).length > 0) && (
           <div className={styles.chips}>
-            {deal.niche_tags.map(t => <Chip key={t} label={t} variant="ghost" size="sm" />)}
+            {(deal.niche_tags?.length > 0 ? deal.niche_tags : [category]).map(t => <Chip key={t} label={t} variant="ghost" size="sm" />)}
           </div>
         )}
 
         {/* Brief */}
-        {deal.brief && (
+        {(deal.brief || deal.type) && (
           <section className={styles.section}>
             <h3 className={styles.sectionTitle}>Brand Brief</h3>
-            <p className={styles.sectionText}>{deal.brief}</p>
+            <p className={styles.sectionText}>{deal.brief || deal.type}</p>
           </section>
         )}
 

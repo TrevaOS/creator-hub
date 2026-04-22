@@ -217,7 +217,7 @@ export default function Dashboard() {
   });
 
   const shareProfile = async () => {
-    const url = `https://creator.treva.in/${displayProfile?.username || 'creator'}`;
+    const url = `https://creatorhub.treva.in/${displayProfile?.username || 'creator'}`;
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch { /* silent */ }
   };
 

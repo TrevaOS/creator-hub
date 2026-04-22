@@ -510,6 +510,27 @@
   animation: slideUp 0.25s ease;
 }
 
+.supportSheet {
+  display: grid;
+  gap: 12px;
+}
+
+.supportIntro {
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.supportSubmit {
+  margin-top: 8px;
+}
+
+.supportMessage {
+  color: var(--text-primary);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
 @keyframes slideUp {
   from { transform: translateX(-50%) translateY(16px); opacity: 0; }
   to   { transform: translateX(-50%) translateY(0); opacity: 1; }

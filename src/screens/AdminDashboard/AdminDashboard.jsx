@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   AlertTriangle,
   BadgeIndianRupee,
@@ -16,7 +16,9 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
+import { useAuth } from '../../store/AuthContext';
 import { loadAdminData, resetAdminData, saveAdminData } from '../../services/adminStore';
+import { isSupabaseEnabled, supabase } from '../../services/supabase';
 import styles from './AdminDashboard.module.css';
 
 const EMPTY_CREATOR = { name: '', niche: '', followers: '', city: '' };
@@ -38,6 +40,8 @@ const EMPTY_TICKET = { source: 'App', title: '', raisedBy: '', severity: 'Medium
 const DEAL_STAGES = ['Pending', 'Active', 'Completed'];
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
+  const fileInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('Overview');
   const [creators, setCreators] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -46,6 +50,8 @@ export default function AdminDashboard() {
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [chatDraft, setChatDraft] = useState('');
+  const [importError, setImportError] = useState('');
+  const [isRemoteDeals, setIsRemoteDeals] = useState(false);
 
   const [query, setQuery] = useState('');
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -65,16 +71,26 @@ export default function AdminDashboard() {
     root?.classList.add('admin-fullwidth');
 
     let mounted = true;
-    loadAdminData().then((data) => {
+    async function loadData() {
+      const data = await loadAdminData();
+      let remoteDeals = [];
+      if (isSupabaseEnabled) {
+        const { data: supaDeals, error } = await supabase.from('creator_hub_deals').select('*').order('created_at', { ascending: false });
+        if (!error && Array.isArray(supaDeals) && supaDeals.length > 0) {
+          remoteDeals = supaDeals;
+        }
+      }
       if (!mounted) return;
       setCreators(data.creators || []);
       setBrands(data.brands || []);
-      setDeals(data.deals || []);
       setSupportTickets(data.supportTickets || []);
       setChats(data.chats || []);
       setSelectedChatId(data.chats?.[0]?.id || null);
+      setIsRemoteDeals(remoteDeals.length > 0);
+      setDeals(remoteDeals.length > 0 ? remoteDeals : data.deals || []);
       setLoading(false);
-    });
+    }
+    loadData();
 
     const onOnline = () => setOnline(true);
     const onOffline = () => setOnline(false);
@@ -212,14 +228,22 @@ export default function AdminDashboard() {
     closeDrawer();
   }
 
-  function upsertDeal(e) {
+  async function upsertDeal(e) {
     e.preventDefault();
     if (!dealForm.brand || !dealForm.creator || !dealForm.type) return;
     const payload = { ...dealForm, payout: Number(dealForm.payout || 0) };
+
     if (drawer.mode === 'edit') {
       setDeals((prev) => prev.map((d) => (d.id === drawer.id ? { ...d, ...payload } : d)));
+      if (isSupabaseEnabled && payload.id) {
+        await supabase.from('creator_hub_deals').upsert({ id: payload.id, ...payload }, { onConflict: 'id' });
+      }
     } else {
-      setDeals((prev) => [{ id: Date.now(), ...payload }, ...prev]);
+      const item = { id: Date.now(), ...payload };
+      setDeals((prev) => [item, ...prev]);
+      if (isSupabaseEnabled) {
+        await supabase.from('creator_hub_deals').insert({ ...item, status: item.status?.toLowerCase() || 'open' });
+      }
     }
     closeDrawer();
   }
@@ -274,6 +298,55 @@ export default function AdminDashboard() {
     setMessage('Reset complete');
   }
 
+  async function importCsvFile(file) {
+    setImportError('');
+    if (!file) return;
+    const raw = await file.text();
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) {
+      setImportError('CSV file must contain headers and at least one row.');
+      return;
+    }
+    const headers = lines[0].split(',').map((cell) => cell.trim().toLowerCase().replace(/[^a-z0-9]/g, '_'));
+    const rows = lines.slice(1).map((line) => {
+      const values = line.match(/(?:"([^"]*)"|([^,]+))(?:,|$)/g)?.map((cell) => cell.replace(/(^,|,$)/g, '').replace(/^"|"$/g, '').trim()) || [];
+      return headers.reduce((row, header, index) => {
+        row[header] = values[index] || '';
+        return row;
+      }, {});
+    }).filter(row => Object.values(row).some(Boolean));
+
+    const normalized = rows.map((row) => {
+      const name = row.name || row.full_name || row.creator_name || row.creator || row['user name'] || row['username'] || '';
+      if (!name) return null;
+      return {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name.trim(),
+        username: row.username || row.handle || name.trim().toLowerCase().replace(/\s+/g, '_'),
+        email: row.email || row.e_mail || '',
+        city: row.city || row.location || row.base_city || '',
+        niche: row.niche || row.industry || row.category || '',
+        followers: Number(row.followers || row.audience || row.follower_count || 0),
+        phone: row.phone || row.mobile || row.contact || '',
+      };
+    }).filter(Boolean);
+
+    if (normalized.length === 0) {
+      setImportError('No valid user rows were detected in the CSV file.');
+      return;
+    }
+
+    setCreators((prev) => [...normalized, ...prev]);
+    setMessage(`Imported ${normalized.length} users`);
+  }
+
+  function handleCsvInputChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    importCsvFile(file);
+    event.target.value = '';
+  }
+
   if (loading) return <main className={styles.page}><div className={styles.loading}>Loading admin center...</div></main>;
 
   return (
@@ -302,6 +375,10 @@ export default function AdminDashboard() {
                 {online ? <Wifi size={14} /> : <WifiOff size={14} />}
                 {online ? 'Online' : 'Offline'}
               </div>
+              <button className={styles.actionBtn} onClick={() => fileInputRef.current?.click()}>
+                <Plus size={14} />
+                Import CSV
+              </button>
               <button className={styles.actionBtn} onClick={resetAll}>
                 <RefreshCcw size={14} />
                 Reset
@@ -311,11 +388,19 @@ export default function AdminDashboard() {
                 {saving ? 'Saving...' : message || 'Ready'}
               </span>
             </div>
+            <input
+              type="file"
+              accept=".csv"
+              ref={fileInputRef}
+              onChange={handleCsvInputChange}
+              style={{ display: 'none' }}
+            />
           </header>
 
           <div className={styles.searchRow}>
             <input className="input-field" placeholder="Search current tab..." value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
+          {importError && <div className={styles.importError}>{importError}</div>}
 
           <section className={styles.kpiGrid}>
             <KpiCard title="Creators" value={totals.creators} icon={<Users size={16} />} />

@@ -50,6 +50,33 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth();
+  const DEFAULT_ACCESS_EMAIL = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL?.toLowerCase() || '';
+
+  if (loading) return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'var(--bg-primary)',
+    }}>
+      <div style={{
+        width: 48, height: 48,
+        border: '3px solid var(--brand)',
+        borderTopColor: 'transparent',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+    </div>
+  );
+
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!DEFAULT_ACCESS_EMAIL || user?.email?.toLowerCase() !== DEFAULT_ACCESS_EMAIL) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 function AppShell() {
   const location = useLocation();
   const isDealSubRoute = location.pathname.startsWith('/deals/chat/') || location.pathname.startsWith('/deals/');
@@ -71,7 +98,7 @@ function AppShell() {
 
         {/* OAuth callbacks — no auth guard needed, handles redirect from platform */}
         <Route path="/oauth/:platform" element={<OAuthCallback />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
         <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
