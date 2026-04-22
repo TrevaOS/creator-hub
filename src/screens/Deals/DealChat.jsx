@@ -17,6 +17,7 @@ export default function DealChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [briefOpen, setBriefOpen] = useState(false);
+  const [deal, setDeal] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -29,6 +30,13 @@ export default function DealChat() {
     let active = true;
 
     (async () => {
+      const { data: dealData } = await supabase
+        .from('creator_hub_deals')
+        .select('*')
+        .eq('id', dealId)
+        .single();
+      if (active) setDeal(dealData || null);
+
       const { data } = await supabase
         .from('creator_hub_messages')
         .select('*')
@@ -103,9 +111,9 @@ export default function DealChat() {
           <ArrowLeft size={24} />
         </button>
         <div className={styles.chatInfo}>
-          <div className={styles.chatAvatar}>S</div>
+          <div className={styles.chatAvatar}>{(deal?.brand_name || 'B').charAt(0).toUpperCase()}</div>
           <div>
-            <p className={styles.chatName}>StyleCo</p>
+            <p className={styles.chatName}>{deal?.brand_name || 'Brand'}</p>
             <p className={styles.chatStatus}>Online</p>
           </div>
         </div>
@@ -113,15 +121,15 @@ export default function DealChat() {
 
       <div className={styles.briefCard}>
         <button className={styles.briefToggle} onClick={() => setBriefOpen(!briefOpen)}>
-          <span className={styles.briefTitle}>Deal Brief - StyleCo x You</span>
+          <span className={styles.briefTitle}>Deal Brief - {(deal?.brand_name || 'Brand')} x You</span>
           {briefOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
         {briefOpen && (
           <div className={styles.briefContent}>
-            <p><strong>Deliverables:</strong> 2 Reels + 3 Stories</p>
-            <p><strong>Timeline:</strong> 2 weeks</p>
-            <p><strong>Payout:</strong> INR 15,000-INR 25,000</p>
-            <p><strong>Platform:</strong> Instagram</p>
+            <p><strong>Deliverables:</strong> {deal?.deliverables || deal?.requirement || 'To be discussed'}</p>
+            <p><strong>Timeline:</strong> Negotiation phase</p>
+            <p><strong>Payout:</strong> INR {deal?.payout_min || 0} - INR {deal?.payout_max || 0}</p>
+            <p><strong>Platform:</strong> {deal?.platform || 'TBD'}</p>
           </div>
         )}
       </div>

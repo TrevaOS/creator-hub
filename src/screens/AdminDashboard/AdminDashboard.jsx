@@ -46,6 +46,8 @@ const EMPTY_DEAL = {
   status: 'Pending',
 };
 const EMPTY_TICKET = { source: 'App', title: '', raisedBy: '', severity: 'Medium', linkedDealId: '', status: 'Open' };
+const DEAL_NICHES = ['Tech', 'Fashion', 'Fitness', 'Food', 'Travel', 'Lifestyle', 'Gaming', 'Beauty'];
+const DEAL_LOCATIONS = ['Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai', 'Pune', 'Kolkata', 'Remote'];
 
 const DEAL_STAGES = ['Pending', 'Active', 'Completed'];
 
@@ -285,7 +287,19 @@ export default function AdminDashboard() {
           }
           const dealThreads = messageRes?.data ? buildDealChatThreads(messageRes.data, remoteDeals, user?.id) : [];
           const supportThreads = ticketMsgRes?.data ? buildSupportChatThreads(ticketMsgRes.data, remoteSupportTickets, adminOrgUserId) : [];
-          remoteChats = [...supportThreads, ...dealThreads];
+          const missingSupportThreads = remoteSupportTickets
+            .filter((ticket) => !supportThreads.some((thread) => Number(thread.ticketId) === Number(ticket.id)))
+            .map((ticket) => ({
+              id: `ticket_${ticket.id}`,
+              chatType: 'ticket',
+              ticketId: ticket.id,
+              participantName: ticket.raisedBy || `Ticket #${ticket.id}`,
+              participantType: 'Support Ticket',
+              topic: ticket.title || `Ticket ${ticket.id}`,
+              unread: 0,
+              messages: [],
+            }));
+          remoteChats = [...supportThreads, ...missingSupportThreads, ...dealThreads];
         } catch (err) {
           console.warn('[AdminDashboard] remote Supabase load failed, using local admin data', err);
         }
@@ -511,7 +525,7 @@ export default function AdminDashboard() {
         if (created) {
           setDeals((prev) => [normalizeDealRow(created), ...prev]);
         } else {
-          setDeals((prev) => [localDeal, ...prev]);
+          setMessage(error?.message || 'Unable to create deal in Supabase');
         }
       } else {
         setDeals((prev) => [localDeal, ...prev]);
@@ -1005,8 +1019,14 @@ export default function AdminDashboard() {
                   {brands.map((b) => <option key={b.id} value={b.name}>{b.name}</option>)}
                 </select>
                 <input className="input-field" placeholder="Category" value={dealForm.category} onChange={(e) => setDealForm((v) => ({ ...v, category: e.target.value }))} />
-                <input className="input-field" placeholder="Location" value={dealForm.location} onChange={(e) => setDealForm((v) => ({ ...v, location: e.target.value }))} />
-                <input className="input-field" placeholder="Niche tags (comma separated)" value={dealForm.niche_tags} onChange={(e) => setDealForm((v) => ({ ...v, niche_tags: e.target.value }))} />
+                <select className="input-field" value={dealForm.location} onChange={(e) => setDealForm((v) => ({ ...v, location: e.target.value }))}>
+                  <option value="">Select place</option>
+                  {DEAL_LOCATIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <select className="input-field" value={typeof dealForm.niche_tags === 'string' ? dealForm.niche_tags.split(',')[0] || '' : ''} onChange={(e) => setDealForm((v) => ({ ...v, niche_tags: e.target.value }))}>
+                  <option value="">Select niche</option>
+                  {DEAL_NICHES.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
                 <input className="input-field" placeholder="Platforms (comma separated)" value={dealForm.platform} onChange={(e) => setDealForm((v) => ({ ...v, platform: e.target.value }))} />
                 <textarea className="input-field" placeholder="Deliverables / requirement" value={dealForm.deliverables} onChange={(e) => setDealForm((v) => ({ ...v, deliverables: e.target.value }))} rows={3} />
                 <div className={styles.inlineRow}>

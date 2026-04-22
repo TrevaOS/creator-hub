@@ -419,8 +419,16 @@ export default function Setup() {
         };
 
         if (payload.organization_id) {
-          const { error } = await supabase.from('support_tickets').insert(payload);
+          const { data: createdTicket, error } = await supabase.from('support_tickets').insert(payload).select().single();
           if (error) throw error;
+          if (createdTicket?.id && orgUser?.id) {
+            await supabase.from('ticket_messages').insert({
+              ticket_id: createdTicket.id,
+              sender_id: orgUser.id,
+              sender_type: 'org_user',
+              body: description,
+            });
+          }
         } else {
           await addSupportTicket({
             source: 'App',

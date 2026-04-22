@@ -10,7 +10,7 @@ import BottomSheet from '../../components/BottomSheet';
 import Skeleton from '../../components/Skeleton';
 import styles from './Deals.module.css';
 
-const STATUS_TABS = ['Browse', 'Pending', 'Active', 'Completed'];
+const STATUS_TABS = ['Browse', 'Accepted', 'Negotiation', 'Confirmed'];
 
 export default function Deals() {
   const { user } = useAuth();
@@ -55,6 +55,11 @@ export default function Deals() {
   }
 
   async function fetchAcceptedDeals() {
+    if (!isSupabaseEnabled || !user?.id) {
+      setAcceptedDeals([]);
+      setAcceptedIds(new Set());
+      return;
+    }
     const { data } = await supabase
       .from('creator_hub_accepted_deals')
       .select('*, creator_hub_deals(*)')
@@ -68,28 +73,44 @@ export default function Deals() {
     e.stopPropagation();
     if (!user) { navigate('/auth'); return; }
     try {
-      await supabase.from('creator_hub_accepted_deals').upsert(
-        { deal_id: dealId, user_id: user.id, status: 'pending' },
-        { onConflict: 'deal_id,user_id' }
-      );
+      if (isSupabaseEnabled) {
+        const { data: existing } = await supabase
+          .from('creator_hub_accepted_deals')
+          .select('id,status')
+          .eq('deal_id', dealId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existing?.id) {
+          await supabase
+            .from('creator_hub_accepted_deals')
+            .update({ status: 'pending' })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('creator_hub_accepted_deals')
+            .insert({ deal_id: dealId, user_id: user.id, status: 'pending' });
+        }
+      }
       setAcceptedIds(prev => new Set([...prev, dealId]));
+      await fetchAcceptedDeals();
     } catch {
       setAcceptedIds(prev => new Set([...prev, dealId]));
     }
   }
 
   const filteredDeals = deals.filter(d => {
-    if (filters.niche && !d.niche_tags?.includes(filters.niche.toLowerCase())) return false;
-    if (filters.platform && d.platform !== filters.platform) return false;
+    if (filters.niche && !(d.niche_tags || []).map((x) => String(x).toLowerCase()).includes(filters.niche.toLowerCase())) return false;
+    if (filters.platform && String(d.platform || '').toLowerCase() !== filters.platform) return false;
     if (filters.location && !d.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
     return true;
   });
 
-  const pendingDeals = acceptedDeals.filter(d => d.status === 'pending');
-  const activeDeals = acceptedDeals.filter(d => d.status === 'active');
-  const completedDeals = acceptedDeals.filter(d => d.status === 'completed');
+  const acceptedDealsTab = acceptedDeals.filter(d => d.status === 'pending');
+  const negotiationDeals = acceptedDeals.filter(d => d.status === 'active');
+  const confirmedDeals = acceptedDeals.filter(d => d.status === 'completed');
 
-  const tabDeals = { Pending: pendingDeals, Active: activeDeals, Completed: completedDeals };
+  const tabDeals = { Accepted: acceptedDealsTab, Negotiation: negotiationDeals, Confirmed: confirmedDeals };
 
   return (
     <main className="screen">
