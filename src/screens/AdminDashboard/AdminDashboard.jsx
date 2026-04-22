@@ -270,6 +270,18 @@ export default function AdminDashboard() {
     }));
   };
 
+  const buildTicketThreadsFromTickets = (tickets) =>
+    (tickets || []).map((ticket) => ({
+      id: `ticket_${ticket.id}`,
+      chatType: 'ticket',
+      ticketId: ticket.id,
+      participantName: ticket.raisedBy || `Ticket #${ticket.id}`,
+      participantType: 'Support Ticket',
+      topic: ticket.title || `Ticket ${ticket.id}`,
+      unread: 0,
+      messages: [],
+    }));
+
   const [query, setQuery] = useState('');
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [loading, setLoading] = useState(true);
@@ -375,11 +387,20 @@ export default function AdminDashboard() {
       }
 
       if (!mounted) return;
-      setCreators(remoteCreators.length > 0 ? remoteCreators : data.creators || []);
-      setBrands(remoteBrands.length > 0 ? remoteBrands : data.brands || []);
-      setSupportTickets(remoteSupportTickets.length > 0 ? remoteSupportTickets : data.supportTickets || []);
-      setChats(remoteChats.length > 0 ? remoteChats : data.chats || []);
-      setSelectedChatId((remoteChats.length > 0 ? remoteChats : data.chats || [])[0]?.id || null);
+      const finalCreators = remoteCreators.length > 0 ? remoteCreators : data.creators || [];
+      const finalBrands = remoteBrands.length > 0 ? remoteBrands : data.brands || [];
+      const finalSupportTickets = remoteSupportTickets.length > 0 ? remoteSupportTickets : data.supportTickets || [];
+      const baseChats = remoteChats.length > 0 ? remoteChats : data.chats || [];
+      const hasTicketThreads = baseChats.some((chat) => chat.chatType === 'ticket');
+      const finalChats = hasTicketThreads
+        ? baseChats
+        : [...buildTicketThreadsFromTickets(finalSupportTickets), ...baseChats];
+
+      setCreators(finalCreators);
+      setBrands(finalBrands);
+      setSupportTickets(finalSupportTickets);
+      setChats(finalChats);
+      setSelectedChatId(finalChats[0]?.id || null);
       setIsRemoteDeals(remoteDeals.length > 0);
       setDeals(remoteDeals.length > 0 ? remoteDeals : data.deals || []);
       setLoading(false);
