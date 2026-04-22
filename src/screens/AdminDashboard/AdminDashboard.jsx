@@ -466,8 +466,9 @@ export default function AdminDashboard() {
     [supportTickets, query],
   );
 
-  const selectedChat = chats.find((c) => c.id === selectedChatId) || null;
-  const unreadCount = chats.reduce((sum, chat) => sum + Number(chat.unread || 0), 0);
+  const chatThreads = chats.length > 0 ? chats : buildTicketThreadsFromTickets(supportTickets);
+  const selectedChat = chatThreads.find((c) => c.id === selectedChatId) || null;
+  const unreadCount = chatThreads.reduce((sum, chat) => sum + Number(chat.unread || 0), 0);
 
   useEffect(() => {
     if (!selectedChatId) return;
@@ -1113,7 +1114,7 @@ export default function AdminDashboard() {
             <section className={styles.chatLayout}>
               <div className={styles.chatList}>
                 <h3>Help Chat Inbox</h3>
-                {chats.map((chat) => (
+                {chatThreads.map((chat) => (
                   <button key={chat.id} className={`${styles.chatThread} ${selectedChatId === chat.id ? styles.chatThreadActive : ''}`} onClick={() => setSelectedChatId(chat.id)}>
                     <div>
                       <strong>{chat.participantName}</strong>
