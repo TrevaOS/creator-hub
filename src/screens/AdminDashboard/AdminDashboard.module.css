@@ -331,6 +331,35 @@
   gap: 6px;
 }
 
+.notificationBtn {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #2f62ff;
+  background: rgba(47, 98, 255, 0.15);
+  color: #9bb5ff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.notificationBadge {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 5px;
+}
+
 .actionBtnSmall {
   min-height: 28px;
   padding: 0 8px;

@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   BadgeIndianRupee,
   BarChart3,
+  Bell,
   Building2,
   Headset,
   MessageSquare,
@@ -206,7 +207,10 @@ export default function AdminDashboard() {
         time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
       });
     });
-    return Object.values(threads);
+    return Object.values(threads).map((thread) => ({
+      ...thread,
+      unread: thread.messages.filter((message) => message.from === 'other').length,
+    }));
   };
 
   const buildSupportChatThreads = (ticketMessages, tickets, adminOrgUserId) => {
@@ -234,7 +238,10 @@ export default function AdminDashboard() {
         time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
       });
     });
-    return Object.values(threads);
+    return Object.values(threads).map((thread) => ({
+      ...thread,
+      unread: thread.messages.filter((message) => message.from === 'other').length,
+    }));
   };
 
   const [query, setQuery] = useState('');
@@ -413,6 +420,7 @@ export default function AdminDashboard() {
   );
 
   const selectedChat = chats.find((c) => c.id === selectedChatId) || null;
+  const unreadCount = chats.reduce((sum, chat) => sum + Number(chat.unread || 0), 0);
 
   function openDrawer(type, mode = 'create', row = null) {
     setDrawer({ open: true, type, mode, id: row?.id ?? null });
@@ -892,6 +900,11 @@ export default function AdminDashboard() {
               <button className={styles.actionBtn} onClick={resetAll}>
                 <RefreshCcw size={14} />
                 Reset
+              </button>
+              <button className={styles.notificationBtn} onClick={() => setActiveTab('Chats')}>
+                <Bell size={14} />
+                Inbox
+                {unreadCount > 0 && <span className={styles.notificationBadge}>{unreadCount}</span>}
               </button>
               <span className={styles.saveState}>
                 <Save size={14} />

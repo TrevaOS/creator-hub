@@ -56,9 +56,14 @@ export default function Setup() {
   const [coverFile, setCoverFile] = useState(null);
   const [saveError, setSaveError] = useState('');
   const [supportOpen, setSupportOpen] = useState(false);
+  const [supportInboxOpen, setSupportInboxOpen] = useState(false);
   const [supportForm, setSupportForm] = useState({ title: '', details: '', severity: 'Medium' });
   const [supportSaving, setSupportSaving] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
+  const [supportThreads, setSupportThreads] = useState([]);
+  const [selectedSupportTicketId, setSelectedSupportTicketId] = useState(null);
+  const [supportReply, setSupportReply] = useState('');
+  const [supportUnread, setSupportUnread] = useState(0);
 
   const [form, setForm] = useState({
     name:          profile?.name          || '',
@@ -159,6 +164,107 @@ export default function Setup() {
         if (data) setConnectedPlatforms(data.map(r => r.platform));
       });
   }, [user?.id]);
+
+  const getLastSeenStore = () => {
+    try {
+      return JSON.parse(localStorage.getItem('creator_support_last_seen_v1') || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const setLastSeenForTicket = (ticketId) => {
+    const prev = getLastSeenStore();
+    const next = { ...prev, [ticketId]: new Date().toISOString() };
+    localStorage.setItem('creator_support_last_seen_v1', JSON.stringify(next));
+  };
+
+  const loadSupportThreads = async () => {
+    if (!isSupabaseEnabled || !user?.id) {
+      setSupportThreads([]);
+      setSupportUnread(0);
+      return;
+    }
+
+    const orgUser = await resolveOrgUserForAuthUser({
+      userId: user.id,
+      email: user.email,
+      autoLink: true,
+    });
+    if (!orgUser?.id) return;
+
+    const { data: tickets } = await supabase
+      .from('support_tickets')
+      .select('*')
+      .eq('raised_by', orgUser.id)
+      .order('created_at', { ascending: false });
+
+    const ticketIds = (tickets || []).map((ticket) => ticket.id);
+    let ticketMessages = [];
+    if (ticketIds.length > 0) {
+      const { data: msgs } = await supabase
+        .from('ticket_messages')
+        .select('*')
+        .in('ticket_id', ticketIds)
+        .order('created_at', { ascending: true });
+      ticketMessages = msgs || [];
+    }
+
+    const lastSeen = getLastSeenStore();
+    const nextThreads = (tickets || []).map((ticket) => {
+      const messages = ticketMessages
+        .filter((msg) => Number(msg.ticket_id) === Number(ticket.id))
+        .map((msg) => ({
+          id: msg.id,
+          from: Number(msg.sender_id) === Number(orgUser.id) ? 'me' : 'admin',
+          text: msg.body || '',
+          time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+          created_at: msg.created_at,
+        }));
+
+      const unread = messages.filter((msg) => {
+        if (msg.from !== 'admin') return false;
+        const seenAt = lastSeen[ticket.id];
+        if (!seenAt) return true;
+        return new Date(msg.created_at).getTime() > new Date(seenAt).getTime();
+      }).length;
+
+      return {
+        id: ticket.id,
+        title: ticket.subject || `Ticket #${ticket.id}`,
+        status: ticket.status || 'open',
+        messages,
+        unread,
+      };
+    });
+
+    setSupportThreads(nextThreads);
+    setSupportUnread(nextThreads.reduce((sum, thread) => sum + thread.unread, 0));
+    if (!selectedSupportTicketId && nextThreads.length > 0) {
+      setSelectedSupportTicketId(nextThreads[0].id);
+    }
+  };
+
+  useEffect(() => {
+    loadSupportThreads();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!isSupabaseEnabled || !user?.id) return;
+    const channel = supabase
+      .channel(`setup_ticket_inbox_${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_messages' }, () => {
+        loadSupportThreads();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => {
+        loadSupportThreads();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, selectedSupportTicketId]);
 
   const handlePhoto = (e) => {
     const file = e.target.files?.[0];
@@ -454,10 +560,44 @@ export default function Setup() {
       setSupportMessage('Your issue has been sent to the admin dashboard.');
       setSupportForm({ title: '', details: '', severity: 'Medium' });
       setSupportOpen(false);
+      await loadSupportThreads();
     } catch (err) {
       setSupportMessage(err?.message || 'Unable to submit support request.');
     }
     setSupportSaving(false);
+  };
+
+  const openSupportInbox = () => {
+    setSupportInboxOpen(true);
+    if (selectedSupportTicketId) {
+      setLastSeenForTicket(selectedSupportTicketId);
+      loadSupportThreads();
+    }
+  };
+
+  const selectedSupportThread = supportThreads.find((thread) => Number(thread.id) === Number(selectedSupportTicketId));
+
+  const sendSupportReply = async (e) => {
+    e.preventDefault();
+    const body = supportReply.trim();
+    if (!body || !selectedSupportTicketId || !user?.id || !isSupabaseEnabled) return;
+    const orgUser = await resolveOrgUserForAuthUser({
+      userId: user.id,
+      email: user.email,
+      autoLink: true,
+    });
+    if (!orgUser?.id) return;
+
+    await supabase.from('ticket_messages').insert({
+      ticket_id: Number(selectedSupportTicketId),
+      sender_id: orgUser.id,
+      sender_type: 'org_user',
+      body,
+    });
+
+    setSupportReply('');
+    setLastSeenForTicket(selectedSupportTicketId);
+    await loadSupportThreads();
   };
 
   return (
@@ -467,9 +607,15 @@ export default function Setup() {
         {/* ── HEADER ── */}
         <div className={styles.header}>
           <h1 className={styles.headerTitle}>Setup</h1>
-          <button className={styles.menuBtn} onClick={() => setMenuOpen(true)} aria-label="Settings menu">
-            <Menu size={20} />
-          </button>
+          <div className={styles.headerRight}>
+            <button className={styles.notifyBtn} onClick={openSupportInbox} aria-label="Open support notifications">
+              <Bell size={18} />
+              {supportUnread > 0 && <span className={styles.notifyBadge}>{supportUnread}</span>}
+            </button>
+            <button className={styles.menuBtn} onClick={() => setMenuOpen(true)} aria-label="Settings menu">
+              <Menu size={20} />
+            </button>
+          </div>
         </div>
         <div className={styles.headerActions}>
           <button
@@ -824,6 +970,56 @@ export default function Setup() {
             {supportSaving ? 'Submitting…' : 'Send request'}
           </button>
           {supportMessage && <p className={styles.supportMessage}>{supportMessage}</p>}
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={supportInboxOpen} onClose={() => setSupportInboxOpen(false)} title="Support Chat Inbox">
+        <div className={styles.inboxSheet}>
+          <div className={styles.inboxThreads}>
+            {supportThreads.length === 0 && (
+              <p className={styles.inboxEmpty}>No support threads yet.</p>
+            )}
+            {supportThreads.map((thread) => (
+              <button
+                key={thread.id}
+                className={`${styles.inboxThreadBtn} ${Number(selectedSupportTicketId) === Number(thread.id) ? styles.inboxThreadActive : ''}`}
+                onClick={() => {
+                  setSelectedSupportTicketId(thread.id);
+                  setLastSeenForTicket(thread.id);
+                  loadSupportThreads();
+                }}
+              >
+                <span>{thread.title}</span>
+                {thread.unread > 0 && <span className={styles.inboxThreadBadge}>{thread.unread}</span>}
+              </button>
+            ))}
+          </div>
+
+          {selectedSupportThread && (
+            <div className={styles.inboxChatPanel}>
+              <div className={styles.inboxMessages}>
+                {selectedSupportThread.messages.length === 0 && <p className={styles.inboxEmpty}>No messages yet.</p>}
+                {selectedSupportThread.messages.map((msg) => (
+                  <div key={msg.id} className={`${styles.inboxBubble} ${msg.from === 'me' ? styles.inboxBubbleMe : styles.inboxBubbleAdmin}`}>
+                    <p>{msg.text}</p>
+                    <span>{msg.time}</span>
+                  </div>
+                ))}
+              </div>
+
+              <form className={styles.inboxComposer} onSubmit={sendSupportReply}>
+                <input
+                  className="input-field"
+                  value={supportReply}
+                  onChange={(e) => setSupportReply(e.target.value)}
+                  placeholder="Reply to support team..."
+                />
+                <button className="btn btn-primary" type="submit" disabled={!supportReply.trim()}>
+                  Send
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </BottomSheet>
     </main>
