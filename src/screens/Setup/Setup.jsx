@@ -313,7 +313,7 @@ export default function Setup() {
       const uploadedAvatarUrl = await uploadImageAndGetUrl(avatarFile, 'avatar');
       const uploadedCoverUrl = await uploadImageAndGetUrl(coverFile, 'cover');
 
-      await updateProfile({
+      const updatedProfile = await updateProfile({
         name:       form.name,
         username:   form.username.toLowerCase().replace(/\s/g, '_'),
         bio:        form.bio,
@@ -324,13 +324,15 @@ export default function Setup() {
         cover_url:  uploadedCoverUrl || form.coverPreview || null,
       });
 
+      const creatorProfileId = updatedProfile?.profile_id || updatedProfile?.id || null;
+
       if (user) {
         // Upsert social accounts
         const rows = ALL_PLATFORMS
           .filter(p => socials[p].handle)
           .map(p => ({
             user_id:            user.id,
-            creator_profile_id: profile?.profile_id ?? null,
+            creator_profile_id: creatorProfileId,
             platform:           p,
             handle:             socials[p].handle,
             url:                socials[p].url || buildSocialUrl(p, socials[p].handle) || null,
@@ -343,7 +345,7 @@ export default function Setup() {
         // Upsert modules
         await supabase.from('creator_dashboard_modules').upsert({
           user_id: user.id,
-          creator_profile_id: profile?.profile_id ?? null,
+          creator_profile_id: creatorProfileId,
           ...modules,
         }, { onConflict: 'user_id' });
 
@@ -361,7 +363,7 @@ export default function Setup() {
           if (!uploadedUrl) continue;
           await supabase.from('creator_carousel_images').insert({
             user_id:            user.id,
-            creator_profile_id: profile?.profile_id ?? null,
+            creator_profile_id: creatorProfileId,
             image_url:          uploadedUrl,
             caption:            slide.caption,
             order:              slides.indexOf(slide),

@@ -53,6 +53,55 @@ export default function AdminDashboard() {
   const [importError, setImportError] = useState('');
   const [isRemoteDeals, setIsRemoteDeals] = useState(false);
 
+  const mapCreatorRow = (row) => ({
+    id: row.auth_user_id || row.id,
+    name: row.display_name || row.name || row.full_name || row.creator_name || row.username || 'Unknown',
+    niche: Array.isArray(row.niche_tags) ? row.niche_tags.join(', ') : row.niche_tags || row.niche || row.industry || '',
+    followers: Number(row.follower_count || row.audience || row.followers || 0),
+    city: row.base_city || row.location || row.city || '',
+  });
+
+  const mapBrandRow = (row) => ({
+    id: row.id,
+    name: row.name || row.brand_name || 'Unknown',
+    industry: row.industry || row.category || '',
+    budget: Number(row.budget || 0),
+    pan: row.pan || row.tax_id || '',
+    gst: row.gst || '',
+    cin: row.cin || '',
+    email: row.email || row.contact_email || '',
+    phone: row.phone || row.mobile || row.contact || '',
+    address: row.address || row.location || '',
+    history: row.history || row.history_notes || [],
+  });
+
+  const buildChatThreads = (messages, deals) => {
+    const threads = {};
+    messages.forEach((msg) => {
+      const dealId = msg.deal_id || msg.deal || 'unknown';
+      const deal = deals.find((d) => String(d.id) === String(dealId));
+      const threadId = dealId || msg.sender_id || `chat_${msg.id}`;
+      if (!threads[threadId]) {
+        threads[threadId] = {
+          id: threadId,
+          dealId,
+          participantName: deal ? `${deal.brand} • ${deal.creator}` : `Chat ${threadId}`,
+          participantType: deal ? 'Deal Chat' : 'Support',
+          topic: deal ? deal.type || `Deal ${dealId}` : msg.topic || 'Conversation',
+          unread: 0,
+          messages: [],
+        };
+      }
+      threads[threadId].messages.push({
+        id: msg.id,
+        from: msg.sender_id === user?.id ? 'admin' : 'other',
+        text: msg.content || msg.body || msg.text || '',
+        time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+      });
+    });
+    return Object.values(threads);
+  };
+
   const [query, setQuery] = useState('');
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [loading, setLoading] = useState(true);
@@ -73,19 +122,43 @@ export default function AdminDashboard() {
     let mounted = true;
     async function loadData() {
       const data = await loadAdminData();
+      let remoteCreators = [];
+      let remoteBrands = [];
       let remoteDeals = [];
+      let remoteChats = [];
+
       if (isSupabaseEnabled) {
-        const { data: supaDeals, error } = await supabase.from('creator_hub_deals').select('*').order('created_at', { ascending: false });
-        if (!error && Array.isArray(supaDeals) && supaDeals.length > 0) {
-          remoteDeals = supaDeals;
+        try {
+          const [creatorRes, brandRes, dealRes, messageRes] = await Promise.all([
+            supabase.from('creator_profiles').select('*'),
+            supabase.from('creator_collab_brands').select('*'),
+            supabase.from('creator_hub_deals').select('*').order('created_at', { ascending: false }),
+            supabase.from('creator_hub_messages').select('*').order('created_at', { ascending: true }),
+          ]);
+
+          if (creatorRes.data) {
+            remoteCreators = creatorRes.data.map(mapCreatorRow);
+          }
+          if (brandRes.data) {
+            remoteBrands = brandRes.data.map(mapBrandRow);
+          }
+          if (dealRes.data) {
+            remoteDeals = dealRes.data;
+          }
+          if (messageRes.data) {
+            remoteChats = buildChatThreads(messageRes.data, remoteDeals);
+          }
+        } catch (err) {
+          console.warn('[AdminDashboard] remote Supabase load failed, using local admin data', err);
         }
       }
+
       if (!mounted) return;
-      setCreators(data.creators || []);
-      setBrands(data.brands || []);
+      setCreators(remoteCreators.length > 0 ? remoteCreators : data.creators || []);
+      setBrands(remoteBrands.length > 0 ? remoteBrands : data.brands || []);
       setSupportTickets(data.supportTickets || []);
-      setChats(data.chats || []);
-      setSelectedChatId(data.chats?.[0]?.id || null);
+      setChats(remoteChats.length > 0 ? remoteChats : data.chats || []);
+      setSelectedChatId((remoteChats.length > 0 ? remoteChats : data.chats || [])[0]?.id || null);
       setIsRemoteDeals(remoteDeals.length > 0);
       setDeals(remoteDeals.length > 0 ? remoteDeals : data.deals || []);
       setLoading(false);
@@ -263,28 +336,43 @@ export default function AdminDashboard() {
     closeDrawer();
   }
 
-  function sendChatMessage(e) {
+  async function sendChatMessage(e) {
     e.preventDefault();
-    if (!selectedChat || !chatDraft.trim()) return;
+    if (!selectedChat || !chatDraft.trim() || !user) return;
+
+    const messageText = chatDraft.trim();
+    const optimisticMessage = {
+      id: `tmp_${Date.now()}`,
+      from: 'admin',
+      text: messageText,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
     setChats((prev) =>
       prev.map((c) =>
         c.id === selectedChat.id
-          ? {
-              ...c,
-              messages: [
-                ...c.messages,
-                {
-                  id: Date.now(),
-                  from: 'admin',
-                  text: chatDraft.trim(),
-                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                },
-              ],
-            }
+          ? { ...c, messages: [...c.messages, optimisticMessage] }
           : c,
       ),
     );
     setChatDraft('');
+
+    if (isSupabaseEnabled && selectedChat.dealId) {
+      const { error } = await supabase.from('creator_hub_messages').insert({
+        deal_id: selectedChat.dealId,
+        sender_id: user.id,
+        content: messageText,
+      });
+      if (error) {
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === selectedChat.id
+              ? { ...c, messages: c.messages.filter((m) => m.id !== optimisticMessage.id) }
+              : c,
+          ),
+        );
+      }
+    }
   }
 
   function resetAll() {

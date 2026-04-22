@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { isDemoMode, supabase, createCreatorProfileViaFunction } from '../services/supabase';
+import { isDemoMode, supabase, createCreatorProfile } from '../services/supabase';
 
 const AuthContext = createContext(null);
 
@@ -135,7 +135,7 @@ export function AuthProvider({ children }) {
 
     if (data.user) {
       try {
-        await createCreatorProfileViaFunction({
+        await createCreatorProfile({
           authUserId: data.user.id,
           displayName: username || email.split('@')[0],
           username: cleanUsername,

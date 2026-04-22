@@ -113,6 +113,33 @@ export const supabase = isSupabaseEnabled
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createNoopSupabaseClient();
 
+export async function createCreatorProfile({ authUserId, displayName, username }) {
+  if (!isSupabaseEnabled) {
+    throw new Error('Supabase is not enabled');
+  }
+
+  const cleanUsername = username?.trim()?.toLowerCase().replace(/\s+/g, '_');
+  if (!authUserId || !displayName || !cleanUsername) {
+    throw new Error('authUserId, displayName, and username are required');
+  }
+
+  const { data, error } = await supabase
+    .from('creator_profiles')
+    .upsert(
+      { auth_user_id: authUserId, display_name: displayName, username: cleanUsername },
+      { onConflict: 'auth_user_id' },
+    )
+    .select()
+    .single();
+
+  if (!error && data) {
+    return data;
+  }
+
+  console.warn('[createCreatorProfile] direct upsert failed, falling back to edge function:', error);
+  return createCreatorProfileViaFunction({ authUserId, displayName, username: cleanUsername });
+}
+
 export async function createCreatorProfileViaFunction({ authUserId, displayName, username }) {
   if (!isSupabaseEnabled) {
     throw new Error('Supabase is not enabled');
