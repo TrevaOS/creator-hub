@@ -1,16 +1,38 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+function readEnv(...keys) {
+  for (const key of keys) {
+    const value = import.meta.env?.[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+function parseBool(value) {
+  return String(value || '').trim().toLowerCase() === 'true';
+}
+
+const supabaseUrl = readEnv('VITE_SUPABASE_URL', 'VITE_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = readEnv(
+  'VITE_SUPABASE_ANON_KEY',
+  'VITE_SUPABASE_KEY',
+  'VITE_SUPABASE_PUBLISHABLE_KEY',
+  'VITE_PUBLIC_SUPABASE_ANON_KEY',
+);
+const disableSupabase = parseBool(import.meta.env.VITE_DISABLE_SUPABASE);
 
 const hasValidUrl = typeof supabaseUrl === 'string' && supabaseUrl.startsWith('https://');
 const hasValidAnonKey = typeof supabaseAnonKey === 'string' && supabaseAnonKey.length > 20;
 
 export const isSupabaseEnabled = hasValidUrl && hasValidAnonKey;
-export const isDemoMode = !isSupabaseEnabled || import.meta.env.VITE_DISABLE_SUPABASE === 'true';
+export const isDemoMode = !isSupabaseEnabled || disableSupabase;
 export const supabaseConfigError = isSupabaseEnabled
   ? null
-  : 'Supabase not configured. Running in demo mode.';
+  : `Supabase not configured. Running in demo mode. Missing/invalid: ${
+      !hasValidUrl ? 'VITE_SUPABASE_URL' : 'VITE_SUPABASE_ANON_KEY'
+    }`;
 
 function createNoopQueryBuilder() {
   const state = { single: false, action: 'select' };
