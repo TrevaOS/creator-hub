@@ -71,6 +71,7 @@ export default function DealDetail() {
   return (
     <main className={styles.screen}>
       {/* Top bar */}
+      <div className={styles.topBar}>
         <button className={styles.backBtn} onClick={() => navigate(-1)} aria-label="Go back">
           <ArrowLeft size={24} />
         </button>
