@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { isDemoMode, supabase, createCreatorProfile } from '../services/supabase';
+import { isDemoMode, supabase, createCreatorProfile, resolveOrgUserForAuthUser } from '../services/supabase';
 
 const AuthContext = createContext(null);
 
@@ -67,7 +67,7 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         dispatch({ type: 'SET_USER', payload: session.user });
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       } else {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
@@ -80,7 +80,7 @@ export function AuthProvider({ children }) {
       async (event, session) => {
         if (session?.user) {
           dispatch({ type: 'SET_USER', payload: session.user });
-          fetchProfile(session.user.id);
+          fetchProfile(session.user.id, session.user.email);
         } else {
           dispatch({ type: 'LOGOUT' });
         }
@@ -90,7 +90,8 @@ export function AuthProvider({ children }) {
     return () => subscription?.unsubscribe();
   }, []);
 
-  async function fetchProfile(userId) {
+  async function fetchProfile(userId, userEmail) {
+    if (!userId || isDemoMode) return;
     try {
       const { data, error } = await supabase
         .from('creator_profiles')
@@ -107,9 +108,29 @@ export function AuthProvider({ children }) {
           location: data.base_city,
         };
         dispatch({ type: 'SET_PROFILE', payload: mapped });
+        return;
+      }
+
+      const orgUser = await resolveOrgUserForAuthUser({
+        userId,
+        email: userEmail,
+        autoLink: true,
+      });
+
+      if (orgUser) {
+        const mapped = {
+          profile_id: orgUser.id,
+          id: userId,
+          name: orgUser.name || orgUser.full_name || '',
+          email: orgUser.email,
+          phone: orgUser.phone,
+          role_type: orgUser.role_type,
+          organization_id: orgUser.organization_id,
+        };
+        dispatch({ type: 'SET_PROFILE', payload: mapped });
       }
     } catch (e) {
-      // Profile may not exist yet
+      // Profile may not exist yet or org_users may not be available
     }
   }
 

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { loadAdminData, resetAdminData, saveAdminData } from '../../services/adminStore';
-import { isSupabaseEnabled, supabase } from '../../services/supabase';
+import { isSupabaseEnabled, resolveOrgUserForAuthUser, supabase } from '../../services/supabase';
 import styles from './AdminDashboard.module.css';
 
 const EMPTY_CREATOR = { name: '', niche: '', followers: '', city: '' };
@@ -34,11 +34,80 @@ const EMPTY_BRAND = {
   address: '',
   historyNote: '',
 };
-const EMPTY_DEAL = { brand: '', creator: '', type: '', status: 'Pending', payout: '' };
+const EMPTY_DEAL = {
+  brand: '',
+  category: '',
+  location: '',
+  niche_tags: '',
+  platform: '',
+  deliverables: '',
+  payout_min: '',
+  payout_max: '',
+  status: 'Pending',
+};
 const EMPTY_TICKET = { source: 'App', title: '', raisedBy: '', severity: 'Medium', linkedDealId: '', status: 'Open' };
 
 const DEAL_STAGES = ['Pending', 'Active', 'Completed'];
 
+const normalizeDealRow = (row) => {
+  const tags = Array.isArray(row.niche_tags)
+    ? row.niche_tags
+    : typeof row.niche_tags === 'string'
+      ? row.niche_tags.split(',').map((t) => t.trim()).filter(Boolean)
+      : [];
+  const payoutMin = Number(row.payout_min ?? row.payout ?? 0);
+  const payoutMax = Number(row.payout_max ?? row.payout ?? payoutMin);
+  const status = row.status ? String(row.status).charAt(0).toUpperCase() + String(row.status).slice(1) : 'Open';
+
+  return {
+    ...row,
+    brand: row.brand_name || row.brand || row.creator || 'Brand',
+    brand_name: row.brand_name || row.brand,
+    category: row.category || row.type || row.niche || '',
+    type: row.type || row.category || row.deliverables || '',
+    deliverables: row.deliverables || row.requirement || row.type || '',
+    creator: row.creator || row.creator_name || '',
+    location: row.location || row.city || '',
+    niche_tags: tags,
+    platform: row.platform || '',
+    payout: row.payout ?? payoutMin,
+    payout_min: payoutMin,
+    payout_max: payoutMax,
+    status,
+  };
+};
+
+const normalizeSupportTicketRow = (row) => ({
+  id: row.id,
+  source: row.source || 'App',
+  title: row.subject || row.title || '',
+  raisedBy: row.raised_by || row.raisedBy || row.raisedByName || 'Creator',
+  severity: String(row.priority || row.severity || 'medium').replace(/^./, (m) => m.toUpperCase()),
+  status: dbToUiTicketStatus(row.status || row.ticket_status || row.ticketStatus || 'open'),
+  linkedDealId: row.linked_deal_id || row.linkedDealId || null,
+  createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+  description: row.description || '',
+});
+
+function uiToDbTicketStatus(status) {
+  const value = String(status || '').toLowerCase().replace(/\s+/g, '_');
+  if (value === 'in_progress' || value === 'resolved' || value === 'closed') return value;
+  return 'open';
+}
+
+function dbToUiTicketStatus(status) {
+  const value = String(status || '').toLowerCase();
+  if (value === 'in_progress') return 'In Progress';
+  if (value === 'resolved') return 'Resolved';
+  if (value === 'closed') return 'Closed';
+  return 'Open';
+}
+
+function uiToDbPriority(severity) {
+  const value = String(severity || '').toLowerCase();
+  if (value === 'high' || value === 'low') return value;
+  return 'medium';
+}
 export default function AdminDashboard() {
   const { user } = useAuth();
   const fileInputRef = useRef(null);
@@ -126,27 +195,64 @@ export default function AdminDashboard() {
       let remoteBrands = [];
       let remoteDeals = [];
       let remoteChats = [];
+      let remoteSupportTickets = [];
 
       if (isSupabaseEnabled) {
         try {
-          const [creatorRes, brandRes, dealRes, messageRes] = await Promise.all([
-            supabase.from('creator_profiles').select('*'),
-            supabase.from('creator_collab_brands').select('*'),
-            supabase.from('creator_hub_deals').select('*').order('created_at', { ascending: false }),
-            supabase.from('creator_hub_messages').select('*').order('created_at', { ascending: true }),
+          const currentOrgUser = await resolveOrgUserForAuthUser({
+            userId: user?.id,
+            email: user?.email,
+            autoLink: true,
+          });
+          const organizationId = currentOrgUser?.organization_id || null;
+
+          const creatorProfilesQuery = supabase.from('creator_profiles').select('*');
+          const orgUsersQuery = organizationId
+            ? supabase.from('org_users').select('*').eq('organization_id', organizationId)
+            : supabase.from('org_users').select('*');
+          const brandsQuery = supabase.from('creator_collab_brands').select('*');
+          const dealsQuery = supabase.from('creator_hub_deals').select('*').order('created_at', { ascending: false });
+          const messagesQuery = supabase.from('creator_hub_messages').select('*').order('created_at', { ascending: true });
+          const ticketsQuery = organizationId
+            ? supabase.from('support_tickets').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false })
+            : supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
+
+          const [creatorRes, orgUserRes, brandRes, dealRes, messageRes, supportRes] = await Promise.all([
+            creatorProfilesQuery,
+            orgUsersQuery,
+            brandsQuery,
+            dealsQuery,
+            messagesQuery,
+            ticketsQuery,
           ]);
 
-          if (creatorRes.data) {
-            remoteCreators = creatorRes.data.map(mapCreatorRow);
+          const creatorRows = [
+            ...(creatorRes.data || []),
+            ...(orgUserRes?.data || []),
+          ];
+          if (creatorRows.length > 0) {
+            const uniqueCreators = [];
+            const seen = new Set();
+            creatorRows.forEach((row) => {
+              const id = row.auth_user_id || row.user_id || row.id;
+              if (id && seen.has(String(id))) return;
+              seen.add(String(id));
+              uniqueCreators.push(mapCreatorRow(row));
+            });
+            remoteCreators = uniqueCreators;
           }
+
           if (brandRes.data) {
             remoteBrands = brandRes.data.map(mapBrandRow);
           }
           if (dealRes.data) {
-            remoteDeals = dealRes.data;
+            remoteDeals = dealRes.data.map(normalizeDealRow);
           }
           if (messageRes.data) {
             remoteChats = buildChatThreads(messageRes.data, remoteDeals);
+          }
+          if (supportRes?.data) {
+            remoteSupportTickets = supportRes.data.map(normalizeSupportTicketRow);
           }
         } catch (err) {
           console.warn('[AdminDashboard] remote Supabase load failed, using local admin data', err);
@@ -156,7 +262,7 @@ export default function AdminDashboard() {
       if (!mounted) return;
       setCreators(remoteCreators.length > 0 ? remoteCreators : data.creators || []);
       setBrands(remoteBrands.length > 0 ? remoteBrands : data.brands || []);
-      setSupportTickets(data.supportTickets || []);
+      setSupportTickets(remoteSupportTickets.length > 0 ? remoteSupportTickets : data.supportTickets || []);
       setChats(remoteChats.length > 0 ? remoteChats : data.chats || []);
       setSelectedChatId((remoteChats.length > 0 ? remoteChats : data.chats || [])[0]?.id || null);
       setIsRemoteDeals(remoteDeals.length > 0);
@@ -176,7 +282,7 @@ export default function AdminDashboard() {
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (loading) return;
@@ -239,7 +345,17 @@ export default function AdminDashboard() {
       );
     }
     if (type === 'deal') {
-      setDealForm(mode === 'edit' && row ? { ...row, payout: String(row.payout || '') } : EMPTY_DEAL);
+      setDealForm(mode === 'edit' && row ? {
+        brand: row.brand_name || row.brand || '',
+        category: row.category || row.type || '',
+        location: row.location || '',
+        niche_tags: Array.isArray(row.niche_tags) ? row.niche_tags.join(', ') : row.niche_tags || '',
+        platform: row.platform || '',
+        deliverables: row.deliverables || row.type || '',
+        payout_min: String(row.payout_min ?? row.payout ?? ''),
+        payout_max: String(row.payout_max ?? row.payout ?? ''),
+        status: row.status || 'Pending',
+      } : EMPTY_DEAL);
     }
     if (type === 'ticket') {
       setTicketForm(mode === 'edit' && row ? { ...row, linkedDealId: row.linkedDealId ? String(row.linkedDealId) : '' } : EMPTY_TICKET);
@@ -303,35 +419,138 @@ export default function AdminDashboard() {
 
   async function upsertDeal(e) {
     e.preventDefault();
-    if (!dealForm.brand || !dealForm.creator || !dealForm.type) return;
-    const payload = { ...dealForm, payout: Number(dealForm.payout || 0) };
+    if (!dealForm.brand || !dealForm.category || !dealForm.deliverables) return;
+
+    const payload = {
+      ...dealForm,
+      payout_min: Number(dealForm.payout_min || dealForm.payout || 0),
+      payout_max: Number(dealForm.payout_max || dealForm.payout || dealForm.payout_min || 0),
+      niche_tags: typeof dealForm.niche_tags === 'string'
+        ? dealForm.niche_tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : Array.isArray(dealForm.niche_tags) ? dealForm.niche_tags : [],
+      status: dealForm.status?.toLowerCase() || 'pending',
+    };
 
     if (drawer.mode === 'edit') {
-      setDeals((prev) => prev.map((d) => (d.id === drawer.id ? { ...d, ...payload } : d)));
-      if (isSupabaseEnabled && payload.id) {
-        await supabase.from('creator_hub_deals').upsert({ id: payload.id, ...payload }, { onConflict: 'id' });
+      const updatedDeal = normalizeDealRow({ ...deals.find((d) => d.id === drawer.id), ...payload });
+      setDeals((prev) => prev.map((d) => (d.id === drawer.id ? updatedDeal : d)));
+
+      if (isSupabaseEnabled && drawer.id) {
+        const { data: updated, error } = await supabase
+          .from('creator_hub_deals')
+          .upsert({
+            id: drawer.id,
+            brand_name: payload.brand,
+            category: payload.category,
+            location: payload.location || null,
+            niche_tags: payload.niche_tags,
+            platform: payload.platform,
+            deliverables: payload.deliverables,
+            requirement: payload.deliverables,
+            payout_min: payload.payout_min,
+            payout_max: payload.payout_max,
+            status: payload.status,
+          }, { onConflict: 'id' })
+          .select()
+          .single();
+        if (updated) {
+          setDeals((prev) => prev.map((d) => (d.id === drawer.id ? normalizeDealRow(updated) : d)));
+        }
       }
     } else {
-      const item = { id: Date.now(), ...payload };
-      setDeals((prev) => [item, ...prev]);
+      const localDeal = normalizeDealRow({ id: Date.now(), ...payload });
       if (isSupabaseEnabled) {
-        await supabase.from('creator_hub_deals').insert({ ...item, status: item.status?.toLowerCase() || 'open' });
+        const { data: created, error } = await supabase
+          .from('creator_hub_deals')
+          .insert([{
+            brand_name: payload.brand,
+            category: payload.category,
+            location: payload.location || null,
+            niche_tags: payload.niche_tags,
+            platform: payload.platform,
+            deliverables: payload.deliverables,
+            requirement: payload.deliverables,
+            payout_min: payload.payout_min,
+            payout_max: payload.payout_max,
+            status: payload.status,
+          }])
+          .select()
+          .single();
+        if (created) {
+          setDeals((prev) => [normalizeDealRow(created), ...prev]);
+        } else {
+          setDeals((prev) => [localDeal, ...prev]);
+        }
+      } else {
+        setDeals((prev) => [localDeal, ...prev]);
       }
     }
     closeDrawer();
   }
 
-  function upsertTicket(e) {
+  async function upsertTicket(e) {
     e.preventDefault();
     if (!ticketForm.title || !ticketForm.raisedBy) return;
     const payload = {
       ...ticketForm,
       linkedDealId: ticketForm.linkedDealId ? Number(ticketForm.linkedDealId) : null,
     };
+
+    const localTicket = {
+      ...payload,
+      status: payload.status || 'Open',
+      severity: payload.severity || 'Medium',
+    };
+
+    if (isSupabaseEnabled && user?.id) {
+      const orgUser = await resolveOrgUserForAuthUser({
+        userId: user.id,
+        email: user.email,
+        autoLink: true,
+      });
+
+      if (orgUser?.organization_id) {
+        const dbPayload = {
+          organization_id: orgUser.organization_id,
+          raised_by: orgUser.id || null,
+          subject: payload.title,
+          description: payload.description || payload.details || payload.title,
+          priority: uiToDbPriority(payload.severity),
+          status: uiToDbTicketStatus(payload.status),
+          category: 'general',
+        };
+
+        if (drawer.mode === 'edit' && drawer.id) {
+          const { data: updated, error } = await supabase
+            .from('support_tickets')
+            .update(dbPayload)
+            .eq('id', drawer.id)
+            .select()
+            .single();
+          if (!error && updated) {
+            setSupportTickets((prev) => prev.map((t) => (t.id === drawer.id ? normalizeSupportTicketRow(updated) : t)));
+            closeDrawer();
+            return;
+          }
+        } else {
+          const { data: created, error } = await supabase
+            .from('support_tickets')
+            .insert(dbPayload)
+            .select()
+            .single();
+          if (!error && created) {
+            setSupportTickets((prev) => [normalizeSupportTicketRow(created), ...prev]);
+            closeDrawer();
+            return;
+          }
+        }
+      }
+    }
+
     if (drawer.mode === 'edit') {
-      setSupportTickets((prev) => prev.map((t) => (t.id === drawer.id ? { ...t, ...payload } : t)));
+      setSupportTickets((prev) => prev.map((t) => (t.id === drawer.id ? { ...t, ...localTicket } : t)));
     } else {
-      setSupportTickets((prev) => [{ id: Date.now(), ...payload, createdAt: new Date().toISOString() }, ...prev]);
+      setSupportTickets((prev) => [{ id: Date.now(), ...localTicket, createdAt: new Date().toISOString() }, ...prev]);
     }
     closeDrawer();
   }
@@ -373,6 +592,39 @@ export default function AdminDashboard() {
         );
       }
     }
+  }
+
+  async function deleteSupportTicket(id) {
+    if (isSupabaseEnabled) {
+      await supabase.from('support_tickets').delete().eq('id', id);
+    }
+    setSupportTickets((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  async function cycleSupportTicketStatus(id) {
+    const ticket = supportTickets.find((t) => t.id === id);
+    if (!ticket) return;
+
+    const nextStatus = ticket.status === 'Open'
+      ? 'In Progress'
+      : ticket.status === 'In Progress'
+        ? 'Resolved'
+        : 'Open';
+
+    if (isSupabaseEnabled) {
+      const { data: updated } = await supabase
+        .from('support_tickets')
+        .update({ status: uiToDbTicketStatus(nextStatus) })
+        .eq('id', id)
+        .select()
+        .single();
+      if (updated) {
+        setSupportTickets((prev) => prev.map((t) => (t.id === id ? normalizeSupportTicketRow(updated) : t)));
+        return;
+      }
+    }
+
+    setSupportTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
   }
 
   function resetAll() {
@@ -577,9 +829,9 @@ export default function AdminDashboard() {
               </div>
               <DataTable
                 title="Deals"
-                columns={['ID', 'Brand', 'Creator', 'Deliverable', 'Status', 'Payout']}
+                columns={['ID', 'Brand', 'Category', 'Deliverable', 'Status', 'Payout']}
                 rows={filteredDeals}
-                render={(d) => [d.id, d.brand, d.creator, d.type, d.status, `INR ${Number(d.payout || 0).toLocaleString('en-IN')}`]}
+                render={(d) => [d.id, d.brand_name || d.brand, d.category || d.type, d.deliverables || d.type, d.status, `INR ${Number(d.payout || d.payout_max || 0).toLocaleString('en-IN')}`]}
                 onDelete={(id) => setDeals((prev) => prev.filter((d) => d.id !== id))}
                 onEdit={(row) => openDrawer('deal', 'edit', row)}
                 onToggleStatus={(id) =>
@@ -603,15 +855,9 @@ export default function AdminDashboard() {
               </div>
               <SupportTable
                 rows={filteredTickets}
-                onDelete={(id) => setSupportTickets((prev) => prev.filter((t) => t.id !== id))}
+                onDelete={deleteSupportTicket}
                 onEdit={(row) => openDrawer('ticket', 'edit', row)}
-                onStatusChange={(id) =>
-                  setSupportTickets((prev) =>
-                    prev.map((t) =>
-                      t.id === id ? { ...t, status: t.status === 'Open' ? 'In Progress' : t.status === 'In Progress' ? 'Resolved' : 'Open' } : t,
-                    ),
-                  )
-                }
+                onStatusChange={cycleSupportTicketStatus}
               />
             </>
           )}
@@ -700,15 +946,18 @@ export default function AdminDashboard() {
                   <option value="">Select brand</option>
                   {brands.map((b) => <option key={b.id} value={b.name}>{b.name}</option>)}
                 </select>
-                <select className="input-field" value={dealForm.creator} onChange={(e) => setDealForm((v) => ({ ...v, creator: e.target.value }))}>
-                  <option value="">Select creator</option>
-                  {creators.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-                <input className="input-field" placeholder="Deliverable" value={dealForm.type} onChange={(e) => setDealForm((v) => ({ ...v, type: e.target.value }))} />
+                <input className="input-field" placeholder="Category" value={dealForm.category} onChange={(e) => setDealForm((v) => ({ ...v, category: e.target.value }))} />
+                <input className="input-field" placeholder="Location" value={dealForm.location} onChange={(e) => setDealForm((v) => ({ ...v, location: e.target.value }))} />
+                <input className="input-field" placeholder="Niche tags (comma separated)" value={dealForm.niche_tags} onChange={(e) => setDealForm((v) => ({ ...v, niche_tags: e.target.value }))} />
+                <input className="input-field" placeholder="Platforms (comma separated)" value={dealForm.platform} onChange={(e) => setDealForm((v) => ({ ...v, platform: e.target.value }))} />
+                <textarea className="input-field" placeholder="Deliverables / requirement" value={dealForm.deliverables} onChange={(e) => setDealForm((v) => ({ ...v, deliverables: e.target.value }))} rows={3} />
+                <div className={styles.inlineRow}>
+                  <input className="input-field" type="number" placeholder="Payout min" value={dealForm.payout_min} onChange={(e) => setDealForm((v) => ({ ...v, payout_min: e.target.value }))} />
+                  <input className="input-field" type="number" placeholder="Payout max" value={dealForm.payout_max} onChange={(e) => setDealForm((v) => ({ ...v, payout_max: e.target.value }))} />
+                </div>
                 <select className="input-field" value={dealForm.status} onChange={(e) => setDealForm((v) => ({ ...v, status: e.target.value }))}>
                   <option>Pending</option><option>Active</option><option>Completed</option>
                 </select>
-                <input className="input-field" type="number" placeholder="Payout" value={dealForm.payout} onChange={(e) => setDealForm((v) => ({ ...v, payout: e.target.value }))} />
                 <button className={styles.actionBtn} type="submit">{drawer.mode === 'edit' ? 'Update Deal' : 'Create Deal'}</button>
               </form>
             )}

@@ -3,7 +3,7 @@ import { Menu, Camera, X, LogOut, Moon, Sun, Shield, Bell, HelpCircle, Plus, Che
 import { useAuth } from '../../store/AuthContext';
 import { useTheme } from '../../store/ThemeContext';
 import { useProfileData } from '../../hooks/useProfileData';
-import { supabase } from '../../services/supabase';
+import { isSupabaseEnabled, resolveOrgUserForAuthUser, supabase } from '../../services/supabase';
 import {
   getInstagramAuthURL,
   getYouTubeAuthURL,
@@ -304,8 +304,8 @@ export default function Setup() {
     setSaving(true);
     setSaveError('');
     try {
-      if (!form.name.trim() || !form.username.trim() || !form.bio.trim() || !form.location.trim()) {
-        throw new Error('Name, username, bio, and location are required.');
+      if (!form.name.trim() || !form.username.trim()) {
+        throw new Error('Name and username are required.');
       }
       if (selectedLocation === 'Other' && !customLocation.trim()) {
         throw new Error('Please enter a valid custom location or choose one of the predefined areas.');
@@ -396,15 +396,53 @@ export default function Setup() {
     setSupportSaving(true);
     setSupportMessage('');
     try {
-      await addSupportTicket({
-        source: 'App',
-        title: supportForm.title.trim() || 'Support request',
-        raisedBy: profile?.name || profile?.username || 'Creator',
-        severity: supportForm.severity,
-        status: 'Open',
-        details: supportForm.details || '',
-        createdAt: new Date().toISOString(),
-      });
+      const subject = supportForm.title.trim() || 'Support request';
+      const description = supportForm.details?.trim() || 'No additional details provided.';
+      const severity = supportForm.severity || 'Medium';
+
+      if (isSupabaseEnabled && user?.id) {
+        const orgUser = await resolveOrgUserForAuthUser({
+          userId: user.id,
+          email: user.email,
+          autoLink: true,
+        });
+
+        const priorityMap = { High: 'high', Medium: 'medium', Low: 'low' };
+        const payload = {
+          organization_id: orgUser?.organization_id,
+          raised_by: orgUser?.id || null,
+          subject,
+          description,
+          priority: priorityMap[severity] || 'medium',
+          status: 'open',
+          category: 'general',
+        };
+
+        if (payload.organization_id) {
+          const { error } = await supabase.from('support_tickets').insert(payload);
+          if (error) throw error;
+        } else {
+          await addSupportTicket({
+            source: 'App',
+            title: subject,
+            raisedBy: profile?.name || profile?.username || user?.email || 'Creator',
+            severity,
+            status: 'Open',
+            details: description,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } else {
+        await addSupportTicket({
+          source: 'App',
+          title: subject,
+          raisedBy: profile?.name || profile?.username || 'Creator',
+          severity,
+          status: 'Open',
+          details: description,
+          createdAt: new Date().toISOString(),
+        });
+      }
       setSupportMessage('Your issue has been sent to the admin dashboard.');
       setSupportForm({ title: '', details: '', severity: 'Medium' });
       setSupportOpen(false);

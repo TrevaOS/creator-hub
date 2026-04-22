@@ -113,6 +113,43 @@ export const supabase = isSupabaseEnabled
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createNoopSupabaseClient();
 
+export async function resolveOrgUserForAuthUser({ userId, email, autoLink = true } = {}) {
+  if (!isSupabaseEnabled) return null;
+
+  let orgUser = null;
+
+  if (userId) {
+    const { data } = await supabase
+      .from('org_users')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (data) orgUser = data;
+  }
+
+  if (!orgUser && email) {
+    const cleanEmail = String(email).trim().toLowerCase();
+    const { data: byEmail } = await supabase
+      .from('org_users')
+      .select('*')
+      .eq('email', cleanEmail);
+
+    orgUser = Array.isArray(byEmail) && byEmail.length > 0 ? byEmail[0] : null;
+
+    if (orgUser && autoLink && userId && !orgUser.user_id) {
+      const { data: linked } = await supabase
+        .from('org_users')
+        .update({ user_id: userId, updated_at: new Date().toISOString() })
+        .eq('id', orgUser.id)
+        .select()
+        .single();
+      if (linked) orgUser = linked;
+    }
+  }
+
+  return orgUser || null;
+}
+
 export async function createCreatorProfile({ authUserId, displayName, username }) {
   if (!isSupabaseEnabled) {
     throw new Error('Supabase is not enabled');
