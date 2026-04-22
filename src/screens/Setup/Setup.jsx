@@ -569,13 +569,17 @@ export default function Setup() {
 
   const openSupportInbox = () => {
     setSupportInboxOpen(true);
-    if (selectedSupportTicketId) {
-      setLastSeenForTicket(selectedSupportTicketId);
-      loadSupportThreads();
-    }
+    if (selectedSupportTicketId) setLastSeenForTicket(selectedSupportTicketId);
+    loadSupportThreads();
   };
 
   const selectedSupportThread = supportThreads.find((thread) => Number(thread.id) === Number(selectedSupportTicketId));
+
+  useEffect(() => {
+    if (!supportInboxOpen || !selectedSupportTicketId) return;
+    setLastSeenForTicket(selectedSupportTicketId);
+    loadSupportThreads();
+  }, [supportInboxOpen, selectedSupportTicketId]);
 
   const sendSupportReply = async (e) => {
     e.preventDefault();

@@ -143,6 +143,18 @@ async function provisionAuthUserByAdmin({ email, password }) {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const fileInputRef = useRef(null);
+  const getAdminLastSeen = () => {
+    try {
+      return JSON.parse(localStorage.getItem('admin_chat_last_seen_v1') || '{}');
+    } catch {
+      return {};
+    }
+  };
+  const markAdminThreadSeen = (threadId) => {
+    const prev = getAdminLastSeen();
+    const next = { ...prev, [threadId]: new Date().toISOString() };
+    localStorage.setItem('admin_chat_last_seen_v1', JSON.stringify(next));
+  };
   const [activeTab, setActiveTab] = useState('Overview');
   const [creators, setCreators] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -183,6 +195,7 @@ export default function AdminDashboard() {
   });
 
   const buildDealChatThreads = (messages, deals, currentUserId) => {
+    const seenMap = getAdminLastSeen();
     const threads = {};
     messages.forEach((msg) => {
       const dealId = msg.deal_id || msg.deal || 'unknown';
@@ -205,15 +218,22 @@ export default function AdminDashboard() {
         from: msg.sender_id === currentUserId ? 'admin' : 'other',
         text: msg.content || msg.body || msg.text || '',
         time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        created_at: msg.created_at,
       });
     });
     return Object.values(threads).map((thread) => ({
       ...thread,
-      unread: thread.messages.filter((message) => message.from === 'other').length,
+      unread: thread.messages.filter((message) => {
+        if (message.from !== 'other') return false;
+        const seenAt = seenMap[thread.id];
+        if (!seenAt) return true;
+        return new Date(message.created_at || 0).getTime() > new Date(seenAt).getTime();
+      }).length,
     }));
   };
 
   const buildSupportChatThreads = (ticketMessages, tickets, adminOrgUserId) => {
+    const seenMap = getAdminLastSeen();
     const threads = {};
     (ticketMessages || []).forEach((msg) => {
       const ticketId = msg.ticket_id;
@@ -236,11 +256,17 @@ export default function AdminDashboard() {
         from: Number(msg.sender_id) === Number(adminOrgUserId) ? 'admin' : 'other',
         text: msg.body || '',
         time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        created_at: msg.created_at,
       });
     });
     return Object.values(threads).map((thread) => ({
       ...thread,
-      unread: thread.messages.filter((message) => message.from === 'other').length,
+      unread: thread.messages.filter((message) => {
+        if (message.from !== 'other') return false;
+        const seenAt = seenMap[thread.id];
+        if (!seenAt) return true;
+        return new Date(message.created_at || 0).getTime() > new Date(seenAt).getTime();
+      }).length,
     }));
   };
 
@@ -421,6 +447,14 @@ export default function AdminDashboard() {
 
   const selectedChat = chats.find((c) => c.id === selectedChatId) || null;
   const unreadCount = chats.reduce((sum, chat) => sum + Number(chat.unread || 0), 0);
+
+  useEffect(() => {
+    if (!selectedChatId) return;
+    markAdminThreadSeen(selectedChatId);
+    setChats((prev) =>
+      prev.map((chat) => (chat.id === selectedChatId ? { ...chat, unread: 0 } : chat)),
+    );
+  }, [selectedChatId]);
 
   function openDrawer(type, mode = 'create', row = null) {
     setDrawer({ open: true, type, mode, id: row?.id ?? null });
