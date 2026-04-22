@@ -1,5 +1,11 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { isDemoMode, supabase, createCreatorProfile, resolveOrgUserForAuthUser } from '../services/supabase';
+import {
+  isDemoMode,
+  supabase,
+  resolveOrgUserForAuthUser,
+  ensureCreatorScaffold,
+  isSuperAdminEmail,
+} from '../services/supabase';
 
 const AuthContext = createContext(null);
 
@@ -156,8 +162,9 @@ export function AuthProvider({ children }) {
 
     if (data.user) {
       try {
-        await createCreatorProfile({
-          authUserId: data.user.id,
+        await ensureCreatorScaffold({
+          userId: data.user.id,
+          email,
           displayName: username || email.split('@')[0],
           username: cleanUsername,
         });
@@ -191,6 +198,14 @@ export function AuthProvider({ children }) {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (data?.user) {
+      await ensureCreatorScaffold({
+        userId: data.user.id,
+        email: data.user.email || email,
+        displayName: data.user.user_metadata?.full_name || data.user.user_metadata?.name || email.split('@')[0],
+        username: data.user.user_metadata?.username || email.split('@')[0],
+      });
+    }
     return data;
   };
 
@@ -231,8 +246,10 @@ export function AuthProvider({ children }) {
     return mapped;
   };
 
+  const isAdmin = isSuperAdminEmail(state.user?.email);
+
   return (
-    <AuthContext.Provider value={{ ...state, signUp, signIn, signOut, updateProfile, dispatch }}>
+    <AuthContext.Provider value={{ ...state, signUp, signIn, signOut, updateProfile, dispatch, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

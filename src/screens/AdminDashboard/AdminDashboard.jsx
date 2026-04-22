@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+﻿import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   AlertTriangle,
   BadgeIndianRupee,
@@ -144,18 +144,19 @@ export default function AdminDashboard() {
     history: row.history || row.history_notes || [],
   });
 
-  const buildChatThreads = (messages, deals) => {
+  const buildDealChatThreads = (messages, deals, currentUserId) => {
     const threads = {};
     messages.forEach((msg) => {
       const dealId = msg.deal_id || msg.deal || 'unknown';
       const deal = deals.find((d) => String(d.id) === String(dealId));
-      const threadId = dealId || msg.sender_id || `chat_${msg.id}`;
+      const threadId = `deal_${dealId || msg.sender_id || `chat_${msg.id}`}`;
       if (!threads[threadId]) {
         threads[threadId] = {
           id: threadId,
+          chatType: 'deal',
           dealId,
           participantName: deal ? `${deal.brand} • ${deal.creator}` : `Chat ${threadId}`,
-          participantType: deal ? 'Deal Chat' : 'Support',
+          participantType: 'Deal Chat',
           topic: deal ? deal.type || `Deal ${dealId}` : msg.topic || 'Conversation',
           unread: 0,
           messages: [],
@@ -163,8 +164,36 @@ export default function AdminDashboard() {
       }
       threads[threadId].messages.push({
         id: msg.id,
-        from: msg.sender_id === user?.id ? 'admin' : 'other',
+        from: msg.sender_id === currentUserId ? 'admin' : 'other',
         text: msg.content || msg.body || msg.text || '',
+        time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+      });
+    });
+    return Object.values(threads);
+  };
+
+  const buildSupportChatThreads = (ticketMessages, tickets, adminOrgUserId) => {
+    const threads = {};
+    (ticketMessages || []).forEach((msg) => {
+      const ticketId = msg.ticket_id;
+      const ticket = (tickets || []).find((t) => Number(t.id) === Number(ticketId));
+      const threadId = `ticket_${ticketId}`;
+      if (!threads[threadId]) {
+        threads[threadId] = {
+          id: threadId,
+          chatType: 'ticket',
+          ticketId,
+          participantName: ticket?.raisedBy || `Ticket #${ticketId}`,
+          participantType: 'Support Ticket',
+          topic: ticket?.title || `Ticket ${ticketId}`,
+          unread: 0,
+          messages: [],
+        };
+      }
+      threads[threadId].messages.push({
+        id: `ticket_${msg.id}`,
+        from: Number(msg.sender_id) === Number(adminOrgUserId) ? 'admin' : 'other',
+        text: msg.body || '',
         time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
       });
     });
@@ -205,6 +234,7 @@ export default function AdminDashboard() {
             autoLink: true,
           });
           const organizationId = currentOrgUser?.organization_id || null;
+          const adminOrgUserId = currentOrgUser?.id || null;
 
           const creatorProfilesQuery = supabase.from('creator_profiles').select('*');
           const orgUsersQuery = organizationId
@@ -216,14 +246,16 @@ export default function AdminDashboard() {
           const ticketsQuery = organizationId
             ? supabase.from('support_tickets').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false })
             : supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
+          const ticketMessagesQuery = supabase.from('ticket_messages').select('id,ticket_id,sender_id,body,created_at').order('created_at', { ascending: true });
 
-          const [creatorRes, orgUserRes, brandRes, dealRes, messageRes, supportRes] = await Promise.all([
+          const [creatorRes, orgUserRes, brandRes, dealRes, messageRes, supportRes, ticketMsgRes] = await Promise.all([
             creatorProfilesQuery,
             orgUsersQuery,
             brandsQuery,
             dealsQuery,
             messagesQuery,
             ticketsQuery,
+            ticketMessagesQuery,
           ]);
 
           const creatorRows = [
@@ -248,12 +280,12 @@ export default function AdminDashboard() {
           if (dealRes.data) {
             remoteDeals = dealRes.data.map(normalizeDealRow);
           }
-          if (messageRes.data) {
-            remoteChats = buildChatThreads(messageRes.data, remoteDeals);
-          }
           if (supportRes?.data) {
             remoteSupportTickets = supportRes.data.map(normalizeSupportTicketRow);
           }
+          const dealThreads = messageRes?.data ? buildDealChatThreads(messageRes.data, remoteDeals, user?.id) : [];
+          const supportThreads = ticketMsgRes?.data ? buildSupportChatThreads(ticketMsgRes.data, remoteSupportTickets, adminOrgUserId) : [];
+          remoteChats = [...supportThreads, ...dealThreads];
         } catch (err) {
           console.warn('[AdminDashboard] remote Supabase load failed, using local admin data', err);
         }
@@ -591,6 +623,32 @@ export default function AdminDashboard() {
           ),
         );
       }
+      return;
+    }
+
+    if (isSupabaseEnabled && selectedChat.ticketId) {
+      const adminOrgUser = await resolveOrgUserForAuthUser({
+        userId: user.id,
+        email: user.email,
+        autoLink: true,
+      });
+      if (!adminOrgUser?.id) return;
+
+      const { error } = await supabase.from('ticket_messages').insert({
+        ticket_id: Number(selectedChat.ticketId),
+        sender_id: adminOrgUser.id,
+        sender_type: 'org_user',
+        body: messageText,
+      });
+      if (error) {
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === selectedChat.id
+              ? { ...c, messages: c.messages.filter((m) => m.id !== optimisticMessage.id) }
+              : c,
+          ),
+        );
+      }
     }
   }
 
@@ -870,7 +928,7 @@ export default function AdminDashboard() {
                   <button key={chat.id} className={`${styles.chatThread} ${selectedChatId === chat.id ? styles.chatThreadActive : ''}`} onClick={() => setSelectedChatId(chat.id)}>
                     <div>
                       <strong>{chat.participantName}</strong>
-                      <p>{chat.participantType} • {chat.topic}</p>
+                      <p>{chat.participantType} â€¢ {chat.topic}</p>
                     </div>
                     {chat.unread > 0 && <span className={styles.unreadBadge}>{chat.unread}</span>}
                   </button>
@@ -977,7 +1035,7 @@ export default function AdminDashboard() {
                 </select>
                 <select className="input-field" value={ticketForm.linkedDealId} onChange={(e) => setTicketForm((v) => ({ ...v, linkedDealId: e.target.value }))}>
                   <option value="">Link deal (optional)</option>
-                  {deals.map((d) => <option key={d.id} value={d.id}>{d.id} • {d.brand} × {d.creator}</option>)}
+                  {deals.map((d) => <option key={d.id} value={d.id}>{d.id} â€¢ {d.brand} Ã— {d.creator}</option>)}
                 </select>
                 <button className={styles.actionBtn} type="submit">{drawer.mode === 'edit' ? 'Update Ticket' : 'Raise Ticket'}</button>
               </form>
@@ -1109,3 +1167,6 @@ function capitalize(str) {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+
+

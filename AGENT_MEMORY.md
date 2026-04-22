@@ -23,3 +23,25 @@
 - If deployment fails, check the import path first.
 - If runtime insert still fails, verify that the function secret is set and that `creator_profiles` exists.
 - Use `https://<project>.supabase.co/functions/v1/create-creator-profile` as the function endpoint.
+
+## Production User Journey (Locked)
+
+- No dummy/demo mode for production flows.
+- Signup flow is: `Sign up -> username captured -> profile scaffold auto-created -> app access`.
+- Creator profile basics must be saved once and auto-loaded from Supabase on next login.
+- Primary identity mapping:
+  - `auth.users.id` -> `creator_profiles.auth_user_id`
+  - `auth.users.id` -> `org_users.user_id` (auto-link by matching email if missing)
+- On successful auth, app ensures:
+  - `creator_profiles` row exists
+  - `creator_dashboard_modules` row exists
+  - `org_users.user_id` is linked when matching email exists
+
+## Admin Policy
+
+- `fgdhanush@gmail.com` is super admin and must always access `/admin-dashboard`.
+- Admin dashboard must show data from Supabase tables (not local-only fallback when remote is available).
+- Support workflow:
+  - User raises ticket -> stored in `support_tickets`
+  - Admin replies -> stored in `ticket_messages`
+  - Admin can view and respond from the Chats section.

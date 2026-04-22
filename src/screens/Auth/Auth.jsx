@@ -13,8 +13,6 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp }    = useAuth();
   const navigate              = useNavigate();
-  const DEFAULT_EMAIL = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL || '';
-  const DEFAULT_PASSWORD = import.meta.env.VITE_DEFAULT_LOGIN_PASSWORD || '';
 
   const submit = async (e) => {
     e.preventDefault();
@@ -23,7 +21,7 @@ export default function Auth() {
     try {
       if (mode === 'signup') {
         await signUp(email, password, username);
-        navigate('/onboarding', { replace: true });
+        navigate('/dashboard', { replace: true });
       } else {
         await signIn(email, password);
         navigate('/dashboard', { replace: true });
@@ -34,26 +32,6 @@ export default function Auth() {
     setLoading(false);
   };
 
-  const useDefaultAccess = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      await signIn(DEFAULT_EMAIL, DEFAULT_PASSWORD);
-      navigate('/dashboard', { replace: true });
-      return;
-    } catch {
-      // If user does not exist yet, try creating once.
-    }
-
-    try {
-      await signUp(DEFAULT_EMAIL, DEFAULT_PASSWORD, 'creator_admin');
-      await signIn(DEFAULT_EMAIL, DEFAULT_PASSWORD);
-      navigate('/dashboard', { replace: true });
-    } catch (err) {
-      setError(err.message || 'Default access failed');
-    }
-    setLoading(false);
-  };
 
   return (
     <main className={styles.screen}>
@@ -146,17 +124,6 @@ export default function Auth() {
             ? <>Don't have an account? <span>&nbsp;Sign Up</span></>
             : <>Already have an account? <span>&nbsp;Sign In</span></>}
         </button>
-
-        {DEFAULT_EMAIL && DEFAULT_PASSWORD && (
-          <button
-            type="button"
-            className={`btn btn-secondary btn-full ${styles.switchBtn}`}
-            onClick={useDefaultAccess}
-            disabled={loading}
-          >
-            Use Default Access
-          </button>
-        )}
 
       </div>
     </main>

@@ -34,6 +34,7 @@ const hasValidAnonKey = typeof supabaseAnonKey === 'string' && supabaseAnonKey.l
 
 export const isSupabaseEnabled = hasValidUrl && hasValidAnonKey;
 export const isDemoMode = allowDemoMode && (!isSupabaseEnabled || disableSupabase);
+export const SUPER_ADMIN_EMAILS = ['fgdhanush@gmail.com'];
 export const supabaseConfigError = isSupabaseEnabled
   ? null
   : `Supabase env missing/invalid: ${
@@ -141,6 +142,11 @@ export const supabase = isSupabaseEnabled
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createNoopSupabaseClient();
 
+export function isSuperAdminEmail(email) {
+  const clean = String(email || '').trim().toLowerCase();
+  return SUPER_ADMIN_EMAILS.includes(clean);
+}
+
 export async function resolveOrgUserForAuthUser({ userId, email, autoLink = true } = {}) {
   if (!isSupabaseEnabled) return null;
 
@@ -203,6 +209,31 @@ export async function createCreatorProfile({ authUserId, displayName, username }
 
   console.warn('[createCreatorProfile] direct upsert failed, falling back to edge function:', error);
   return createCreatorProfileViaFunction({ authUserId, displayName, username: cleanUsername });
+}
+
+export async function ensureCreatorScaffold({ userId, email, displayName, username }) {
+  if (!isSupabaseEnabled || !userId) return null;
+
+  const cleanUsername = String(username || '').trim().toLowerCase().replace(/\s+/g, '_');
+  const cleanDisplayName = String(displayName || cleanUsername || email?.split('@')[0] || 'Creator').trim();
+
+  const profile = await createCreatorProfile({
+    authUserId: userId,
+    displayName: cleanDisplayName,
+    username: cleanUsername || cleanDisplayName.toLowerCase().replace(/\s+/g, '_'),
+  });
+
+  const profileId = profile?.id || null;
+
+  if (profileId) {
+    await supabase.from('creator_dashboard_modules').upsert(
+      { user_id: userId, creator_profile_id: profileId },
+      { onConflict: 'user_id' },
+    );
+  }
+
+  await resolveOrgUserForAuthUser({ userId, email, autoLink: true });
+  return profile;
 }
 
 export async function createCreatorProfileViaFunction({ authUserId, displayName, username }) {

@@ -12,14 +12,14 @@ import DealChat from './screens/Deals/DealChat';
 import Setup from './screens/Setup/Setup';
 import OAuthCallback from './screens/OAuthCallback/OAuthCallback';
 import AdminDashboard from './screens/AdminDashboard/AdminDashboard';
+import { isSuperAdminEmail } from './services/supabase';
 
 const TABBED_ROUTES = ['/dashboard', '/analytics', '/search', '/deals', '/setup'];
 
 function ProtectedRoute({ children }) {
   const { user, profile, loading } = useAuth();
   const location = useLocation();
-  const DEFAULT_ACCESS_EMAIL = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL?.toLowerCase() || '';
-  const isDefaultAccess = Boolean(DEFAULT_ACCESS_EMAIL && user?.email?.toLowerCase() === DEFAULT_ACCESS_EMAIL);
+  const isSuperAdmin = isSuperAdminEmail(user?.email);
 
   if (loading) return (
     <div style={{
@@ -42,17 +42,14 @@ function ProtectedRoute({ children }) {
   if (!user) return <Navigate to="/auth" replace />;
   const profileComplete = Boolean(
     profile?.name?.trim() &&
-    profile?.username?.trim() &&
-    profile?.bio?.trim() &&
-    profile?.location?.trim()
+    profile?.username?.trim()
   );
-  if (!profileComplete && !isDefaultAccess && location.pathname !== '/setup') return <Navigate to="/setup" replace />;
+  if (!profileComplete && !isSuperAdmin && location.pathname !== '/setup') return <Navigate to="/setup" replace />;
   return children;
 }
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
-  const DEFAULT_ACCESS_EMAIL = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL?.toLowerCase() || '';
 
   if (loading) return (
     <div style={{
@@ -73,7 +70,7 @@ function AdminRoute({ children }) {
   );
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (!DEFAULT_ACCESS_EMAIL || user?.email?.toLowerCase() !== DEFAULT_ACCESS_EMAIL) return <Navigate to="/dashboard" replace />;
+  if (!isSuperAdminEmail(user?.email)) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
