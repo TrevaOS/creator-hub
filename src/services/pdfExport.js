@@ -1,277 +1,172 @@
 import jsPDF from 'jspdf';
 
-const CANE = [201, 169, 110];
-const BLACK = [17, 17, 17];
+const ACCENT = [29, 78, 216];
+const TEXT = [15, 23, 42];
+const MUTED = [100, 116, 139];
+const CARD = [248, 250, 252];
 const WHITE = [255, 255, 255];
-const GREY = [158, 158, 158];
 
-function addFooter(doc, username, pageNum, totalPages) {
-  const pageHeight = doc.internal.pageSize.height;
-  const pageWidth = doc.internal.pageSize.width;
-
-  doc.setFillColor(...CANE);
-  doc.rect(0, pageHeight - 16, pageWidth, 16, 'F');
-
+function addHeader(doc, title) {
+  const width = doc.internal.pageSize.width;
+  doc.setFillColor(...ACCENT);
+  doc.rect(0, 0, width, 26, 'F');
   doc.setTextColor(...WHITE);
-  doc.setFontSize(8);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, 14, 16);
+}
+
+function addFooter(doc, username, page, total) {
+  const pageHeight = doc.internal.pageSize.height;
+  const width = doc.internal.pageSize.width;
+  doc.setTextColor(...MUTED);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('CreatorHub', 10, pageHeight - 5);
-  doc.text(`ourcreatorhub.com/${username || 'creator'}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
-  doc.text(`${pageNum} / ${totalPages}`, pageWidth - 10, pageHeight - 5, { align: 'right' });
+  doc.text(`creatorhub.treva.in/${username || 'creator'}`, 14, pageHeight - 8);
+  doc.text(`${page}/${total}`, width - 14, pageHeight - 8, { align: 'right' });
+}
+
+async function imageToDataUrl(url) {
+  if (!url) return null;
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function formatMetric(value) {
+  if (value === null || value === undefined || value === '') return '-';
+  return String(value);
 }
 
 export async function generateMediaKit(profile, analytics, carouselImages, collabBrands) {
   const doc = new jsPDF({ format: 'a4', unit: 'mm' });
-  const pageWidth = doc.internal.pageSize.width;
-  const totalPages = 4;
+  const width = doc.internal.pageSize.width;
+  const totalPages = 2;
+  const avatarData = await imageToDataUrl(profile?.avatar_url);
 
-  // ===== PAGE 1: Profile =====
-  // Header bar
-  doc.setFillColor(...CANE);
-  doc.rect(0, 0, pageWidth, 50, 'F');
+  addHeader(doc, 'Media Kit');
 
-  // Name
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(28);
+  if (avatarData) {
+    doc.addImage(avatarData, 'JPEG', 14, 34, 34, 34);
+  } else {
+    doc.setFillColor(226, 232, 240);
+    doc.circle(31, 51, 17, 'F');
+  }
+
+  doc.setTextColor(...TEXT);
   doc.setFont('helvetica', 'bold');
-  doc.text(profile?.name || 'Creator', 20, 28);
-
-  // Tagline
-  doc.setFontSize(12);
+  doc.setFontSize(20);
+  doc.text(profile?.name || 'Creator', 54, 45);
   doc.setFont('helvetica', 'normal');
-  doc.text(profile?.tagline || '', 20, 40);
-
-  // Location
-  if (profile?.location) {
-    doc.setFontSize(10);
-    doc.text(`📍 ${profile.location}`, 20, 65);
-  }
-
-  // Bio
-  doc.setTextColor(...BLACK);
   doc.setFontSize(11);
-  const bioLines = doc.splitTextToSize(profile?.bio || '', pageWidth - 40);
-  doc.text(bioLines, 20, 80);
+  doc.setTextColor(...MUTED);
+  doc.text(`@${profile?.username || 'creator'}`, 54, 52);
+  doc.text(profile?.location || 'Location not set', 54, 58);
 
-  // Niche Tags
-  if (profile?.niche_tags?.length) {
+  const bioText = profile?.bio || profile?.tagline || 'Professional creator profile for brand collaborations.';
+  doc.setTextColor(...TEXT);
+  doc.setFontSize(11);
+  const bioLines = doc.splitTextToSize(bioText, width - 28);
+  doc.text(bioLines, 14, 80);
+
+  const cards = [
+    { label: 'Followers', value: analytics?.followers || profile?.follower_count || '-' },
+    { label: 'Engagement', value: analytics?.engagement || '-' },
+    { label: 'Reach', value: analytics?.reach || '-' },
+    { label: 'Top Platform', value: analytics?.topPlatform || '-' },
+  ];
+
+  let y = 104;
+  cards.forEach((card, i) => {
+    const x = 14 + (i % 2) * ((width - 38) / 2 + 10);
+    if (i > 0 && i % 2 === 0) y += 30;
+    doc.setFillColor(...CARD);
+    doc.roundedRect(x, y, (width - 38) / 2, 24, 3, 3, 'F');
+    doc.setTextColor(...MUTED);
     doc.setFontSize(9);
-    doc.setTextColor(...CANE);
+    doc.text(card.label, x + 4, y + 8);
+    doc.setTextColor(...TEXT);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('NICHES', 20, 115);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...BLACK);
-
-    let xPos = 20;
-    profile.niche_tags.forEach(tag => {
-      const tagWidth = doc.getTextWidth(tag) + 10;
-      doc.setFillColor(...CANE);
-      doc.roundedRect(xPos, 120, tagWidth, 8, 2, 2, 'F');
-      doc.setTextColor(...WHITE);
-      doc.setFontSize(8);
-      doc.text(tag, xPos + 5, 126);
-      xPos += tagWidth + 5;
-    });
-  }
-
-  // Profile URL
-  doc.setTextColor(...GREY);
-  doc.setFontSize(10);
-  doc.text(`ourcreatorhub.com/${profile?.username || 'creator'}`, 20, 150);
+    doc.text(formatMetric(card.value), x + 4, y + 18);
+  });
 
   addFooter(doc, profile?.username, 1, totalPages);
 
-  // ===== PAGE 2: Stats =====
   doc.addPage();
+  addHeader(doc, 'Work Highlights');
 
-  doc.setFillColor(...CANE);
-  doc.rect(0, 0, pageWidth, 20, 'F');
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(16);
+  doc.setTextColor(...TEXT);
   doc.setFont('helvetica', 'bold');
-  doc.text('Social Media Stats', 20, 14);
+  doc.setFontSize(12);
+  doc.text('Featured Work', 14, 36);
 
-  const stats = analytics || {
-    instagram: { followers: '12.5K', engagement: '4.2%', reach: '45K' },
-    youtube: { subscribers: '8.2K', views: '120K', watchTime: '3.2K hrs' },
-  };
-
-  let yPos = 35;
-  const platforms = Object.entries(stats);
-  platforms.forEach(([platform, data]) => {
-    doc.setFillColor(245, 245, 245);
-    doc.roundedRect(15, yPos, pageWidth - 30, 45, 4, 4, 'F');
-
-    doc.setTextColor(...BLACK);
-    doc.setFontSize(13);
-    doc.setFont('helvetica', 'bold');
-    doc.text(platform.charAt(0).toUpperCase() + platform.slice(1), 22, yPos + 12);
-
+  const featured = (carouselImages || []).slice(0, 4);
+  if (featured.length === 0) {
+    doc.setTextColor(...MUTED);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    let xStat = 22;
-    Object.entries(data).forEach(([key, val]) => {
-      doc.setTextColor(...GREY);
-      doc.text(key.toUpperCase(), xStat, yPos + 24);
-      doc.setTextColor(...BLACK);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(String(val), xStat, yPos + 35);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      xStat += 50;
-    });
+    doc.text('No featured work uploaded yet.', 14, 44);
+  } else {
+    let imageY = 42;
+    for (let i = 0; i < featured.length; i += 1) {
+      const imageData = await imageToDataUrl(featured[i]?.image_url);
+      const x = 14 + (i % 2) * 92;
+      if (i > 0 && i % 2 === 0) imageY += 56;
+      if (imageData) {
+        doc.addImage(imageData, 'JPEG', x, imageY, 86, 48);
+      } else {
+        doc.setFillColor(226, 232, 240);
+        doc.rect(x, imageY, 86, 48, 'F');
+      }
+    }
+  }
 
-    yPos += 55;
-  });
+  const brands = (collabBrands || []).slice(0, 6);
+  const brandsY = featured.length > 2 ? 160 : 128;
+  doc.setTextColor(...TEXT);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Past Collaborations', 14, brandsY);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...MUTED);
+  if (brands.length === 0) {
+    doc.text('No brand collaborations listed yet.', 14, brandsY + 8);
+  } else {
+    brands.forEach((brand, index) => {
+      doc.text(`- ${brand.brand_name || brand.name || 'Brand'}`, 14, brandsY + 8 + index * 6);
+    });
+  }
 
   addFooter(doc, profile?.username, 2, totalPages);
-
-  // ===== PAGE 3: Featured Work =====
-  doc.addPage();
-
-  doc.setFillColor(...CANE);
-  doc.rect(0, 0, pageWidth, 20, 'F');
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Featured Work', 20, 14);
-
-  if (carouselImages?.length) {
-    doc.setTextColor(...BLACK);
-    doc.setFontSize(10);
-    doc.text(`${carouselImages.length} featured pieces`, 20, 32);
-
-    // Placeholder grid for images
-    let imgX = 15;
-    let imgY = 40;
-    carouselImages.slice(0, 6).forEach((img, i) => {
-      if (i > 0 && i % 3 === 0) {
-        imgX = 15;
-        imgY += 75;
-      }
-      doc.setFillColor(245, 245, 245);
-      doc.roundedRect(imgX, imgY, 55, 65, 4, 4, 'F');
-      doc.setTextColor(...GREY);
-      doc.setFontSize(8);
-      doc.text(`Image ${i + 1}`, imgX + 15, imgY + 35);
-      imgX += 60;
-    });
-  } else {
-    doc.setTextColor(...GREY);
-    doc.setFontSize(12);
-    doc.text('No featured work added yet', 20, 50);
-  }
-
-  addFooter(doc, profile?.username, 3, totalPages);
-
-  // ===== PAGE 4: Collaborations =====
-  doc.addPage();
-
-  doc.setFillColor(...CANE);
-  doc.rect(0, 0, pageWidth, 20, 'F');
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Past Collaborations', 20, 14);
-
-  if (collabBrands?.length) {
-    let colY = 35;
-    collabBrands.forEach((brand, i) => {
-      doc.setFillColor(245, 245, 245);
-      doc.roundedRect(15, colY, pageWidth - 30, 20, 4, 4, 'F');
-      doc.setTextColor(...BLACK);
-      doc.setFontSize(12);
-      doc.text(brand.brand_name, 25, colY + 13);
-      colY += 26;
-    });
-  } else {
-    doc.setTextColor(...GREY);
-    doc.setFontSize(12);
-    doc.text('No collaborations listed yet', 20, 50);
-  }
-
-  addFooter(doc, profile?.username, 4, totalPages);
-
-  // Save
-  const filename = `${profile?.username || 'creator'}_MediaKit.pdf`;
-  doc.save(filename);
+  doc.save(`${profile?.username || 'creator'}_MediaKit.pdf`);
 }
 
 export async function generateAnalyticsReport(profile, analytics, dateRange = 'Last 30 days') {
   const doc = new jsPDF({ format: 'a4', unit: 'mm' });
-  const pageWidth = doc.internal.pageSize.width;
-
-  // Header
-  doc.setFillColor(...CANE);
-  doc.rect(0, 0, pageWidth, 25, 'F');
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Analytics Report', 20, 17);
-
-  // Meta
+  const width = doc.internal.pageSize.width;
+  addHeader(doc, 'Analytics Report');
+  doc.setTextColor(...MUTED);
   doc.setFontSize(10);
-  doc.text(dateRange, pageWidth - 20, 17, { align: 'right' });
-
-  // Creator info
-  doc.setTextColor(...BLACK);
-  doc.setFontSize(12);
+  doc.text(dateRange, width - 14, 16, { align: 'right' });
+  doc.setTextColor(...TEXT);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(profile?.name || 'Creator', 20, 40);
+  doc.text(profile?.name || 'Creator', 14, 40);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(...GREY);
-  if (profile?.niche_tags?.length) {
-    doc.text(profile.niche_tags.join(' · '), 20, 48);
-  }
-
-  // Stats grid
-  const mockStats = [
-    { label: 'Total Reach', value: '125K', delta: '+12%' },
-    { label: 'Impressions', value: '340K', delta: '+8%' },
-    { label: 'Engagement Rate', value: '4.2%', delta: '+0.5%' },
-    { label: 'New Followers', value: '2.1K', delta: '+23%' },
-    { label: 'Total Likes', value: '18.5K', delta: '+15%' },
-    { label: 'Comments', value: '1.2K', delta: '+7%' },
-  ];
-
-  let xPos = 15;
-  let yPos = 60;
-  mockStats.forEach((stat, i) => {
-    if (i > 0 && i % 3 === 0) {
-      xPos = 15;
-      yPos += 45;
-    }
-    const cardWidth = (pageWidth - 35) / 3;
-    doc.setFillColor(245, 245, 245);
-    doc.roundedRect(xPos, yPos, cardWidth, 38, 4, 4, 'F');
-
-    doc.setTextColor(...GREY);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(stat.label, xPos + 5, yPos + 10);
-
-    doc.setTextColor(...BLACK);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(stat.value, xPos + 5, yPos + 24);
-
-    doc.setTextColor(...CANE);
-    doc.setFontSize(9);
-    doc.text(stat.delta, xPos + 5, yPos + 34);
-
-    xPos += cardWidth + 5;
+  doc.setFontSize(11);
+  const metrics = Object.entries(analytics || {});
+  metrics.forEach(([key, value], idx) => {
+    doc.text(`${key}: ${formatMetric(value)}`, 14, 52 + idx * 8);
   });
-
-  // Footer
-  const pageHeight = doc.internal.pageSize.height;
-  doc.setFillColor(...CANE);
-  doc.rect(0, pageHeight - 16, pageWidth, 16, 'F');
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(8);
-  doc.text('CreatorHub Analytics', 10, pageHeight - 5);
-  doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
-
+  addFooter(doc, profile?.username, 1, 1);
   doc.save(`${profile?.username || 'creator'}_Analytics.pdf`);
 }

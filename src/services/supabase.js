@@ -142,6 +142,17 @@ export const supabase = isSupabaseEnabled
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createNoopSupabaseClient();
 
+export function createEphemeralAnonClient() {
+  if (!isSupabaseEnabled) return createNoopSupabaseClient();
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 export function isSuperAdminEmail(email) {
   const clean = String(email || '').trim().toLowerCase();
   return SUPER_ADMIN_EMAILS.includes(clean);

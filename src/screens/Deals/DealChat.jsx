@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
-import { supabase } from '../../services/supabase';
+import { resolveOrgUserForAuthUser, supabase } from '../../services/supabase';
 import styles from './DealChat.module.css';
 
 function formatTime(iso) {
@@ -18,6 +18,7 @@ export default function DealChat() {
   const [input, setInput] = useState('');
   const [briefOpen, setBriefOpen] = useState(false);
   const [deal, setDeal] = useState(null);
+  const [senderOrgUserId, setSenderOrgUserId] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -44,6 +45,15 @@ export default function DealChat() {
         .order('created_at', { ascending: true });
 
       if (active) setMessages(data || []);
+
+      const orgUser = await resolveOrgUserForAuthUser({
+        userId: user.id,
+        email: user.email,
+        autoLink: true,
+      });
+      if (active) {
+        setSenderOrgUserId(orgUser?.id || null);
+      }
     })();
 
     const channel = supabase
@@ -88,7 +98,7 @@ export default function DealChat() {
 
     const { error } = await supabase.from('creator_hub_messages').insert({
       deal_id: dealId,
-      sender_id: user.id,
+      sender_id: senderOrgUserId || user.id,
       content,
     });
 
@@ -104,6 +114,8 @@ export default function DealChat() {
     }
   };
 
+  const brandName = deal?.brand_name || deal?.brand || 'Brand';
+
   return (
     <main className={styles.screen}>
       <div className={styles.topBar}>
@@ -111,9 +123,9 @@ export default function DealChat() {
           <ArrowLeft size={24} />
         </button>
         <div className={styles.chatInfo}>
-          <div className={styles.chatAvatar}>{(deal?.brand_name || 'B').charAt(0).toUpperCase()}</div>
+          <div className={styles.chatAvatar}>{(brandName || 'B').charAt(0).toUpperCase()}</div>
           <div>
-            <p className={styles.chatName}>{deal?.brand_name || 'Brand'}</p>
+            <p className={styles.chatName}>{brandName}</p>
             <p className={styles.chatStatus}>Online</p>
           </div>
         </div>
@@ -121,7 +133,7 @@ export default function DealChat() {
 
       <div className={styles.briefCard}>
         <button className={styles.briefToggle} onClick={() => setBriefOpen(!briefOpen)}>
-          <span className={styles.briefTitle}>Deal Brief - {(deal?.brand_name || 'Brand')} x You</span>
+          <span className={styles.briefTitle}>Deal Brief - {brandName} x You</span>
           {briefOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
         {briefOpen && (

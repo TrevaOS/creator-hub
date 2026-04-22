@@ -65,8 +65,25 @@ export default function Deals() {
       .select('*, creator_hub_deals(*)')
       .eq('user_id', user.id);
     const list = data || [];
-    setAcceptedDeals(list);
-    setAcceptedIds(new Set(list.map(d => d.deal_id)));
+    const missingDealIds = list
+      .filter((item) => !item.creator_hub_deals && item.deal_id)
+      .map((item) => item.deal_id);
+
+    let fallbackDealMap = new Map();
+    if (missingDealIds.length > 0) {
+      const { data: fallbackDeals } = await supabase
+        .from('creator_hub_deals')
+        .select('*')
+        .in('id', missingDealIds);
+      fallbackDealMap = new Map((fallbackDeals || []).map((deal) => [deal.id, deal]));
+    }
+
+    const normalized = list.map((item) => ({
+      ...item,
+      creator_hub_deals: item.creator_hub_deals || fallbackDealMap.get(item.deal_id) || null,
+    }));
+    setAcceptedDeals(normalized);
+    setAcceptedIds(new Set(normalized.map(d => d.deal_id)));
   }
 
   async function acceptDeal(e, dealId) {
@@ -274,7 +291,7 @@ function DealCard({ deal, isAccepted, onPress, onAccept, onChat }) {
           </div>
           <div className={styles.dealPayout}>
             <span className={styles.payoutBadge}>
-              ₹{(payoutMin / 1000).toFixed(0)}K–{(payoutMax / 1000).toFixed(0)}K
+              Rs {(payoutMin / 1000).toFixed(0)}K - {(payoutMax / 1000).toFixed(0)}K
             </span>
           </div>
         </div>
@@ -352,6 +369,8 @@ function DealCard({ deal, isAccepted, onPress, onAccept, onChat }) {
 
 function AcceptedDealCard({ acceptedDeal, onChat, onView }) {
   const deal = acceptedDeal.creator_hub_deals || acceptedDeal;
+  const brandName = deal?.brand_name || deal?.brand || 'Brand';
+  const deliverable = deal?.deliverables || deal?.requirement || deal?.type || 'To be discussed';
   const statusColors = { pending: '#f59e0b', active: '#10b981', completed: '#6b7280', rejected: '#ef4444' };
 
   return (
@@ -359,14 +378,14 @@ function AcceptedDealCard({ acceptedDeal, onChat, onView }) {
       <div className={styles.acceptedInner}>
         <div className={styles.acceptedBrand}>
           {deal?.brand_logo ? (
-            <img src={deal.brand_logo} alt={deal.brand_name} className={styles.acceptedLogoImg} />
+            <img src={deal.brand_logo} alt={brandName} className={styles.acceptedLogoImg} />
           ) : (
-            <span>{deal?.brand_name?.[0] || 'B'}</span>
+            <span>{brandName?.[0] || 'B'}</span>
           )}
         </div>
         <div className={styles.acceptedInfo}>
-          <p className={styles.acceptedBrandName}>{deal?.brand_name || 'Brand'}</p>
-          <p className={styles.acceptedDeliverable}>{deal?.deliverables || 'TBD'}</p>
+          <p className={styles.acceptedBrandName}>{brandName}</p>
+          <p className={styles.acceptedDeliverable}>{deliverable}</p>
           <span
             className={styles.statusPill}
             style={{ backgroundColor: `${statusColors[acceptedDeal.status]}20`, color: statusColors[acceptedDeal.status] }}

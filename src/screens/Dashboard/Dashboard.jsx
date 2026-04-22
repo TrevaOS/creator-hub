@@ -223,7 +223,13 @@ export default function Dashboard() {
 
   const downloadKit = async () => {
     setExporting(true);
-    await generateMediaKit(displayProfile, null, carouselImages, collabBrands);
+    const mediaKitAnalytics = {
+      followers: followers || '-',
+      engagement: engagement || '-',
+      reach: ytData?.channel?.statistics?.viewCount || '-',
+      topPlatform: instagramSocial ? 'Instagram' : youtubeSocial ? 'YouTube' : 'Creator Hub',
+    };
+    await generateMediaKit(displayProfile, mediaKitAnalytics, carouselImages, collabBrands);
     setExporting(false);
   };
 

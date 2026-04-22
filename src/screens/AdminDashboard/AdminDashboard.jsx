@@ -18,10 +18,19 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { loadAdminData, resetAdminData, saveAdminData } from '../../services/adminStore';
-import { isSupabaseEnabled, resolveOrgUserForAuthUser, supabase } from '../../services/supabase';
+import { createEphemeralAnonClient, isSupabaseEnabled, resolveOrgUserForAuthUser, supabase } from '../../services/supabase';
 import styles from './AdminDashboard.module.css';
 
-const EMPTY_CREATOR = { name: '', niche: '', followers: '', city: '' };
+const EMPTY_CREATOR = {
+  name: '',
+  niche: '',
+  followers: '',
+  city: '',
+  email: '',
+  phone: '',
+  password: '',
+  accountSource: 'self_signup',
+};
 const EMPTY_BRAND = {
   name: '',
   industry: '',
@@ -31,6 +40,8 @@ const EMPTY_BRAND = {
   cin: '',
   email: '',
   phone: '',
+  password: '',
+  accountSource: 'self_signup',
   address: '',
   historyNote: '',
 };
@@ -110,6 +121,24 @@ function uiToDbPriority(severity) {
   if (value === 'high' || value === 'low') return value;
   return 'medium';
 }
+
+async function provisionAuthUserByAdmin({ email, password }) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanPassword = String(password || '');
+  if (!cleanEmail || !cleanPassword) return { userId: null, error: null };
+
+  try {
+    const authClient = createEphemeralAnonClient();
+    const { data, error } = await authClient.auth.signUp({
+      email: cleanEmail,
+      password: cleanPassword,
+    });
+    if (error) return { userId: null, error: error.message || 'Unable to create auth account' };
+    return { userId: data?.user?.id || null, error: null };
+  } catch (err) {
+    return { userId: null, error: err?.message || 'Unable to create auth account' };
+  }
+}
 export default function AdminDashboard() {
   const { user } = useAuth();
   const fileInputRef = useRef(null);
@@ -130,6 +159,10 @@ export default function AdminDashboard() {
     niche: Array.isArray(row.niche_tags) ? row.niche_tags.join(', ') : row.niche_tags || row.niche || row.industry || '',
     followers: Number(row.follower_count || row.audience || row.followers || 0),
     city: row.base_city || row.location || row.city || '',
+    email: row.email || '',
+    phone: row.phone || row.mobile || row.contact || '',
+    accountSource: row.account_source || 'self_signup',
+    password: row.temp_password || '',
   });
 
   const mapBrandRow = (row) => ({
@@ -142,6 +175,8 @@ export default function AdminDashboard() {
     cin: row.cin || '',
     email: row.email || row.contact_email || '',
     phone: row.phone || row.mobile || row.contact || '',
+    password: row.temp_password || '',
+    accountSource: row.account_source || 'self_signup',
     address: row.address || row.location || '',
     history: row.history || row.history_notes || [],
   });
@@ -218,6 +253,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const root = document.getElementById('root');
     root?.classList.add('admin-fullwidth');
+    setActiveTab('Overview');
 
     let mounted = true;
     async function loadData() {
@@ -381,12 +417,12 @@ export default function AdminDashboard() {
   function openDrawer(type, mode = 'create', row = null) {
     setDrawer({ open: true, type, mode, id: row?.id ?? null });
     if (type === 'creator') {
-      setCreatorForm(mode === 'edit' && row ? { ...row, followers: String(row.followers || '') } : EMPTY_CREATOR);
+      setCreatorForm(mode === 'edit' && row ? { ...row, followers: String(row.followers || ''), password: row.password || '' } : EMPTY_CREATOR);
     }
     if (type === 'brand') {
       setBrandForm(
         mode === 'edit' && row
-          ? { ...row, budget: String(row.budget || ''), historyNote: '' }
+          ? { ...row, budget: String(row.budget || ''), historyNote: '', password: row.password || '' }
           : EMPTY_BRAND,
       );
     }
@@ -412,19 +448,51 @@ export default function AdminDashboard() {
     setDrawer({ open: false, type: null, mode: 'create', id: null });
   }
 
-  function upsertCreator(e) {
+  async function upsertCreator(e) {
     e.preventDefault();
     if (!creatorForm.name || !creatorForm.niche) return;
-    const payload = { ...creatorForm, followers: Number(creatorForm.followers || 0), city: creatorForm.city || 'Unknown' };
+    const payload = {
+      ...creatorForm,
+      followers: Number(creatorForm.followers || 0),
+      city: creatorForm.city || 'Unknown',
+      email: String(creatorForm.email || '').trim().toLowerCase(),
+      phone: String(creatorForm.phone || '').trim(),
+      accountSource: creatorForm.accountSource || 'self_signup',
+      password: String(creatorForm.password || '').trim(),
+    };
+
+    let provisionedAuthUserId = null;
+    if (payload.accountSource === 'admin_created' && payload.email && payload.password) {
+      const { userId, error } = await provisionAuthUserByAdmin({ email: payload.email, password: payload.password });
+      if (!userId && error) setMessage(`Auth account creation skipped: ${error}`);
+      provisionedAuthUserId = userId;
+    }
+
+    if (isSupabaseEnabled && payload.email) {
+      await supabase
+        .from('org_users')
+        .upsert({
+          id: drawer.mode === 'edit' ? drawer.id : undefined,
+          user_id: provisionedAuthUserId || undefined,
+          name: payload.name,
+          email: payload.email,
+          phone: payload.phone || null,
+          role_type: 'creator',
+          account_source: payload.accountSource,
+          temp_password: payload.password || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+
     if (drawer.mode === 'edit') {
       setCreators((prev) => prev.map((c) => (c.id === drawer.id ? { ...c, ...payload } : c)));
     } else {
-      setCreators((prev) => [{ id: Date.now(), ...payload }, ...prev]);
+      setCreators((prev) => [{ id: provisionedAuthUserId || Date.now(), ...payload }, ...prev]);
     }
     closeDrawer();
   }
 
-  function upsertBrand(e) {
+  async function upsertBrand(e) {
     e.preventDefault();
     if (!brandForm.name || !brandForm.pan || !brandForm.gst) return;
     const payload = {
@@ -432,8 +500,33 @@ export default function AdminDashboard() {
       budget: Number(brandForm.budget || 0),
       pan: brandForm.pan.toUpperCase(),
       gst: brandForm.gst.toUpperCase(),
+      email: String(brandForm.email || '').trim().toLowerCase(),
+      phone: String(brandForm.phone || '').trim(),
+      accountSource: brandForm.accountSource || 'self_signup',
+      password: String(brandForm.password || '').trim(),
       history: [],
     };
+
+    if (payload.accountSource === 'admin_created' && payload.email && payload.password) {
+      const { error } = await provisionAuthUserByAdmin({ email: payload.email, password: payload.password });
+      if (error) setMessage(`Brand auth account creation skipped: ${error}`);
+    }
+
+    if (isSupabaseEnabled && payload.email) {
+      await supabase
+        .from('org_users')
+        .upsert({
+          id: drawer.mode === 'edit' ? drawer.id : undefined,
+          name: payload.name,
+          email: payload.email,
+          phone: payload.phone || null,
+          role_type: 'brand',
+          account_source: payload.accountSource,
+          temp_password: payload.password || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+    }
+
     if (drawer.mode === 'edit') {
       setBrands((prev) =>
         prev.map((b) =>
@@ -623,9 +716,14 @@ export default function AdminDashboard() {
     setChatDraft('');
 
     if (isSupabaseEnabled && selectedChat.dealId) {
+      const adminOrgUser = await resolveOrgUserForAuthUser({
+        userId: user.id,
+        email: user.email,
+        autoLink: true,
+      });
       const { error } = await supabase.from('creator_hub_messages').insert({
         deal_id: selectedChat.dealId,
-        sender_id: user.id,
+        sender_id: adminOrgUser?.id || user.id,
         content: messageText,
       });
       if (error) {
@@ -870,9 +968,18 @@ export default function AdminDashboard() {
               </div>
               <DataTable
                 title="Creator Directory"
-                columns={['ID', 'Name', 'Niche', 'Followers', 'City']}
+                columns={['ID', 'Name', 'Niche', 'Followers', 'City', 'Email', 'Phone', 'Access']}
                 rows={filteredCreators}
-                render={(c) => [c.id, c.name, c.niche, Number(c.followers || 0).toLocaleString('en-IN'), c.city]}
+                render={(c) => [
+                  c.id,
+                  c.name,
+                  c.niche,
+                  Number(c.followers || 0).toLocaleString('en-IN'),
+                  c.city,
+                  c.email || '-',
+                  c.phone || '-',
+                  c.accountSource === 'admin_created' ? 'Admin Created' : 'Self Created',
+                ]}
                 onDelete={(id) => setCreators((prev) => prev.filter((c) => c.id !== id))}
                 onEdit={(row) => openDrawer('creator', 'edit', row)}
               />
@@ -992,6 +1099,15 @@ export default function AdminDashboard() {
                 <input className="input-field" placeholder="Niche" value={creatorForm.niche} onChange={(e) => setCreatorForm((v) => ({ ...v, niche: e.target.value }))} />
                 <input className="input-field" type="number" placeholder="Followers" value={creatorForm.followers} onChange={(e) => setCreatorForm((v) => ({ ...v, followers: e.target.value }))} />
                 <input className="input-field" placeholder="City" value={creatorForm.city} onChange={(e) => setCreatorForm((v) => ({ ...v, city: e.target.value }))} />
+                <select className="input-field" value={creatorForm.accountSource} onChange={(e) => setCreatorForm((v) => ({ ...v, accountSource: e.target.value }))}>
+                  <option value="self_signup">Self created (no password access)</option>
+                  <option value="admin_created">Admin created (with credentials)</option>
+                </select>
+                <input className="input-field" type="email" placeholder="Email" value={creatorForm.email} onChange={(e) => setCreatorForm((v) => ({ ...v, email: e.target.value }))} />
+                <input className="input-field" placeholder="Phone" value={creatorForm.phone} onChange={(e) => setCreatorForm((v) => ({ ...v, phone: e.target.value }))} />
+                {creatorForm.accountSource === 'admin_created' && (
+                  <input className="input-field" placeholder="Password" value={creatorForm.password} onChange={(e) => setCreatorForm((v) => ({ ...v, password: e.target.value }))} />
+                )}
                 <button className={styles.actionBtn} type="submit">{drawer.mode === 'edit' ? 'Update Creator' : 'Create Creator'}</button>
               </form>
             )}
@@ -1006,6 +1122,13 @@ export default function AdminDashboard() {
                 <input className="input-field" placeholder="CIN" value={brandForm.cin} onChange={(e) => setBrandForm((v) => ({ ...v, cin: e.target.value }))} />
                 <input className="input-field" placeholder="Email" value={brandForm.email} onChange={(e) => setBrandForm((v) => ({ ...v, email: e.target.value }))} />
                 <input className="input-field" placeholder="Phone" value={brandForm.phone} onChange={(e) => setBrandForm((v) => ({ ...v, phone: e.target.value }))} />
+                <select className="input-field" value={brandForm.accountSource} onChange={(e) => setBrandForm((v) => ({ ...v, accountSource: e.target.value }))}>
+                  <option value="self_signup">Self created (no password access)</option>
+                  <option value="admin_created">Admin created (with credentials)</option>
+                </select>
+                {brandForm.accountSource === 'admin_created' && (
+                  <input className="input-field" placeholder="Password" value={brandForm.password} onChange={(e) => setBrandForm((v) => ({ ...v, password: e.target.value }))} />
+                )}
                 <input className="input-field" placeholder="Address" value={brandForm.address} onChange={(e) => setBrandForm((v) => ({ ...v, address: e.target.value }))} />
                 <textarea className="input-field" placeholder="History / notes" value={brandForm.historyNote} onChange={(e) => setBrandForm((v) => ({ ...v, historyNote: e.target.value }))} />
                 <button className={styles.actionBtn} type="submit">{drawer.mode === 'edit' ? 'Update Brand' : 'Create Brand'}</button>
@@ -1117,7 +1240,7 @@ function BrandTable({ rows, onDelete, onEdit }) {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>ID</th><th>Name</th><th>Industry</th><th>PAN</th><th>GST</th><th>CIN</th><th>Contact</th><th>Address</th><th>History</th><th>Actions</th>
+              <th>ID</th><th>Name</th><th>Industry</th><th>PAN</th><th>GST</th><th>CIN</th><th>Contact</th><th>Access</th><th>Address</th><th>History</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -1130,6 +1253,7 @@ function BrandTable({ rows, onDelete, onEdit }) {
                 <td>{row.gst}</td>
                 <td>{row.cin || '-'}</td>
                 <td>{row.email}<br />{row.phone}</td>
+                <td>{row.accountSource === 'admin_created' ? 'Admin Created' : 'Self Created'}</td>
                 <td>{row.address}</td>
                 <td>{(row.history || []).slice(0, 2).map((h, i) => <div key={i}>{h.date}: {h.note}</div>)}</td>
                 <td className={styles.actionsCell}>
@@ -1138,7 +1262,7 @@ function BrandTable({ rows, onDelete, onEdit }) {
                 </td>
               </tr>
             ))}
-            {rows.length === 0 && <tr><td colSpan={10} className={styles.emptyRow}>No brand records found.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={11} className={styles.emptyRow}>No brand records found.</td></tr>}
           </tbody>
         </table>
       </div>
