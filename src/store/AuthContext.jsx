@@ -199,12 +199,18 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     if (data?.user) {
-      await ensureCreatorScaffold({
-        userId: data.user.id,
-        email: data.user.email || email,
-        displayName: data.user.user_metadata?.full_name || data.user.user_metadata?.name || email.split('@')[0],
-        username: data.user.user_metadata?.username || email.split('@')[0],
-      });
+      try {
+        await ensureCreatorScaffold({
+          userId: data.user.id,
+          email: data.user.email || email,
+          displayName: data.user.user_metadata?.full_name || data.user.user_metadata?.name || email.split('@')[0],
+          username: data.user.user_metadata?.username || email.split('@')[0],
+        });
+      } catch (scaffoldError) {
+        // Do not block successful login if profile bootstrap has a non-auth conflict
+        // like username collision; user is already authenticated at this point.
+        console.warn('[Auth] signIn scaffold warning:', scaffoldError);
+      }
     }
     return data;
   };
