@@ -11,7 +11,6 @@ import {
   isInstagramOAuthConfigured,
   isYouTubeOAuthConfigured,
 } from '../../services/oauth';
-import { addSupportTicket } from '../../services/adminStore';
 import Avatar from '../../components/Avatar';
 import BottomSheet from '../../components/BottomSheet';
 import Toggle from '../../components/Toggle';
@@ -580,26 +579,10 @@ export default function Setup() {
             });
           }
         } else {
-          await addSupportTicket({
-            source: 'App',
-            title: subject,
-            raisedBy: profile?.name || profile?.username || user?.email || 'Creator',
-            severity,
-            status: 'Open',
-            details: description,
-            createdAt: new Date().toISOString(),
-          });
+          throw new Error('Missing organization mapping for this account.');
         }
       } else {
-        await addSupportTicket({
-          source: 'App',
-          title: subject,
-          raisedBy: profile?.name || profile?.username || 'Creator',
-          severity,
-          status: 'Open',
-          details: description,
-          createdAt: new Date().toISOString(),
-        });
+        throw new Error('Supabase is required for support ticket submission.');
       }
       setSupportMessage('Your issue has been sent to the admin dashboard.');
       setSupportForm({ title: '', details: '', severity: 'Medium' });

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Filter, ChevronRight, MessageCircle, CheckCircle, Zap } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { isSupabaseEnabled, supabase } from '../../services/supabase';
-import { loadAdminData } from '../../services/adminStore';
 import Card from '../../components/Card';
 import Chip from '../../components/Chip';
 import BottomSheet from '../../components/BottomSheet';
@@ -30,27 +29,18 @@ export default function Deals() {
 
   async function fetchDeals() {
     setLoading(true);
-    let result = [];
-    if (isSupabaseEnabled) {
-      const { data } = await supabase.from('creator_hub_deals').select('*').eq('status', 'open').order('created_at', { ascending: false });
-      if (Array.isArray(data)) {
-        result = data;
-      }
+    if (!isSupabaseEnabled) {
+      setDeals([]);
+      setLoading(false);
+      return;
     }
 
-    const adminData = await loadAdminData();
-    const localDeals = adminData.deals || [];
-    if (localDeals.length > 0) {
-      const merged = [...result];
-      for (const localDeal of localDeals) {
-        if (!merged.some((remote) => remote.id === localDeal.id)) {
-          merged.push(localDeal);
-        }
-      }
-      result = merged;
-    }
-
-    setDeals(result);
+    const { data } = await supabase
+      .from('creator_hub_deals')
+      .select('*')
+      .in('status', ['open', 'pending', 'assigned'])
+      .order('created_at', { ascending: false });
+    setDeals(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 

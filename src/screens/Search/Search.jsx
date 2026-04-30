@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
-import { loadAdminData } from '../../services/adminStore';
 import { isSupabaseEnabled, supabase } from '../../services/supabase';
 import styles from './Search.module.css';
 
@@ -11,14 +10,12 @@ export default function Search() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const adminData = await loadAdminData();
       let nextImages = [];
 
       if (isSupabaseEnabled) {
-        const [imageRes, creatorRes, dealRes] = await Promise.all([
+        const [imageRes, creatorRes] = await Promise.all([
           supabase.from('creator_carousel_images').select('*').order('created_at', { ascending: false }).limit(60),
           supabase.from('creator_profiles').select('*').order('updated_at', { ascending: false }).limit(200),
-          supabase.from('creator_hub_deals').select('*').order('created_at', { ascending: false }).limit(200),
         ]);
 
         const creatorMap = new Map((creatorRes.data || []).map((c) => [c.id, c]));
@@ -34,10 +31,7 @@ export default function Search() {
           };
         }).filter((item) => !!item.image);
 
-        void dealRes;
       }
-
-      void adminData;
 
       if (mounted) {
         setImages(nextImages);

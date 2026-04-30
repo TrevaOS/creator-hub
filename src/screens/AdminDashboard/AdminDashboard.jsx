@@ -18,7 +18,6 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
-import { loadAdminData, resetAdminData, saveAdminData } from '../../services/adminStore';
 import { createEphemeralAnonClient, isSupabaseEnabled, resolveOrgUserForAuthUser, supabase } from '../../services/supabase';
 import styles from './AdminDashboard.module.css';
 
@@ -302,7 +301,6 @@ export default function AdminDashboard() {
 
     let mounted = true;
     async function loadData() {
-      const data = await loadAdminData();
       let remoteCreators = [];
       let remoteBrands = [];
       let remoteDeals = [];
@@ -382,15 +380,15 @@ export default function AdminDashboard() {
             }));
           remoteChats = [...supportThreads, ...missingSupportThreads, ...dealThreads];
         } catch (err) {
-          console.warn('[AdminDashboard] remote Supabase load failed, using local admin data', err);
+          console.warn('[AdminDashboard] remote Supabase load failed', err);
         }
       }
 
       if (!mounted) return;
-      const finalCreators = remoteCreators.length > 0 ? remoteCreators : data.creators || [];
-      const finalBrands = remoteBrands.length > 0 ? remoteBrands : data.brands || [];
-      const finalSupportTickets = remoteSupportTickets.length > 0 ? remoteSupportTickets : data.supportTickets || [];
-      const baseChats = remoteChats.length > 0 ? remoteChats : data.chats || [];
+      const finalCreators = remoteCreators;
+      const finalBrands = remoteBrands;
+      const finalSupportTickets = remoteSupportTickets;
+      const baseChats = remoteChats;
       const hasTicketThreads = baseChats.some((chat) => chat.chatType === 'ticket');
       const finalChats = hasTicketThreads
         ? baseChats
@@ -402,7 +400,7 @@ export default function AdminDashboard() {
       setChats(finalChats);
       setSelectedChatId(finalChats[0]?.id || null);
       setIsRemoteDeals(remoteDeals.length > 0);
-      setDeals(remoteDeals.length > 0 ? remoteDeals : data.deals || []);
+      setDeals(remoteDeals);
       setLoading(false);
     }
     loadData();
@@ -419,14 +417,6 @@ export default function AdminDashboard() {
       window.removeEventListener('offline', onOffline);
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    if (loading) return;
-    setSaving(true);
-    saveAdminData({ creators, brands, deals, companies: [], supportTickets, chats })
-      .then(() => setMessage('Saved'))
-      .finally(() => setSaving(false));
-  }, [brands, chats, creators, deals, loading, supportTickets]);
 
   const totals = useMemo(() => {
     const totalDealValue = deals.reduce((sum, d) => sum + Number(d.payout || 0), 0);
@@ -862,13 +852,12 @@ export default function AdminDashboard() {
   }
 
   function resetAll() {
-    const data = resetAdminData();
-    setCreators(data.creators);
-    setBrands(data.brands);
-    setDeals(data.deals);
-    setSupportTickets(data.supportTickets);
-    setChats(data.chats);
-    setSelectedChatId(data.chats?.[0]?.id || null);
+    setCreators([]);
+    setBrands([]);
+    setDeals([]);
+    setSupportTickets([]);
+    setChats([]);
+    setSelectedChatId(null);
     setMessage('Reset complete');
   }
 

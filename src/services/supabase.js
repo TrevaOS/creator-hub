@@ -34,7 +34,15 @@ const hasValidAnonKey = typeof supabaseAnonKey === 'string' && supabaseAnonKey.l
 
 export const isSupabaseEnabled = hasValidUrl && hasValidAnonKey;
 export const isDemoMode = allowDemoMode && (!isSupabaseEnabled || disableSupabase);
-export const SUPER_ADMIN_EMAILS = ['fgdhanush@gmail.com'];
+const envAdminEmails = readEnv('VITE_SUPER_ADMIN_EMAILS')
+  .split(',')
+  .map((item) => item.trim().toLowerCase())
+  .filter(Boolean);
+export const SUPER_ADMIN_EMAILS = Array.from(new Set([
+  'fgdhanush@gmail.com',
+  'admin@creatorhub.dev',
+  ...envAdminEmails,
+]));
 export const supabaseConfigError = isSupabaseEnabled
   ? null
   : `Supabase env missing/invalid: ${

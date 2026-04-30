@@ -12,14 +12,13 @@ import DealChat from './screens/Deals/DealChat';
 import Setup from './screens/Setup/Setup';
 import OAuthCallback from './screens/OAuthCallback/OAuthCallback';
 import AdminDashboard from './screens/AdminDashboard/AdminDashboard';
-import { isSuperAdminEmail } from './services/supabase';
 
 const TABBED_ROUTES = ['/dashboard', '/analytics', '/search', '/deals', '/setup'];
 
 function ProtectedRoute({ children }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isAdmin } = useAuth();
   const location = useLocation();
-  const isSuperAdmin = isSuperAdminEmail(user?.email);
+  const isSuperAdmin = isAdmin || profile?.role_type === 'superadmin' || profile?.role_type === 'org_admin';
 
   if (loading) return (
     <div style={{
@@ -49,7 +48,7 @@ function ProtectedRoute({ children }) {
 }
 
 function AdminRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading, isAdmin } = useAuth();
 
   if (loading) return (
     <div style={{
@@ -70,7 +69,8 @@ function AdminRoute({ children }) {
   );
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isSuperAdminEmail(user?.email)) return <Navigate to="/dashboard" replace />;
+  const roleType = profile?.role_type || '';
+  if (!['superadmin', 'org_admin'].includes(roleType) && !isAdmin) return <Navigate to="/dashboard" replace />;
   return children;
 }
 

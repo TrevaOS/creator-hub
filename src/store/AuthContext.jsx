@@ -252,7 +252,8 @@ export function AuthProvider({ children }) {
     return mapped;
   };
 
-  const isAdmin = isSuperAdminEmail(state.user?.email);
+  const roleType = state.profile?.role_type || '';
+  const isAdmin = roleType === 'superadmin' || roleType === 'org_admin' || isSuperAdminEmail(state.user?.email);
 
   return (
     <AuthContext.Provider value={{ ...state, signUp, signIn, signOut, updateProfile, dispatch, isAdmin }}>

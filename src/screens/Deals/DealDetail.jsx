@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { isSupabaseEnabled, supabase } from '../../services/supabase';
-import { loadAdminData } from '../../services/adminStore';
 import Chip from '../../components/Chip';
 import styles from './DealDetail.module.css';
 
@@ -21,16 +20,13 @@ export default function DealDetail() {
   }, [id]);
 
   async function fetchDeal() {
-    let result = null;
-    if (isSupabaseEnabled) {
-      const { data } = await supabase.from('creator_hub_deals').select('*').eq('id', id).single();
-      result = data || null;
+    if (!isSupabaseEnabled) {
+      setDeal(null);
+      setLoading(false);
+      return;
     }
-    if (!result) {
-      const adminData = await loadAdminData();
-      result = (adminData.deals || []).find((item) => String(item.id) === String(id)) || null;
-    }
-    setDeal(result);
+    const { data } = await supabase.from('creator_hub_deals').select('*').eq('id', id).single();
+    setDeal(data || null);
     setLoading(false);
   }
 
