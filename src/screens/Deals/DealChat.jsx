@@ -151,7 +151,7 @@ export default function DealChat() {
           <div className={styles.emptyState}>No messages yet. Start the conversation.</div>
         )}
         {messages.map((msg) => {
-          const isMe = msg.sender_id === user?.id;
+          const isMe = String(msg.sender_id) === String(senderOrgUserId || user?.id);
           return (
             <div key={msg.id} className={`${styles.msgRow} ${isMe ? styles.msgMe : styles.msgThem}`}>
               <div className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem}`}>

@@ -104,6 +104,14 @@ export default function Setup() {
   const [slides, setSlides] = useState(
     carouselImages.map(img => ({ id: img.id, url: img.image_url, caption: img.caption || '', isExisting: true }))
   );
+  const getSlideMode = (slide) => (String(slide.caption || '').trim().startsWith('[square]') ? 'square' : 'banner');
+  const setSlideMode = (slideId, mode) => {
+    setSlides((prev) => prev.map((s) => {
+      if (s.id !== slideId) return s;
+      const clean = String(s.caption || '').replace(/^\[(square|banner)\]\s*/i, '').trim();
+      return { ...s, caption: `${mode === 'square' ? '[square]' : '[banner]'} ${clean}`.trim() };
+    }));
+  };
 
   useEffect(() => {
     setForm({
@@ -865,9 +873,18 @@ export default function Setup() {
                     <input
                       style={{ fontSize: 11, background: 'none', color: 'var(--text-secondary)', textAlign: 'center', width: '100%' }}
                       placeholder="Caption…"
-                      value={slide.caption}
+                      value={String(slide.caption || '').replace(/^\[(square|banner)\]\s*/i, '')}
                       onChange={e => updateSlideCaption(slide.id, e.target.value)}
                     />
+                    <select
+                      className="input-field"
+                      style={{ fontSize: 11, minHeight: 28, padding: '4px 8px' }}
+                      value={getSlideMode(slide)}
+                      onChange={(e) => setSlideMode(slide.id, e.target.value)}
+                    >
+                      <option value="banner">Banner strip</option>
+                      <option value="square">1:1 square</option>
+                    </select>
                   </div>
                 ))}
                 <div className={styles.addSlideBtn} onClick={() => carouselFileRef.current?.click()}>

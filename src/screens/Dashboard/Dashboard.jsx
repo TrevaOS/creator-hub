@@ -160,6 +160,8 @@ export default function Dashboard() {
   const postsCount       = igProfile?.media_count ?? 0;
   const engagement       = '0%';
   const featuredImages   = carouselImages.length > 0 ? carouselImages : [];
+  const getImageMode = (img) => (String(img?.caption || '').trim().startsWith('[square]') ? 'square' : 'banner');
+  const getCleanCaption = (img) => String(img?.caption || '').replace(/^\[(square|banner)\]\s*/i, '').trim();
   const dragCardRef = useRef(null);
   const defaultOrder = ['bio', ...displaySocials.map((s) => `social_${s.platform}`), 'carousel', 'spotify', 'brands', 'connect'];
   const [cardOrder, setCardOrder] = useState(() => {
@@ -428,7 +430,7 @@ export default function Dashboard() {
                 <div className={styles.cardHeader}>
                   <h2 className={styles.cardTitle}>Featured Work</h2>
                 </div>
-                <div className={styles.carouselWrap}>
+                <div className={`${styles.carouselWrap} ${getImageMode(featuredImages[carouselIdx]) === 'square' ? styles.carouselSquare : ''}`}>
                   <img src={featuredImages[carouselIdx]?.image_url} alt={featuredImages[carouselIdx]?.caption || 'Featured'} className={styles.carouselImg} />
                   {featuredImages.length > 1 && (
                     <div className={styles.carouselNav}>
@@ -442,8 +444,8 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
-                {featuredImages[carouselIdx]?.caption && (
-                  <p className={styles.carouselCaption}>{featuredImages[carouselIdx].caption}</p>
+                {getCleanCaption(featuredImages[carouselIdx]) && (
+                  <p className={styles.carouselCaption}>{getCleanCaption(featuredImages[carouselIdx])}</p>
                 )}
               </div>
             );

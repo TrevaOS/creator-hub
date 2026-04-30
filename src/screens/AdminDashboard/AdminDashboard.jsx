@@ -194,7 +194,7 @@ export default function AdminDashboard() {
     history: row.history || row.history_notes || [],
   });
 
-  const buildDealChatThreads = (messages, deals, currentUserId) => {
+  const buildDealChatThreads = (messages, deals, adminOrgUserId, currentUserId) => {
     const seenMap = getAdminLastSeen();
     const threads = {};
     messages.forEach((msg) => {
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
       }
       threads[threadId].messages.push({
         id: msg.id,
-        from: msg.sender_id === currentUserId ? 'admin' : 'other',
+        from: String(msg.sender_id) === String(adminOrgUserId || currentUserId) ? 'admin' : 'other',
         text: msg.content || msg.body || msg.text || '',
         time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         created_at: msg.created_at,
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
           if (supportRes?.data) {
             remoteSupportTickets = supportRes.data.map(normalizeSupportTicketRow);
           }
-          const dealThreads = messageRes?.data ? buildDealChatThreads(messageRes.data, remoteDeals, user?.id) : [];
+          const dealThreads = messageRes?.data ? buildDealChatThreads(messageRes.data, remoteDeals, adminOrgUserId, user?.id) : [];
           const supportThreads = ticketMsgRes?.data ? buildSupportChatThreads(ticketMsgRes.data, remoteSupportTickets, adminOrgUserId) : [];
           const missingSupportThreads = remoteSupportTickets
             .filter((ticket) => !supportThreads.some((thread) => Number(thread.ticketId) === Number(ticket.id)))
