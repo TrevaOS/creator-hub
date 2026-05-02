@@ -27,12 +27,16 @@ export default function Search() {
         const creatorMap = new Map((creatorRes.data || []).map((c) => [c.id, c]));
         nextImages = (imageRes.data || []).map((img, index) => {
           const profile = creatorMap.get(img.creator_profile_id);
-          const username = profile?.username || profile?.display_name?.toLowerCase().replace(/\s+/g, '_') || 'creator';
+          const username = profile?.username?.trim() || null;
+          const displayHandle = username
+            ? `@${username}`
+            : profile?.display_name || 'Creator';
           return {
             id: img.id,
             title: img.caption || `Featured Image ${index + 1}`,
-            creator: `@${username}`,
+            creator: displayHandle,
             username,
+            profileId: profile?.id || null,
             views: profile?.follower_count ? `${Math.max(1, Math.round(profile.follower_count / 10))} views` : 'Featured',
             image: img.image_url,
             heightClass: index % 11 === 0 ? 'tall' : index % 5 === 0 ? 'mid' : 'short',
@@ -57,12 +61,16 @@ export default function Search() {
     return !q || [item.title, item.creator].some((value) => value.toLowerCase().includes(q));
   }), [query, images]);
 
-  const goToProfile = (username) => {
-    if (!username || username === 'creator') return;
-    if (myProfile?.username && username === myProfile.username) {
+  const goToProfile = (username, profileId) => {
+    if (!username && !profileId) return;
+    if (username && myProfile?.username && username === myProfile.username) {
       navigate('/dashboard');
-    } else {
+      return;
+    }
+    if (username) {
       navigate(`/profile/${username}`);
+    } else {
+      navigate(`/profile/id/${profileId}`);
     }
   };
 
@@ -98,7 +106,7 @@ export default function Search() {
               <button
                 key={c.id}
                 className={styles.creatorRow}
-                onClick={() => goToProfile(c.username)}
+                onClick={() => goToProfile(c.username, c.id)}
               >
                 <Avatar src={c.avatar_url} name={c.display_name || c.name || c.username} size={44} />
                 <div className={styles.creatorInfo}>
@@ -116,8 +124,8 @@ export default function Search() {
               <article
                 key={item.id}
                 className={`${styles.reelTile} ${styles[item.heightClass]}`}
-                onClick={() => goToProfile(item.username)}
-                style={{ cursor: item.username && item.username !== 'creator' ? 'pointer' : 'default' }}
+                onClick={() => goToProfile(item.username, item.profileId)}
+                style={{ cursor: (item.username || item.profileId) ? 'pointer' : 'default' }}
               >
                 <img src={item.image} alt={item.title} loading="lazy" />
                 <div className={styles.reelOverlay}>

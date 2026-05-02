@@ -94,6 +94,7 @@ function AppShell() {
         <Route path="/deals/chat/:dealId" element={<ProtectedRoute><DealChat /></ProtectedRoute>} />
         <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
 
+        <Route path="/profile/id/:profileId" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
         <Route path="/profile/:username" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
 
         {/* OAuth callbacks — no auth guard needed, handles redirect from platform */}

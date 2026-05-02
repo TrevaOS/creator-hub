@@ -13,7 +13,7 @@ function formatK(n) {
 }
 
 export default function PublicProfile() {
-  const { username } = useParams();
+  const { username, profileId } = useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [images, setImages] = useState([]);
@@ -22,14 +22,17 @@ export default function PublicProfile() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseEnabled || !username) return;
+    if (!isSupabaseEnabled || (!username && !profileId)) return;
     setLoading(true);
+    setNotFound(false);
     (async () => {
-      const { data: profileData } = await supabase
-        .from('creator_profiles')
-        .select('*')
-        .eq('username', username)
-        .single();
+      let query = supabase.from('creator_profiles').select('*');
+      if (profileId) {
+        query = query.eq('id', profileId);
+      } else {
+        query = query.eq('username', username);
+      }
+      const { data: profileData } = await query.single();
 
       if (!profileData) {
         setNotFound(true);
@@ -56,7 +59,7 @@ export default function PublicProfile() {
       setSocials((socialRes.data || []).filter((s) => s.handle));
       setLoading(false);
     })();
-  }, [username]);
+  }, [username, profileId]);
 
   if (loading) {
     return (
