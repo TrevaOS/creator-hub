@@ -216,9 +216,15 @@
   color: rgba(255,255,255,0.7);
 }
 
-.followBtn {
+.ctaRow {
+  display: flex;
+  gap: 10px;
   margin-top: 14px;
   width: 100%;
+}
+
+.followBtn {
+  flex: 1;
   min-height: 42px;
   background: var(--brand-gradient);
   border-radius: var(--radius-full);
@@ -237,8 +243,7 @@
 .followBtn:disabled { opacity: 0.5; }
 
 .unfollowBtn {
-  margin-top: 14px;
-  width: 100%;
+  flex: 1;
   min-height: 42px;
   background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.25);
@@ -256,6 +261,25 @@
 }
 .unfollowBtn:active { background: rgba(255,255,255,0.2); }
 .unfollowBtn:disabled { opacity: 0.5; }
+
+.chatBtn {
+  flex: 1;
+  min-height: 42px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.chatBtn:active { background: rgba(255,255,255,0.2); }
 
 /* ── Body ── */
 .body {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, MapPin, UserCheck, UserPlus } from 'lucide-react';
+import { ChevronLeft, MapPin, MessageCircle, UserCheck, UserPlus } from 'lucide-react';
 import { isSupabaseEnabled, supabase } from '../../services/supabase';
 import { useAuth } from '../../store/AuthContext';
 import Avatar from '../../components/Avatar';
@@ -202,6 +202,32 @@ export default function PublicProfile() {
     setFollowLoading(false);
   };
 
+  const startChat = async () => {
+    if (!currentUser || !profile.auth_user_id) return;
+    // Find or create a direct conversation between these two users
+    const { data: existing } = await supabase
+      .from('creator_hub_conversations')
+      .select('id')
+      .eq('conversation_type', 'direct')
+      .or(`and(creator_user_id.eq.${currentUser.id},brand_user_id.eq.${profile.auth_user_id}),and(creator_user_id.eq.${profile.auth_user_id},brand_user_id.eq.${currentUser.id})`)
+      .maybeSingle();
+    if (existing) {
+      navigate(`/deals/chat/${existing.id}`);
+      return;
+    }
+    const { data: created } = await supabase
+      .from('creator_hub_conversations')
+      .insert({
+        conversation_type: 'direct',
+        creator_user_id: currentUser.id,
+        brand_user_id: profile.auth_user_id,
+        created_by: currentUser.id,
+      })
+      .select('id')
+      .single();
+    if (created) navigate(`/deals/chat/${created.id}`);
+  };
+
   return (
     <main className="screen">
       <div className={styles.screenContent}>
@@ -265,15 +291,20 @@ export default function PublicProfile() {
             )}
 
             {canFollow && (
-              <button
-                className={isFollowing ? styles.unfollowBtn : styles.followBtn}
-                onClick={toggleFollow}
-                disabled={followLoading}
-              >
-                {isFollowing
-                  ? <><UserCheck size={15} /> Following</>
-                  : <><UserPlus size={15} /> Follow</>}
-              </button>
+              <div className={styles.ctaRow}>
+                <button
+                  className={isFollowing ? styles.unfollowBtn : styles.followBtn}
+                  onClick={toggleFollow}
+                  disabled={followLoading}
+                >
+                  {isFollowing
+                    ? <><UserCheck size={15} /> Following</>
+                    : <><UserPlus size={15} /> Follow</>}
+                </button>
+                <button className={styles.chatBtn} onClick={startChat}>
+                  <MessageCircle size={15} /> Message
+                </button>
+              </div>
             )}
           </div>
         </div>

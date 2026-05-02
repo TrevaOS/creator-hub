@@ -6,6 +6,13 @@ import { useAuth } from '../../store/AuthContext';
 import Avatar from '../../components/Avatar';
 import styles from './Search.module.css';
 
+function formatK(n) {
+  if (!n) return '0';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
 export default function Search() {
   const navigate = useNavigate();
   const { profile: myProfile } = useAuth();
@@ -19,37 +26,43 @@ export default function Search() {
       let nextImages = [];
 
       if (isSupabaseEnabled) {
-        // Step 1: fetch only public images
-        const imageRes = await supabase
-          .from('creator_carousel_images')
-          .select('*')
-          .eq('is_public', true)
-          .order('created_at', { ascending: false })
-          .limit(60);
-
-        const allImages = imageRes.data || [];
-
-        // Step 2: collect all unique creator_profile_ids from images
-        const profileIds = [...new Set(
-          allImages.map(img => img.creator_profile_id).filter(Boolean)
-        )];
-
-        // Step 3: fetch ONLY those profiles (exact match, no limit miss)
-        const [creatorRes, allCreatorsRes] = await Promise.all([
-          profileIds.length > 0
-            ? supabase.from('creator_profiles').select('*').in('id', profileIds)
-            : Promise.resolve({ data: [] }),
-          supabase.from('creator_profiles').select('id,username,display_name,avatar_url,base_city,niche_tags').order('updated_at', { ascending: false }).limit(200),
+        // Fetch all images (no is_public filter — column may not exist yet)
+        // and all creator profiles in parallel
+        const [imageRes, allCreatorsRes] = await Promise.all([
+          supabase
+            .from('creator_carousel_images')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100),
+          supabase
+            .from('creator_profiles')
+            .select('id,auth_user_id,username,display_name,avatar_url,base_city,niche_tags,hub_follower_count')
+            .order('updated_at', { ascending: false })
+            .limit(200),
         ]);
 
-        const creatorMap = new Map((creatorRes.data || []).map((c) => [c.id, c]));
+        const allImages = imageRes.data || [];
+        const allProfiles = allCreatorsRes.data || [];
 
-        nextImages = allImages.map((img, index) => {
-          const profile = creatorMap.get(img.creator_profile_id);
+        // Build two maps: by creator_profile_id (UUID) and by auth_user_id
+        const profileById = new Map(allProfiles.map(c => [c.id, c]));
+        const profileByUserId = new Map(allProfiles.map(c => [c.auth_user_id, c]));
+
+        // Deduplicate: one image per creator (show their best/latest image)
+        const seenCreators = new Set();
+        const deduped = [];
+        for (const img of allImages) {
+          const profile = profileById.get(img.creator_profile_id) || profileByUserId.get(img.user_id);
+          const key = profile?.id || img.creator_profile_id || img.user_id || img.id;
+          if (!seenCreators.has(key)) {
+            seenCreators.add(key);
+            deduped.push({ img, profile });
+          }
+        }
+
+        nextImages = deduped.map(({ img, profile }, index) => {
           const username = profile?.username?.trim() || null;
-          const displayHandle = username
-            ? `@${username}`
-            : profile?.display_name || null;
+          const displayHandle = username ? `@${username}` : profile?.display_name || null;
           const profileId = profile?.id || img.creator_profile_id || null;
           return {
             id: img.id,
@@ -57,13 +70,13 @@ export default function Search() {
             creator: displayHandle || 'Creator',
             username,
             profileId,
-            views: profile?.follower_count ? `${Math.max(1, Math.round(profile.follower_count / 10))} views` : 'Featured',
+            views: profile?.hub_follower_count ? `${formatK(profile.hub_follower_count)} followers` : 'Featured',
             image: img.image_url,
             heightClass: index % 11 === 0 ? 'tall' : index % 5 === 0 ? 'mid' : 'short',
           };
         }).filter((item) => !!item.image);
 
-        if (mounted) setCreators(allCreatorsRes.data || []);
+        if (mounted) setCreators(allProfiles);
       }
 
       if (mounted) {
