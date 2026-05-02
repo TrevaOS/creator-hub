@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search as SearchIcon } from 'lucide-react';
 import { isSupabaseEnabled, supabase } from '../../services/supabase';
+import Avatar from '../../components/Avatar';
 import styles from './Search.module.css';
 
 export default function Search() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [images, setImages] = useState([]);
+  const [creators, setCreators] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -21,16 +25,19 @@ export default function Search() {
         const creatorMap = new Map((creatorRes.data || []).map((c) => [c.id, c]));
         nextImages = (imageRes.data || []).map((img, index) => {
           const profile = creatorMap.get(img.creator_profile_id);
+          const username = profile?.username || profile?.display_name?.toLowerCase().replace(/\s+/g, '_') || 'creator';
           return {
             id: img.id,
             title: img.caption || `Featured Image ${index + 1}`,
-            creator: `@${profile?.username || profile?.display_name?.toLowerCase().replace(/\s+/g, '_') || 'creator'}`,
+            creator: `@${username}`,
+            username,
             views: profile?.follower_count ? `${Math.max(1, Math.round(profile.follower_count / 10))} views` : 'Featured',
             image: img.image_url,
             heightClass: index % 11 === 0 ? 'tall' : index % 5 === 0 ? 'mid' : 'short',
           };
         }).filter((item) => !!item.image);
 
+        if (mounted) setCreators(creatorRes.data || []);
       }
 
       if (mounted) {
@@ -47,6 +54,15 @@ export default function Search() {
     const q = query.toLowerCase();
     return !q || [item.title, item.creator].some((value) => value.toLowerCase().includes(q));
   }), [query, images]);
+
+  const filteredCreators = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return [];
+    return creators.filter((c) =>
+      (c.username || '').toLowerCase().includes(q) ||
+      (c.display_name || c.name || '').toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [query, creators]);
 
   return (
     <main className="screen">
@@ -65,10 +81,33 @@ export default function Search() {
           </div>
         </div>
 
+        {filteredCreators.length > 0 && (
+          <section className={styles.creatorSection}>
+            {filteredCreators.map((c) => (
+              <button
+                key={c.id}
+                className={styles.creatorRow}
+                onClick={() => navigate(`/profile/${c.username}`)}
+              >
+                <Avatar src={c.avatar_url} name={c.display_name || c.name || c.username} size={44} />
+                <div className={styles.creatorInfo}>
+                  <span className={styles.creatorName}>{c.display_name || c.name || c.username}</span>
+                  <span className={styles.creatorHandle}>@{c.username}</span>
+                </div>
+              </button>
+            ))}
+          </section>
+        )}
+
         <section className={styles.resultSection}>
           <div className={styles.reelGrid}>
             {filteredImages.map((item) => (
-              <article key={item.id} className={`${styles.reelTile} ${styles[item.heightClass]}`}>
+              <article
+                key={item.id}
+                className={`${styles.reelTile} ${styles[item.heightClass]}`}
+                onClick={() => navigate(`/profile/${item.username}`)}
+                style={{ cursor: 'pointer' }}
+              >
                 <img src={item.image} alt={item.title} loading="lazy" />
                 <div className={styles.reelOverlay}>
                   <p>{item.creator}</p>

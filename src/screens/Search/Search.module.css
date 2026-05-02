@@ -44,6 +44,42 @@
   gap: 8px;
 }
 
+.creatorSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.creatorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.creatorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.creatorName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.creatorHandle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .resultSection {
   display: flex;
   flex-direction: column;

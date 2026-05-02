@@ -12,8 +12,9 @@ import DealChat from './screens/Deals/DealChat';
 import Setup from './screens/Setup/Setup';
 import OAuthCallback from './screens/OAuthCallback/OAuthCallback';
 import AdminDashboard from './screens/AdminDashboard/AdminDashboard';
+import PublicProfile from './screens/PublicProfile/PublicProfile';
 
-const TABBED_ROUTES = ['/dashboard', '/analytics', '/search', '/deals', '/setup'];
+const TABBED_ROUTES = ['/dashboard', '/analytics', '/search', '/deals', '/setup', '/profile'];
 
 function ProtectedRoute({ children }) {
   const { user, profile, loading, isAdmin } = useAuth();
@@ -92,6 +93,8 @@ function AppShell() {
         <Route path="/deals/:id" element={<ProtectedRoute><DealDetail /></ProtectedRoute>} />
         <Route path="/deals/chat/:dealId" element={<ProtectedRoute><DealChat /></ProtectedRoute>} />
         <Route path="/setup" element={<ProtectedRoute><Setup /></ProtectedRoute>} />
+
+        <Route path="/profile/:username" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
 
         {/* OAuth callbacks — no auth guard needed, handles redirect from platform */}
         <Route path="/oauth/:platform" element={<OAuthCallback />} />
