@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, MapPin } from 'lucide-react';
+import { ChevronLeft, MapPin, UserCheck, UserPlus } from 'lucide-react';
 import { isSupabaseEnabled, supabase } from '../../services/supabase';
+import { useAuth } from '../../store/AuthContext';
 import Avatar from '../../components/Avatar';
 import styles from './PublicProfile.module.css';
 
@@ -15,24 +16,83 @@ function formatK(n) {
 export default function PublicProfile() {
   const { username, profileId } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [images, setImages] = useState([]);
   const [socials, setSocials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [localFollowerCount, setLocalFollowerCount] = useState(0);
 
   useEffect(() => {
     if (!isSupabaseEnabled || (!username && !profileId)) return;
     setLoading(true);
     setNotFound(false);
     (async () => {
-      let query = supabase.from('creator_profiles').select('*');
+      let profileData = null;
+
       if (profileId) {
-        query = query.eq('id', profileId);
+        // Try UUID lookup first
+        const { data } = await supabase
+          .from('creator_profiles')
+          .select('*')
+          .eq('id', profileId)
+          .maybeSingle();
+        profileData = data;
+
+        // If not found by UUID, the id might be a legacy integer FK —
+        // fetch images directly by creator_profile_id and build a synthetic profile
+        if (!profileData) {
+          const { data: imgs } = await supabase
+            .from('creator_carousel_images')
+            .select('*')
+            .eq('creator_profile_id', profileId)
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+          if (imgs && imgs.length > 0) {
+            // Build a synthetic profile from the image metadata
+            profileData = {
+              id: profileId,
+              auth_user_id: null,
+              display_name: 'Creator',
+              username: null,
+              avatar_url: null,
+              cover_url: null,
+              bio: null,
+              base_city: null,
+              tagline: null,
+              niche_tags: [],
+              follower_count: null,
+              engagement_rate: null,
+              _synthetic: true,
+              _images: imgs,
+            };
+          }
+
+          if (!profileData) {
+            setNotFound(true);
+            setLoading(false);
+            return;
+          }
+
+          setProfile(profileData);
+          setLocalFollowerCount(0);
+          setImages(profileData._images || []);
+          setSocials([]);
+          setLoading(false);
+          return;
+        }
       } else {
-        query = query.eq('username', username);
+        const { data } = await supabase
+          .from('creator_profiles')
+          .select('*')
+          .eq('username', username)
+          .maybeSingle();
+        profileData = data;
       }
-      const { data: profileData } = await query.maybeSingle();
 
       if (!profileData) {
         setNotFound(true);
@@ -73,11 +133,24 @@ export default function PublicProfile() {
       const imgRes = { data: [...imgMap.values()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 30) };
 
       setProfile(profileData);
+      setLocalFollowerCount(profileData.hub_follower_count ?? 0);
       setImages(imgRes.data || []);
       setSocials((socialRes.data || []).filter((s) => s.handle));
+
+      // Check if current user already follows this profile
+      if (currentUser && profileData.auth_user_id && currentUser.id !== profileData.auth_user_id) {
+        const { data: followRow } = await supabase
+          .from('creator_follows')
+          .select('id')
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', profileData.auth_user_id)
+          .maybeSingle();
+        setIsFollowing(!!followRow);
+      }
+
       setLoading(false);
     })();
-  }, [username, profileId]);
+  }, [username, profileId, currentUser?.id]);
 
   if (loading) {
     return (
@@ -100,11 +173,34 @@ export default function PublicProfile() {
     );
   }
 
-  const displayName = profile.display_name || profile.name || profile.username;
-  const followers = formatK(profile.follower_count ?? 0);
+  const displayName = profile.display_name || profile.name || profile.username || 'Creator';
+  const followers = formatK(localFollowerCount);
+  const following = formatK(profile.hub_following_count ?? 0);
   const postsCount = images.length;
-  const engagement = profile.engagement_rate ? `${profile.engagement_rate}%` : '0%';
   const location = profile.base_city || profile.location;
+  const isOwnProfile = currentUser && profile.auth_user_id && currentUser.id === profile.auth_user_id;
+  const canFollow = !isOwnProfile && !profile._synthetic && !!profile.auth_user_id;
+
+  const toggleFollow = async () => {
+    if (!currentUser || followLoading) return;
+    setFollowLoading(true);
+    if (isFollowing) {
+      await supabase
+        .from('creator_follows')
+        .delete()
+        .eq('follower_id', currentUser.id)
+        .eq('following_id', profile.auth_user_id);
+      setIsFollowing(false);
+      setLocalFollowerCount(c => Math.max(c - 1, 0));
+    } else {
+      await supabase
+        .from('creator_follows')
+        .insert({ follower_id: currentUser.id, following_id: profile.auth_user_id });
+      setIsFollowing(true);
+      setLocalFollowerCount(c => c + 1);
+    }
+    setFollowLoading(false);
+  };
 
   return (
     <main className="screen">
@@ -151,13 +247,13 @@ export default function PublicProfile() {
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
-                <span className={styles.statNum}>{postsCount}</span>
-                <span className={styles.statLabel}>Posts</span>
+                <span className={styles.statNum}>{following}</span>
+                <span className={styles.statLabel}>Following</span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
-                <span className={styles.statNum}>{engagement}</span>
-                <span className={styles.statLabel}>Engagement</span>
+                <span className={styles.statNum}>{postsCount}</span>
+                <span className={styles.statLabel}>Posts</span>
               </div>
             </div>
 
@@ -166,6 +262,18 @@ export default function PublicProfile() {
                 <MapPin size={12} />
                 <span>{location}</span>
               </div>
+            )}
+
+            {canFollow && (
+              <button
+                className={isFollowing ? styles.unfollowBtn : styles.followBtn}
+                onClick={toggleFollow}
+                disabled={followLoading}
+              >
+                {isFollowing
+                  ? <><UserCheck size={15} /> Following</>
+                  : <><UserPlus size={15} /> Follow</>}
+              </button>
             )}
           </div>
         </div>

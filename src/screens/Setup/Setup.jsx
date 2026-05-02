@@ -101,7 +101,7 @@ export default function Setup() {
 
   // Local carousel slides (start from existing Supabase images)
   const [slides, setSlides] = useState(
-    carouselImages.map(img => ({ id: img.id, url: img.image_url, caption: img.caption || '', isExisting: true }))
+    carouselImages.map(img => ({ id: img.id, url: img.image_url, caption: img.caption || '', isExisting: true, is_public: img.is_public ?? true }))
   );
   const getSlideMode = (slide) => (String(slide.caption || '').trim().startsWith('[square]') ? 'square' : 'banner');
   const setSlideMode = (slideId, mode) => {
@@ -516,14 +516,15 @@ export default function Setup() {
             image_url:          uploadedUrl,
             caption:            slide.caption,
             order:              slides.indexOf(slide),
+            is_public:          slide.is_public ?? true,
           });
         }
 
-        // Update captions and order of existing slides
+        // Update captions, order, and visibility of existing slides
         for (const slide of slides.filter(s => s.isExisting)) {
           await supabase
             .from('creator_carousel_images')
-            .update({ caption: slide.caption, order: slides.indexOf(slide) })
+            .update({ caption: slide.caption, order: slides.indexOf(slide), is_public: slide.is_public ?? true })
             .eq('id', slide.id);
         }
       }
@@ -978,6 +979,17 @@ export default function Setup() {
                     >
                       <option value="banner">Banner strip</option>
                       <option value="square">1:1 square</option>
+                    </select>
+                    <select
+                      className="input-field"
+                      style={{ fontSize: 11, minHeight: 28, padding: '4px 8px', marginTop: 4 }}
+                      value={slide.is_public === false ? 'followers' : 'public'}
+                      onChange={(e) => setSlides(prev => prev.map(s =>
+                        s.id === slide.id ? { ...s, is_public: e.target.value === 'public' } : s
+                      ))}
+                    >
+                      <option value="public">🌐 Public</option>
+                      <option value="followers">🔒 Followers only</option>
                     </select>
                   </div>
                 ))}

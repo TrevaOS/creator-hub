@@ -216,6 +216,47 @@
   color: rgba(255,255,255,0.7);
 }
 
+.followBtn {
+  margin-top: 14px;
+  width: 100%;
+  min-height: 42px;
+  background: var(--brand-gradient);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.4);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.followBtn:active { opacity: 0.82; }
+.followBtn:disabled { opacity: 0.5; }
+
+.unfollowBtn {
+  margin-top: 14px;
+  width: 100%;
+  min-height: 42px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.unfollowBtn:active { background: rgba(255,255,255,0.2); }
+.unfollowBtn:disabled { opacity: 0.5; }
+
 /* ── Body ── */
 .body {
   padding: 16px 12px;

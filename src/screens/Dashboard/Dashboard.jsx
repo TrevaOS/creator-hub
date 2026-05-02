@@ -156,8 +156,9 @@ export default function Dashboard() {
     ? igPosts.map(p => ({ id: p.id, type: p.media_type === 'VIDEO' ? 'reel' : 'image', thumb: p.thumbnail_url || p.media_url, likes: p.like_count || 0, caption: p.caption || '' }))
     : EMPTY_POSTS;
 
-  const followers        = igProfile?.followers_count ? formatK(igProfile.followers_count) : '0';
-  const postsCount       = igProfile?.media_count ?? 0;
+  const followers        = formatK(displayProfile?.hub_follower_count ?? 0);
+  const following        = formatK(displayProfile?.hub_following_count ?? 0);
+  const postsCount       = displayProfile?.hub_posts_count ?? 0;
   const engagement       = '0%';
   const featuredImages   = carouselImages.length > 0 ? carouselImages : [];
   const getImageMode = (img) => (String(img?.caption || '').trim().startsWith('[square]') ? 'square' : 'banner');
@@ -318,13 +319,13 @@ export default function Dashboard() {
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
-                <span className={styles.statNum}>{postsCount}</span>
-                <span className={styles.statLabel}>Posts</span>
+                <span className={styles.statNum}>{following}</span>
+                <span className={styles.statLabel}>Following</span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
-                <span className={styles.statNum}>{engagement}</span>
-                <span className={styles.statLabel}>Engagement</span>
+                <span className={styles.statNum}>{postsCount}</span>
+                <span className={styles.statLabel}>Posts</span>
               </div>
             </div>
 

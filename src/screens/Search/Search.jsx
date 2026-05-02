@@ -19,10 +19,11 @@ export default function Search() {
       let nextImages = [];
 
       if (isSupabaseEnabled) {
-        // Step 1: fetch all images
+        // Step 1: fetch only public images
         const imageRes = await supabase
           .from('creator_carousel_images')
           .select('*')
+          .eq('is_public', true)
           .order('created_at', { ascending: false })
           .limit(60);
 
