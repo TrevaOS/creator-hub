@@ -1,7 +1,10 @@
+/* Exact mirror of Dashboard.module.css — read-only viewer */
+
 .screenContent {
+  padding: 0 0 calc(var(--tab-bar-height) + 16px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(var(--tab-bar-height) + 16px + env(safe-area-inset-bottom, 0px));
+  gap: 0;
 }
 
 /* ── Loading / Not found ── */
@@ -11,7 +14,6 @@
   justify-content: center;
   min-height: 60vh;
 }
-
 .spinner {
   width: 40px;
   height: 40px;
@@ -20,11 +22,7 @@
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
+@keyframes spin { to { transform: rotate(360deg); } }
 .notFound {
   display: flex;
   flex-direction: column;
@@ -35,29 +33,20 @@
   color: var(--text-secondary);
   font-size: 15px;
 }
+.backLink { background: none; border: none; color: var(--brand); font-size: 14px; cursor: pointer; }
 
-.backLink {
-  background: none;
-  border: none;
-  color: var(--brand);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* ── Hero (mirrors Dashboard hero) ── */
+/* ── Hero ── */
 .hero {
   position: relative;
   min-height: 72vh;
   overflow: hidden;
 }
-
 .heroBanner {
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, #1a0533 0%, #0a1628 40%, #001018 100%);
   z-index: 0;
 }
-
 .heroBannerOverlay {
   position: absolute;
   inset: 0;
@@ -66,17 +55,15 @@
     radial-gradient(ellipse at 10% 100%, rgba(6,182,212,0.2)   0%, transparent 60%);
   z-index: 1;
 }
-
 .heroBannerOverlay::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 0; right: 0; bottom: 0;
   height: 38%;
-  background: linear-gradient(to bottom, rgba(8, 10, 17, 0) 0%, var(--bg-primary) 100%);
+  background: linear-gradient(to bottom, rgba(8,10,17,0) 0%, var(--bg-primary) 100%);
 }
 
+/* Back button (replaces heroActions) */
 .backBtn {
   position: absolute;
   top: 16px;
@@ -87,7 +74,7 @@
   gap: 4px;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.85);
   background: rgba(255,255,255,0.1);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,0.15);
@@ -107,41 +94,49 @@
   justify-content: flex-end;
 }
 
+/* Avatar */
 .avatarRing {
+  position: relative;
   padding: 3px;
   border-radius: 50%;
   background: var(--brand-gradient);
   margin-bottom: 12px;
 }
-
 .avatarRingInner {
   background: #0f0528;
   border-radius: 50%;
   padding: 3px;
 }
+.platformBadge {
+  position: absolute;
+  bottom: 4px; right: 4px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--ig-gradient);
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #0f0528;
+}
 
+/* Profile text */
 .profileName {
   font-size: 1.4rem;
   font-weight: 800;
-  color: white;
+  color: var(--white);
   text-align: center;
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
-
 .handleRow {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-top: 3px;
 }
-
 .handle {
   font-size: var(--font-caption);
   color: rgba(255,255,255,0.6);
   font-weight: 500;
 }
-
 .tagline {
   font-size: var(--font-caption);
   color: rgba(255,255,255,0.55);
@@ -151,6 +146,7 @@
   line-height: 1.4;
 }
 
+/* Stats */
 .statsRow {
   display: flex;
   align-items: center;
@@ -162,37 +158,12 @@
   padding: 12px 0;
   backdrop-filter: blur(8px);
 }
+.statItem { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.statNum { font-size: 16px; font-weight: 800; color: var(--white); line-height: 1; letter-spacing: -0.02em; }
+.statLabel { font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.statDivider { width: 1px; height: 26px; background: rgba(255,255,255,0.1); }
 
-.statItem {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.statNum {
-  font-size: 16px;
-  font-weight: 800;
-  color: white;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.statLabel {
-  font-size: 10px;
-  color: rgba(255,255,255,0.45);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.statDivider {
-  width: 1px;
-  height: 26px;
-  background: rgba(255,255,255,0.1);
-}
-
+/* Location */
 .locationRow {
   display: flex;
   align-items: center;
@@ -202,38 +173,21 @@
   margin-top: 10px;
 }
 
-[data-theme="light"] .statsRow {
-  background: rgba(10, 14, 24, 0.58);
-  border-color: rgba(255,255,255,0.2);
-}
-
-[data-theme="light"] .statNum,
-[data-theme="light"] .statLabel {
-  color: #ffffff;
-}
-
-[data-theme="light"] .locationRow {
-  color: rgba(255,255,255,0.7);
-}
-
+/* Follow + Chat CTA row */
 .ctaRow {
   display: flex;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 16px;
   width: 100%;
 }
-
 .followBtn {
   flex: 1;
-  min-height: 42px;
+  min-height: 40px;
   background: var(--brand-gradient);
   border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   color: white;
-  font-size: 14px;
+  font-size: var(--font-caption);
   font-weight: 700;
   box-shadow: 0 4px 14px rgba(124,58,237,0.4);
   cursor: pointer;
@@ -244,101 +198,126 @@
 
 .unfollowBtn {
   flex: 1;
-  min-height: 42px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.25);
+  min-height: 40px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   color: white;
-  font-size: 14px;
+  font-size: var(--font-caption);
   font-weight: 600;
   backdrop-filter: blur(8px);
   cursor: pointer;
-  transition: background 0.15s;
 }
-.unfollowBtn:active { background: rgba(255,255,255,0.2); }
+.unfollowBtn:active { background: rgba(255,255,255,0.18); }
 .unfollowBtn:disabled { opacity: 0.5; }
 
 .chatBtn {
   flex: 1;
-  min-height: 42px;
+  min-height: 40px;
   background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   color: white;
-  font-size: 14px;
+  font-size: var(--font-caption);
   font-weight: 600;
   backdrop-filter: blur(8px);
   cursor: pointer;
-  transition: background 0.15s;
+  text-decoration: none;
 }
-.chatBtn:active { background: rgba(255,255,255,0.2); }
+.chatBtn:active { background: rgba(255,255,255,0.18); }
 
-/* ── Body ── */
-.body {
-  padding: 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* Light mode fixes */
+[data-theme="light"] .statsRow { background: rgba(10,14,24,0.58); border-color: rgba(255,255,255,0.2); }
+[data-theme="light"] .statNum, [data-theme="light"] .statLabel { color: #ffffff; }
+[data-theme="light"] .locationRow { color: rgba(255,255,255,0.7); }
+
+/* ── Card grid (identical to Dashboard) ── */
+.cardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px 14px calc(var(--tab-bar-height) + 24px);
 }
+.cardFull { grid-column: 1 / -1; }
 
-.bioCard {
+.card {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: var(--radius-md);
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.bioText {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.55;
-}
-
-.chipRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.chip {
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: var(--bg-elevated, rgba(124,58,237,0.12));
-  color: var(--brand);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-/* ── Post grid ── */
-.grid {
-  column-count: 3;
-  column-gap: 6px;
-}
-
-.tile {
-  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
-  margin-bottom: 6px;
-  break-inside: avoid;
-  aspect-ratio: 1;
-  background: var(--bg-card);
 }
 
-.tile img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+/* Bio */
+.bioText { font-size: var(--font-caption); color: var(--text-secondary); line-height: 1.65; white-space: pre-line; }
+.chipRow { display: flex; flex-wrap: wrap; gap: 5px; }
+.nicheChip {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px; font-weight: 600;
+  background: var(--brand-gradient-soft);
+  color: var(--brand);
+  border: 1px solid rgba(124,58,237,0.2);
 }
+
+/* Social cards */
+.socialCard { flex-direction: row !important; align-items: center; gap: 10px; padding: 12px 14px; min-height: 68px; }
+.socialCardIcon {
+  flex-shrink: 0; width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  display: flex; align-items: center; justify-content: center;
+}
+.socialCardInfo { flex: 1; min-width: 0; }
+.socialCardHandle { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.socialCardBtn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 700;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background var(--transition), color var(--transition);
+}
+.socialCardBtn:active { background: var(--brand); color: white; border-color: var(--brand); }
+.socialCardBtnDisabled { opacity: 0.45; pointer-events: none; }
+
+/* Card header */
+.cardHeader { display: flex; align-items: center; justify-content: space-between; }
+.cardTitle { font-size: var(--font-body); font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+
+/* Carousel */
+.carouselWrap { position: relative; aspect-ratio: 4/3; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-secondary); }
+.carouselSquare { aspect-ratio: 1/1; }
+.carouselImg { width: 100%; height: 100%; object-fit: cover; }
+.carouselNav { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; pointer-events: none; }
+.carouselNavBtn { pointer-events: all; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; color: white; }
+.carouselNavBtn:active { background: rgba(0,0,0,0.75); }
+.carouselDots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.45); transition: all var(--transition); }
+.dotActive { background: white; width: 14px; border-radius: 3px; }
+.carouselCaption { font-size: var(--font-caption); color: var(--text-secondary); text-align: center; }
+
+/* Spotify */
+.spotifyCard { flex-direction: row !important; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(29,185,84,0.08), rgba(29,185,84,0.03)) !important; border-color: rgba(29,185,84,0.2) !important; }
+.spotifyInfo { flex: 1; }
+.spotifyLabel { font-size: 11px; color: var(--text-secondary); }
+.spotifyName { font-size: var(--font-body); font-weight: 700; color: var(--text-primary); }
+.spotifyBtn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: var(--radius-full); font-size: 12px; font-weight: 700; background: #1DB954; color: white; box-shadow: 0 3px 10px rgba(29,185,84,0.3); text-decoration: none; white-space: nowrap; }
+
+/* Brands */
+.brandsRow { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 2px; }
+.brandBadge { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.brandLogo { width: 48px; height: 48px; border-radius: var(--radius-sm); object-fit: contain; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 4px; }
+.brandInitial { width: 48px; height: 48px; border-radius: var(--radius-sm); background: var(--brand-gradient-soft); border: 1px solid rgba(124,58,237,0.2); display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; color: var(--brand); }
+.brandName { font-size: 10px; color: var(--text-secondary); max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
