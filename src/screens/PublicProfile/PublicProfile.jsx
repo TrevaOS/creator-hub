@@ -40,19 +40,37 @@ export default function PublicProfile() {
         return;
       }
 
-      const [imgRes, socialRes] = await Promise.all([
+      // Try both creator_profile_id and user_id since images can be keyed either way
+      const [imgByProfileId, imgByUserId, socialRes] = await Promise.all([
         supabase
           .from('creator_carousel_images')
           .select('*')
           .eq('creator_profile_id', profileData.id)
           .order('created_at', { ascending: false })
           .limit(30),
-        supabase
-          .from('creator_social_accounts')
-          .select('*')
-          .eq('creator_profile_id', profileData.id)
-          .eq('is_visible', true),
+        profileData.auth_user_id
+          ? supabase
+              .from('creator_carousel_images')
+              .select('*')
+              .eq('user_id', profileData.auth_user_id)
+              .order('created_at', { ascending: false })
+              .limit(30)
+          : Promise.resolve({ data: [] }),
+        profileData.auth_user_id
+          ? supabase
+              .from('creator_social_accounts')
+              .select('*')
+              .eq('user_id', profileData.auth_user_id)
+              .eq('is_visible', true)
+          : Promise.resolve({ data: [] }),
       ]);
+
+      // Merge and deduplicate images from both queries
+      const imgMap = new Map();
+      for (const img of [...(imgByProfileId.data || []), ...(imgByUserId.data || [])]) {
+        imgMap.set(img.id, img);
+      }
+      const imgRes = { data: [...imgMap.values()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 30) };
 
       setProfile(profileData);
       setImages(imgRes.data || []);

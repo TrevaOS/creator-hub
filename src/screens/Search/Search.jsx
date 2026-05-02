@@ -63,7 +63,15 @@ export default function Search() {
 
   const goToProfile = (username, profileId) => {
     if (!username && !profileId) return;
-    if (username && myProfile?.username && username === myProfile.username) {
+    const myUsername = myProfile?.username?.trim();
+    const myProfileId = myProfile?.profile_id;
+    // Only redirect to own dashboard if username explicitly matches (never match on null/empty)
+    if (username && myUsername && username === myUsername) {
+      navigate('/dashboard');
+      return;
+    }
+    // Also redirect to own dashboard if navigating by profileId and it's our own profile
+    if (!username && profileId && myProfileId && profileId === myProfileId) {
       navigate('/dashboard');
       return;
     }
