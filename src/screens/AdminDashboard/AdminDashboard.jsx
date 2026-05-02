@@ -23,13 +23,13 @@ import styles from './AdminDashboard.module.css';
 
 const EMPTY_CREATOR = {
   name: '',
-  niche: '',
-  followers: '',
-  city: '',
+  username: '',
   email: '',
   phone: '',
   password: '',
-  accountSource: 'self_signup',
+  niche: '',
+  city: '',
+  accountSource: 'admin_created',
 };
 const EMPTY_BRAND = {
   name: '',
@@ -116,6 +116,12 @@ function dbToUiTicketStatus(status) {
   return 'Open';
 }
 
+function extractErrorMessage(error) {
+  if (!error) return null;
+  if (typeof error === 'string') return error;
+  return error.message || error.details || error.hint || error.error_description || JSON.stringify(error);
+}
+
 function uiToDbPriority(severity) {
   const value = String(severity || '').toLowerCase();
   if (value === 'high' || value === 'low') return value;
@@ -133,10 +139,15 @@ async function provisionAuthUserByAdmin({ email, password }) {
       email: cleanEmail,
       password: cleanPassword,
     });
-    if (error) return { userId: null, error: error.message || 'Unable to create auth account' };
+    if (error) {
+      console.error('[Admin] provisionAuthUserByAdmin signUp error', error);
+      const msg = extractErrorMessage(error) || 'Unable to create auth account';
+      return { userId: null, error: error.status === 422 ? `Invalid email or password too short (min 6 chars): ${msg}` : msg };
+    }
     return { userId: data?.user?.id || null, error: null };
   } catch (err) {
-    return { userId: null, error: err?.message || 'Unable to create auth account' };
+    console.error('[Admin] provisionAuthUserByAdmin unexpected error', err);
+    return { userId: null, error: extractErrorMessage(err) || 'Unable to create auth account' };
   }
 }
 export default function AdminDashboard() {
@@ -168,13 +179,14 @@ export default function AdminDashboard() {
   const mapCreatorRow = (row) => ({
     id: row.auth_user_id || row.id,
     name: row.display_name || row.name || row.full_name || row.creator_name || row.username || 'Unknown',
+    username: row.username || '',
     niche: Array.isArray(row.niche_tags) ? row.niche_tags.join(', ') : row.niche_tags || row.niche || row.industry || '',
     followers: Number(row.follower_count || row.audience || row.followers || 0),
     city: row.base_city || row.location || row.city || '',
     email: row.email || '',
     phone: row.phone || row.mobile || row.contact || '',
     accountSource: row.account_source || 'self_signup',
-    password: row.temp_password || '',
+    password: '',
   });
 
   const mapBrandRow = (row) => ({
@@ -187,7 +199,7 @@ export default function AdminDashboard() {
     cin: row.cin || '',
     email: row.email || row.contact_email || '',
     phone: row.phone || row.mobile || row.contact || '',
-    password: row.temp_password || '',
+    password: '',
     accountSource: row.account_source || 'self_signup',
     address: row.address || row.location || '',
     history: row.history || row.history_notes || [],
@@ -502,48 +514,104 @@ export default function AdminDashboard() {
     setDrawer({ open: false, type: null, mode: 'create', id: null });
   }
 
+  async function resolveCurrentOrganizationId() {
+    if (!isSupabaseEnabled || !user?.id) return null;
+
+    const currentOrgUser = await resolveOrgUserForAuthUser({
+      userId: user.id,
+      email: user.email,
+      autoLink: true,
+    });
+
+    let organizationId = currentOrgUser?.organization_id || null;
+
+    if (!organizationId) {
+      const { data: orgs, error: orgsError } = await supabase
+        .from('organizations')
+        .select('id')
+        .limit(1);
+      if (!orgsError && Array.isArray(orgs) && orgs.length) {
+        organizationId = orgs[0].id;
+      }
+    }
+
+    if (!organizationId) {
+      const { data: createdOrg, error: createdOrgError } = await supabase
+        .from('organizations')
+        .insert({
+          business_name: 'Creator Hub',
+          status: 'active',
+          city: 'Bangalore',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+      if (!createdOrgError && createdOrg?.id) {
+        organizationId = createdOrg.id;
+      }
+    }
+
+    return organizationId;
+  }
+
   async function upsertCreator(e) {
     e.preventDefault();
-    if (!creatorForm.name || !creatorForm.niche) return;
+    if (!creatorForm.name || !creatorForm.email || !creatorForm.phone) return;
+    const email = String(creatorForm.email || '').trim().toLowerCase();
+    const username = String(creatorForm.username || email.split('@')[0] || creatorForm.name || '').trim().toLowerCase();
     const payload = {
       ...creatorForm,
-      followers: Number(creatorForm.followers || 0),
-      city: creatorForm.city || 'Unknown',
-      email: String(creatorForm.email || '').trim().toLowerCase(),
+      followers: 0,
+      email,
       phone: String(creatorForm.phone || '').trim(),
-      accountSource: creatorForm.accountSource || 'self_signup',
+      username,
+      niche: creatorForm.niche || '',
+      city: creatorForm.city || '',
       password: String(creatorForm.password || '').trim(),
     };
 
     let provisionedAuthUserId = null;
-    if (payload.accountSource === 'admin_created' && payload.email && payload.password) {
-      const { userId, error } = await provisionAuthUserByAdmin({ email: payload.email, password: payload.password });
-      if (!userId && error) setMessage(`Auth account creation skipped: ${error}`);
-      provisionedAuthUserId = userId;
-    }
+    let organizationId = null;
+    try {
+      if (payload.password && payload.email) {
+        const { userId, error } = await provisionAuthUserByAdmin({ email: payload.email, password: payload.password });
+        if (error) {
+          setMessage(`Auth account creation skipped: ${error}`);
+        }
+        provisionedAuthUserId = userId;
+      }
 
-    if (isSupabaseEnabled && payload.email) {
-      await supabase
-        .from('org_users')
-        .upsert({
-          id: drawer.mode === 'edit' ? drawer.id : undefined,
-          user_id: provisionedAuthUserId || undefined,
-          name: payload.name,
-          email: payload.email,
-          phone: payload.phone || null,
-          role_type: 'creator',
-          account_source: payload.accountSource,
-          temp_password: payload.password || null,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
-    }
+      if (isSupabaseEnabled && payload.email) {
+        organizationId = await resolveCurrentOrganizationId();
+        if (!organizationId) {
+          throw new Error('Unable to resolve organization ID for creator user.');
+        }
+        const { error } = await supabase
+          .from('org_users')
+          .upsert({
+            id: drawer.mode === 'edit' ? drawer.id : undefined,
+            user_id: provisionedAuthUserId || undefined,
+            organization_id: organizationId,
+            name: payload.name,
+            email: payload.email,
+            phone: payload.phone || null,
+            role_type: 'creator',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
+        if (error) throw error;
+      }
 
-    if (drawer.mode === 'edit') {
-      setCreators((prev) => prev.map((c) => (c.id === drawer.id ? { ...c, ...payload } : c)));
-    } else {
-      setCreators((prev) => [{ id: provisionedAuthUserId || Date.now(), ...payload }, ...prev]);
+      if (drawer.mode === 'edit') {
+        setCreators((prev) => prev.map((c) => (c.id === drawer.id ? { ...c, ...payload } : c)));
+      } else {
+        setCreators((prev) => [{ id: provisionedAuthUserId || Date.now(), ...payload }, ...prev]);
+      }
+      setMessage('Creator user saved successfully.');
+      closeDrawer();
+    } catch (err) {
+      setMessage(extractErrorMessage(err) || 'Unable to create creator user.');
     }
-    closeDrawer();
   }
 
   async function upsertBrand(e) {
@@ -567,23 +635,28 @@ export default function AdminDashboard() {
     }
 
     if (isSupabaseEnabled && payload.email) {
-      await supabase
-        .from('org_users')
-        .upsert({
-          id: drawer.mode === 'edit' ? drawer.id : undefined,
-          name: payload.name,
-          email: payload.email,
-          phone: payload.phone || null,
-          role_type: 'brand',
-          account_source: payload.accountSource,
-          temp_password: payload.password || null,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
+      const organizationId = await resolveCurrentOrganizationId();
+      if (!organizationId) {
+        setMessage('Unable to resolve organization ID for brand user.');
+      } else {
+        const { error } = await supabase
+          .from('org_users')
+          .upsert({
+            id: drawer.mode === 'edit' ? drawer.id : undefined,
+            organization_id: organizationId,
+            name: payload.name,
+            email: payload.email,
+            phone: payload.phone || null,
+            role_type: 'brand',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
+        if (error) setMessage(`Brand org_user creation skipped: ${extractErrorMessage(error)}`);
+      }
     }
 
     if (drawer.mode === 'edit') {
-      setBrands((prev) =>
-        prev.map((b) =>
+      setBrands((prev) => [
+        ...prev.map((b) =>
           b.id === drawer.id
             ? {
                 ...b,
@@ -594,7 +667,7 @@ export default function AdminDashboard() {
               }
             : b,
         ),
-      );
+      ]);
     } else {
       setBrands((prev) => [
         {
@@ -851,6 +924,17 @@ export default function AdminDashboard() {
     setSupportTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
   }
 
+  async function sendResetLink(email) {
+    if (!email || !isSupabaseEnabled) {
+      setMessage('Reset link unavailable (missing email or Supabase disabled).');
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    setMessage(error ? `Reset link failed: ${error.message}` : `Password reset link sent to ${email}`);
+  }
+
   function resetAll() {
     setCreators([]);
     setBrands([]);
@@ -919,7 +1003,7 @@ export default function AdminDashboard() {
           <h1 className={styles.brand}>Creator Hub CRM</h1>
           <p className={styles.sidebarHint}>Support contact point + full operations panel.</p>
           <nav className={styles.nav}>
-            {['Overview', 'Creators', 'Brands', 'Deals', 'Support', 'Chats'].map((tab) => (
+            {['Overview', 'Creators', 'Brands', 'Deals', 'Support', 'Chats', 'Create'].map((tab) => (
               <button key={tab} className={`${styles.navBtn} ${activeTab === tab ? styles.navActive : ''}`} onClick={() => setActiveTab(tab)}>
                 {tab}
               </button>
@@ -1009,10 +1093,8 @@ export default function AdminDashboard() {
               <div className={styles.panel}>
                 <div className={styles.panelHead}><h3>Quick Actions</h3><Plus size={14} /></div>
                 <div className={styles.quickActions}>
-                  <button className={styles.actionBtn} onClick={() => openDrawer('creator')}>New Creator</button>
-                  <button className={styles.actionBtn} onClick={() => openDrawer('brand')}>New Brand</button>
-                  <button className={styles.actionBtn} onClick={() => openDrawer('deal')}>New Deal</button>
-                  <button className={styles.actionBtn} onClick={() => openDrawer('ticket')}>Raise Issue</button>
+                  <button className={styles.actionBtn} onClick={() => setActiveTab('Create')}>Go To Create</button>
+                  <button className={styles.actionBtn} onClick={() => setActiveTab('Support')}>Go To Support</button>
                 </div>
               </div>
             </section>
@@ -1022,7 +1104,6 @@ export default function AdminDashboard() {
             <>
               <div className={styles.tabHeader}>
                 <h3>Creators</h3>
-                <button className={styles.actionBtn} onClick={() => openDrawer('creator')}><Plus size={14} />Add Creator</button>
               </div>
               <DataTable
                 title="Creator Directory"
@@ -1048,7 +1129,6 @@ export default function AdminDashboard() {
             <>
               <div className={styles.tabHeader}>
                 <h3>Brands & Company Details</h3>
-                <button className={styles.actionBtn} onClick={() => openDrawer('brand')}><Plus size={14} />Add Brand</button>
               </div>
               <BrandTable
                 rows={filteredBrands}
@@ -1062,7 +1142,6 @@ export default function AdminDashboard() {
             <>
               <div className={styles.tabHeader}>
                 <h3>Deal Pipeline</h3>
-                <button className={styles.actionBtn} onClick={() => openDrawer('deal')}><Plus size={14} />Create Deal</button>
               </div>
               <DataTable
                 title="Deals"
@@ -1139,6 +1218,19 @@ export default function AdminDashboard() {
               </div>
             </section>
           )}
+
+          {activeTab === 'Create' && (
+            <section className={styles.overviewGrid}>
+              <div className={styles.panel}>
+                <div className={styles.panelHead}><h3>Create Records</h3><Plus size={14} /></div>
+                <div className={styles.quickActions}>
+                  <button className={styles.actionBtn} onClick={() => openDrawer('creator')}>Create User</button>
+                  <button className={styles.actionBtn} onClick={() => openDrawer('brand')}>Create Brand</button>
+                  <button className={styles.actionBtn} onClick={() => openDrawer('deal')}>Create Deal</button>
+                </div>
+              </div>
+            </section>
+          )}
         </section>
       </div>
 
@@ -1154,18 +1246,21 @@ export default function AdminDashboard() {
             {drawer.type === 'creator' && (
               <form className={styles.drawerForm} onSubmit={upsertCreator}>
                 <input className="input-field" placeholder="Name" value={creatorForm.name} onChange={(e) => setCreatorForm((v) => ({ ...v, name: e.target.value }))} />
-                <input className="input-field" placeholder="Niche" value={creatorForm.niche} onChange={(e) => setCreatorForm((v) => ({ ...v, niche: e.target.value }))} />
-                <input className="input-field" type="number" placeholder="Followers" value={creatorForm.followers} onChange={(e) => setCreatorForm((v) => ({ ...v, followers: e.target.value }))} />
-                <input className="input-field" placeholder="City" value={creatorForm.city} onChange={(e) => setCreatorForm((v) => ({ ...v, city: e.target.value }))} />
-                <select className="input-field" value={creatorForm.accountSource} onChange={(e) => setCreatorForm((v) => ({ ...v, accountSource: e.target.value }))}>
-                  <option value="self_signup">Self created (no password access)</option>
-                  <option value="admin_created">Admin created (with credentials)</option>
+                <select className="input-field" value={creatorForm.niche} onChange={(e) => setCreatorForm((v) => ({ ...v, niche: e.target.value }))}>
+                  <option value="">Select niche</option>
+                  {DEAL_NICHES.map((niche) => (
+                    <option key={niche} value={niche}>{niche}</option>
+                  ))}
+                </select>
+                <select className="input-field" value={creatorForm.city} onChange={(e) => setCreatorForm((v) => ({ ...v, city: e.target.value }))}>
+                  <option value="">Select city</option>
+                  {DEAL_LOCATIONS.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
                 </select>
                 <input className="input-field" type="email" placeholder="Email" value={creatorForm.email} onChange={(e) => setCreatorForm((v) => ({ ...v, email: e.target.value }))} />
                 <input className="input-field" placeholder="Phone" value={creatorForm.phone} onChange={(e) => setCreatorForm((v) => ({ ...v, phone: e.target.value }))} />
-                {creatorForm.accountSource === 'admin_created' && (
-                  <input className="input-field" placeholder="Password" value={creatorForm.password} onChange={(e) => setCreatorForm((v) => ({ ...v, password: e.target.value }))} />
-                )}
+                <input className="input-field" placeholder="Password (optional)" value={creatorForm.password} onChange={(e) => setCreatorForm((v) => ({ ...v, password: e.target.value }))} />
                 <button className={styles.actionBtn} type="submit">{drawer.mode === 'edit' ? 'Update Creator' : 'Create Creator'}</button>
               </form>
             )}

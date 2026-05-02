@@ -550,11 +550,95 @@ export default function Setup() {
       const severity = supportForm.severity || 'Medium';
 
       if (isSupabaseEnabled && user?.id) {
-        const orgUser = await resolveOrgUserForAuthUser({
+        let orgUser = await resolveOrgUserForAuthUser({
           userId: user.id,
           email: user.email,
           autoLink: true,
         });
+
+        // Fallback: if user is not mapped to an org_user yet, attach/create under admin org.
+        if (!orgUser?.organization_id) {
+          const { data: adminOrgUser } = await supabase
+            .from('org_users')
+            .select('*')
+            .eq('email', 'admin@creatorhub.dev')
+            .maybeSingle();
+
+          let adminOrg = adminOrgUser;
+
+          if (!adminOrg?.organization_id) {
+            let organizationId = adminOrg?.organization_id || null;
+
+            if (!organizationId) {
+              const { data: orgs, error: orgsError } = await supabase
+                .from('organizations')
+                .select('id')
+                .limit(1);
+              if (!orgsError && Array.isArray(orgs) && orgs.length) {
+                organizationId = orgs[0].id;
+              }
+            }
+
+            if (!organizationId) {
+              const { data: createdOrg } = await supabase
+                .from('organizations')
+                .insert({
+                  name: 'Creator Hub',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                })
+                .select('id')
+                .single();
+              organizationId = createdOrg?.id;
+            }
+
+            if (organizationId) {
+              if (!adminOrg) {
+                const { data: createdAdminOrgUser } = await supabase
+                  .from('org_users')
+                  .insert({
+                    email: 'admin@creatorhub.dev',
+                    name: 'Admin',
+                    role_type: 'superadmin',
+                    organization_id: organizationId,
+                    is_active: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  })
+                  .select()
+                  .single();
+                adminOrg = createdAdminOrgUser || adminOrg;
+              } else if (!adminOrg.organization_id) {
+                const { data: updatedAdminOrgUser } = await supabase
+                  .from('org_users')
+                  .update({
+                    organization_id: organizationId,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', adminOrg.id)
+                  .select()
+                  .single();
+                adminOrg = updatedAdminOrgUser || adminOrg;
+              }
+            }
+          }
+
+          if (adminOrg?.organization_id) {
+            const { data: createdOrgUser } = await supabase
+              .from('org_users')
+              .insert({
+                organization_id: adminOrg.organization_id,
+                user_id: user.id,
+                name: profile?.name || profile?.username || user.email?.split('@')[0] || 'Creator User',
+                email: user.email,
+                role_type: 'outlet_staff',
+                is_active: true,
+              })
+              .select()
+              .single();
+            orgUser = createdOrgUser || orgUser;
+          }
+        }
 
         const priorityMap = { High: 'high', Medium: 'medium', Low: 'low' };
         const payload = {
@@ -567,16 +651,34 @@ export default function Setup() {
           category: 'general',
         };
 
-        if (payload.organization_id) {
+        if (payload.organization_id && orgUser?.id) {
           const { data: createdTicket, error } = await supabase.from('support_tickets').insert(payload).select().single();
           if (error) throw error;
-          if (createdTicket?.id && orgUser?.id) {
+          if (createdTicket?.id) {
             await supabase.from('ticket_messages').insert({
               ticket_id: createdTicket.id,
               sender_id: orgUser.id,
               sender_type: 'org_user',
               body: description,
             });
+
+            const { data: adminResponder } = await supabase
+              .from('org_users')
+              .select('id')
+              .eq('organization_id', payload.organization_id)
+              .in('role_type', ['org_admin', 'superadmin'])
+              .order('id', { ascending: true })
+              .limit(1)
+              .maybeSingle();
+
+            if (adminResponder?.id) {
+              await supabase.from('ticket_messages').insert({
+                ticket_id: createdTicket.id,
+                sender_id: adminResponder.id,
+                sender_type: 'org_user',
+                body: `Hi ${profile?.name || 'there'}, thanks for contacting support. Your ticket #${createdTicket.ticket_number || createdTicket.id} has been created (${severity}). We received your issue details and our team will respond shortly.`,
+              });
+            }
           }
         } else {
           throw new Error('Missing organization mapping for this account.');
@@ -592,6 +694,10 @@ export default function Setup() {
       setSupportMessage(err?.message || 'Unable to submit support request.');
     }
     setSupportSaving(false);
+  };
+
+  const saveSection = async () => {
+    await saveAll();
   };
 
   const openSupportInbox = () => {
@@ -762,6 +868,11 @@ export default function Setup() {
                 />
               ))}
             </div>
+            <div className={styles.sectionSaveRow}>
+              <button className={`btn btn-primary ${styles.saveBtnInline}`} onClick={saveSection} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Profile'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -819,7 +930,7 @@ export default function Setup() {
                     )
                   ) : (
                     <Toggle
-                      checked={socials[platform]?.is_visible ?? true}
+                      checked={Boolean(socials[platform]?.url) && Boolean(socials[platform]?.is_visible)}
                       disabled={!socials[platform]?.url}
                       onChange={v => setSocials(s => ({ ...s, [platform]: { ...s[platform], is_visible: v } }))}
                       id={`social_${platform}`}
@@ -919,6 +1030,11 @@ export default function Setup() {
               <p className={styles.moduleDesc}>Brand partnership logos</p>
             </div>
             <Toggle checked={modules.collab_badges_enabled} onChange={v => setModules(m => ({ ...m, collab_badges_enabled: v }))} id="badges_toggle" />
+          </div>
+          <div className={styles.sectionSaveRow}>
+            <button className={`btn btn-primary ${styles.saveBtnInline}`} onClick={saveSection} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Modules'}
+            </button>
           </div>
         </div>
 

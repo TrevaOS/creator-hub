@@ -150,15 +150,20 @@ export const supabase = isSupabaseEnabled
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createNoopSupabaseClient();
 
+let _ephemeralAnonClient = null;
 export function createEphemeralAnonClient() {
   if (!isSupabaseEnabled) return createNoopSupabaseClient();
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  if (!_ephemeralAnonClient) {
+    _ephemeralAnonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storageKey: 'sb-ephemeral-admin',
+      },
+    });
+  }
+  return _ephemeralAnonClient;
 }
 
 export function isSuperAdminEmail(email) {
@@ -172,30 +177,33 @@ export async function resolveOrgUserForAuthUser({ userId, email, autoLink = true
   let orgUser = null;
 
   if (userId) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('org_users')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+    if (error) throw error;
     if (data) orgUser = data;
   }
 
   if (!orgUser && email) {
     const cleanEmail = String(email).trim().toLowerCase();
-    const { data: byEmail } = await supabase
+    const { data: byEmail, error: byEmailError } = await supabase
       .from('org_users')
       .select('*')
       .eq('email', cleanEmail);
+    if (byEmailError) throw byEmailError;
 
     orgUser = Array.isArray(byEmail) && byEmail.length > 0 ? byEmail[0] : null;
 
     if (orgUser && autoLink && userId && !orgUser.user_id) {
-      const { data: linked } = await supabase
+      const { data: linked, error: linkedError } = await supabase
         .from('org_users')
         .update({ user_id: userId, updated_at: new Date().toISOString() })
         .eq('id', orgUser.id)
         .select()
         .single();
+      if (linkedError) throw linkedError;
       if (linked) orgUser = linked;
     }
   }

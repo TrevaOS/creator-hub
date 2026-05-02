@@ -132,10 +132,16 @@ export default function Deals() {
               <span>Near You</span>
             </div>
           </div>
-          <button className={`btn btn-secondary ${styles.filterBtn}`} onClick={() => setFilterOpen(true)}>
-            <Filter size={16} />
-            Filter
-          </button>
+          <div className={styles.headerActions}>
+            <button className={`btn btn-outline ${styles.filterBtn}`} onClick={() => navigate('/deals/chat/inbox')}>
+              <MessageCircle size={16} />
+              Chat
+            </button>
+            <button className={`btn btn-secondary ${styles.filterBtn}`} onClick={() => setFilterOpen(true)}>
+              <Filter size={16} />
+              Filter
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}

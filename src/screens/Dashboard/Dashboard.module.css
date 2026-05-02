@@ -232,6 +232,24 @@
 .ctaKit:active  { opacity: 0.82; }
 .ctaKit:disabled { opacity: 0.5; }
 
+/* Improve readability only for light mode on hero stats/share/location card elements */
+[data-theme="light"] .statsRow {
+  background: rgba(10, 14, 24, 0.58);
+  border-color: rgba(255,255,255,0.2);
+}
+[data-theme="light"] .statNum,
+[data-theme="light"] .statLabel,
+[data-theme="light"] .ctaShare {
+  color: #ffffff;
+}
+[data-theme="light"] .ctaShare {
+  background: rgba(0,0,0,0.34);
+  border-color: rgba(255,255,255,0.25);
+}
+[data-theme="light"] .locationRow {
+  color: #111111;
+}
+
 /* ═══════════════════════════════════════════════════════════
    EDIT MODE BANNER
 ═══════════════════════════════════════════════════════════ */
