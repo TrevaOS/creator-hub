@@ -68,22 +68,38 @@ export default function PublicProfile() {
           .eq('id', profileId).maybeSingle();
         profileData = data;
 
-        // Fallback: integer FK — build synthetic from images
+        // Fallback: integer FK — find real profile via user_id on the image
         if (!profileData) {
           const { data: imgs } = await supabase
             .from('creator_carousel_images').select('*')
             .eq('creator_profile_id', profileId)
             .order('created_at', { ascending: false }).limit(30);
+
           if (imgs?.length) {
-            setProfile({ id: profileId, _synthetic: true, display_name: 'Creator' });
-            setLocalFollowerCount(0);
-            setImages(imgs);
+            // Try to find the real creator_profile via user_id on the image
+            const imageUserId = imgs[0]?.user_id;
+            if (imageUserId) {
+              const { data: realProfile } = await supabase
+                .from('creator_profiles').select('*')
+                .eq('auth_user_id', imageUserId).maybeSingle();
+              if (realProfile) {
+                profileData = realProfile;
+                // continue with full fetch below using the real profile
+              }
+            }
+            // If still no real profile, show what we have from images only
+            if (!profileData) {
+              setProfile({ id: profileId, _synthetic: true, display_name: 'Creator' });
+              setLocalFollowerCount(0);
+              setImages(imgs);
+              setLoading(false);
+              return;
+            }
+          } else {
+            setNotFound(true);
             setLoading(false);
             return;
           }
-          setNotFound(true);
-          setLoading(false);
-          return;
         }
       } else {
         const { data } = await supabase
