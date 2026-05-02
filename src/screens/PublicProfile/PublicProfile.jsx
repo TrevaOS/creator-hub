@@ -32,7 +32,7 @@ export default function PublicProfile() {
       } else {
         query = query.eq('username', username);
       }
-      const { data: profileData } = await query.single();
+      const { data: profileData } = await query.maybeSingle();
 
       if (!profileData) {
         setNotFound(true);

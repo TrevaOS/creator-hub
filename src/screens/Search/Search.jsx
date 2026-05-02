@@ -19,31 +19,50 @@ export default function Search() {
       let nextImages = [];
 
       if (isSupabaseEnabled) {
-        const [imageRes, creatorRes] = await Promise.all([
-          supabase.from('creator_carousel_images').select('*').order('created_at', { ascending: false }).limit(60),
-          supabase.from('creator_profiles').select('*').order('updated_at', { ascending: false }).limit(200),
+        // Step 1: fetch all images
+        const imageRes = await supabase
+          .from('creator_carousel_images')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(60);
+
+        const allImages = imageRes.data || [];
+
+        // Step 2: collect all unique creator_profile_ids from images
+        const profileIds = [...new Set(
+          allImages.map(img => img.creator_profile_id).filter(Boolean)
+        )];
+
+        // Step 3: fetch ONLY those profiles (exact match, no limit miss)
+        const [creatorRes, allCreatorsRes] = await Promise.all([
+          profileIds.length > 0
+            ? supabase.from('creator_profiles').select('*').in('id', profileIds)
+            : Promise.resolve({ data: [] }),
+          supabase.from('creator_profiles').select('id,username,display_name,avatar_url,base_city,niche_tags').order('updated_at', { ascending: false }).limit(200),
         ]);
 
         const creatorMap = new Map((creatorRes.data || []).map((c) => [c.id, c]));
-        nextImages = (imageRes.data || []).map((img, index) => {
+
+        nextImages = allImages.map((img, index) => {
           const profile = creatorMap.get(img.creator_profile_id);
           const username = profile?.username?.trim() || null;
           const displayHandle = username
             ? `@${username}`
-            : profile?.display_name || 'Creator';
+            : profile?.display_name || null;
+          const profileId = profile?.id || img.creator_profile_id || null;
           return {
             id: img.id,
             title: img.caption || `Featured Image ${index + 1}`,
-            creator: displayHandle,
+            creator: displayHandle || 'Creator',
             username,
-            profileId: profile?.id || null,
+            profileId,
             views: profile?.follower_count ? `${Math.max(1, Math.round(profile.follower_count / 10))} views` : 'Featured',
             image: img.image_url,
             heightClass: index % 11 === 0 ? 'tall' : index % 5 === 0 ? 'mid' : 'short',
           };
         }).filter((item) => !!item.image);
 
-        if (mounted) setCreators(creatorRes.data || []);
+        if (mounted) setCreators(allCreatorsRes.data || []);
       }
 
       if (mounted) {
