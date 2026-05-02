@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search as SearchIcon } from 'lucide-react';
 import { isSupabaseEnabled, supabase } from '../../services/supabase';
+import { useAuth } from '../../store/AuthContext';
 import Avatar from '../../components/Avatar';
 import styles from './Search.module.css';
 
 export default function Search() {
   const navigate = useNavigate();
+  const { profile: myProfile } = useAuth();
   const [query, setQuery] = useState('');
   const [images, setImages] = useState([]);
   const [creators, setCreators] = useState([]);
@@ -55,6 +57,15 @@ export default function Search() {
     return !q || [item.title, item.creator].some((value) => value.toLowerCase().includes(q));
   }), [query, images]);
 
+  const goToProfile = (username) => {
+    if (!username || username === 'creator') return;
+    if (myProfile?.username && username === myProfile.username) {
+      navigate('/dashboard');
+    } else {
+      navigate(`/profile/${username}`);
+    }
+  };
+
   const filteredCreators = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return [];
@@ -87,7 +98,7 @@ export default function Search() {
               <button
                 key={c.id}
                 className={styles.creatorRow}
-                onClick={() => navigate(`/profile/${c.username}`)}
+                onClick={() => goToProfile(c.username)}
               >
                 <Avatar src={c.avatar_url} name={c.display_name || c.name || c.username} size={44} />
                 <div className={styles.creatorInfo}>
@@ -105,8 +116,8 @@ export default function Search() {
               <article
                 key={item.id}
                 className={`${styles.reelTile} ${styles[item.heightClass]}`}
-                onClick={() => navigate(`/profile/${item.username}`)}
-                style={{ cursor: 'pointer' }}
+                onClick={() => goToProfile(item.username)}
+                style={{ cursor: item.username && item.username !== 'creator' ? 'pointer' : 'default' }}
               >
                 <img src={item.image} alt={item.title} loading="lazy" />
                 <div className={styles.reelOverlay}>
