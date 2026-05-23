@@ -1,0 +1,140 @@
+Supabase Tables — Influencer Discovery Schema
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. EXISTING TABLE USED → global_contacts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This becomes the global user identity layer.
+
+Store here:
+  Field               Mapping
+  ──────────────────  ──────────────
+  Influencer Name     name
+  Phone               phone
+  Email               email
+  Gender              gender
+  Avatar              avatar_url
+  City                city
+  State               state
+  Address             address
+
+Why?
+Because your app already uses global_contacts as universal people storage.
+Influencer = Global Contact
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. NEW TABLE NEEDED → influencer_profiles
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This becomes the REAL discover/discovery engine table.
+
+  Column               Purpose
+  ───────────────────  ────────────────────────
+  id                   PK
+  global_contact_id    FK → global_contacts.id
+  instagram_handle     @username
+  instagram_id         IG numeric ID
+  profile_url          IG URL
+  bio                  Creator bio
+  primary_niche        Food/Fashion/etc
+  niches[]             Multiple niches
+  followers_exact      Numeric followers
+  followers_count      250K
+  avg_plays_raw        Avg plays
+  impressions_raw      Reach
+  platform             Instagram/YT
+  is_verified          Blue tick
+  deal_type            paid/barter
+  cost                 pricing
+  area                 Indiranagar
+  lat/lng              geo search
+  source               CSV/manual
+  scraped              imported or not
+  created_at           timestamp
+  updated_at           timestamp
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. NEW TABLE NEEDED → influencer_posts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Column                Purpose
+  ────────────────────  ───────────────────────
+  id                    PK
+  influencer_profile_id FK
+  post_url              Reel/post
+  thumbnail_url         Preview
+  caption               Caption
+  hashtags[]            Tags
+  likes_count           Metrics
+  comments_count        Metrics
+  views_count           Metrics
+  posted_at             Date
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. NEW TABLE NEEDED → brand_influencer_actions
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Instead of discover_actions
+
+  Column                Purpose
+  ────────────────────  ───────────────────────
+  id                    PK
+  organization_id       Brand
+  influencer_profile_id Influencer
+  starred               ⭐
+  hearted               ❤️
+  notes                 Internal note
+  created_by            org_users.id
+  created_at            timestamp
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. NEW TABLE NEEDED → brand_influencer_filters
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Column           Purpose
+  ───────────────  ───────────────────────
+  id               PK
+  organization_id  Brand
+  user_id          org_users.id
+  deal_types[]     filters
+  niches[]         filters
+  platforms[]      filters
+  regions[]        filters
+  radius_km        geo
+  search_query     search
+  updated_at       timestamp
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  global_contacts
+  ↓
+  influencer_profiles
+  ↓
+  influencer_posts
+  organizations (brands)
+  ↓
+  brand_influencer_actions
+  organizations/users
+  ↓
+  brand_influencer_filters
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIMPLE UNDERSTANDING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Thing                            Stored In
+  ───────────────────────────────  ─────────────────────────
+  Global human identity            global_contacts
+  Influencer-specific analytics    influencer_profiles
+  IG posts/reels                   influencer_posts
+  Brand saved/liked influencers    brand_influencer_actions
+  Discover filter state            brand_influencer_filters
