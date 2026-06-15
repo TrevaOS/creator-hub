@@ -71,6 +71,7 @@ export function CreatorAvatar({ src, name, handle, className = '', size = 40 }: 
         objectFit: 'cover',
         objectPosition: 'center top',
         display: 'block',
+        borderRadius: '50%',
       }}
       onError={() => setFailed(true)}
       loading="lazy"

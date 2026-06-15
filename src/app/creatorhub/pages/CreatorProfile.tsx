@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react';
-import type { JSX } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router';
+﻿import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, Dispatch, JSX, SetStateAction } from 'react';
+import { Route, Routes, useLocation, useNavigate } from 'react-router';
 import {
-  MapPin,
-  TrendingUp,
-  X,
-  Plus,
-  Check,
+  ArrowLeftRight,
+  Award,
   ChevronRight,
-  ChevronLeft,
-  Star,
+  ExternalLink,
   Heart,
+  ImagePlus,
+  Link2,
   Lock,
+  MapPin,
+  Plus,
   ShieldCheck,
   SlidersHorizontal,
-  ArrowLeftRight,
+  Star,
+  TrendingUp,
+  Upload,
+  X,
 } from 'lucide-react';
 import { TopBar } from '../CreatorHubApp';
 import { CREATOR } from '../data/creator';
@@ -23,52 +26,15 @@ import {
   MARKETING_PIPELINE_META,
   MARKETING_STATUS_META,
 } from '../../data/creatorHubData';
-
-// Social platform definitions
-const ALL_PLATFORMS = [
-  {
-    id: 'instagram',
-    name: 'Instagram',
-    handle: '@foodie_blr',
-    followers: '28.4K',
-    connected: true,
-    color: '#E1306C',
-    icon: 'IG',
-    gradient: 'linear-gradient(135deg, #FF8AC5 0%, #C13584 55%, #833AB4 100%)',
-  },
-  {
-    id: 'youtube',
-    name: 'YouTube',
-    handle: '@foodie_blr',
-    followers: '12K',
-    connected: true,
-    color: '#FF0000',
-    icon: 'YT',
-    gradient: 'linear-gradient(135deg, #FF5F6D 0%, #FF2D55 50%, #FB1D1D 100%)',
-  },
-  { id: 'tiktok', name: 'TikTok', handle: '', followers: '', connected: false, color: '#010101', icon: 'TT' },
-  { id: 'twitter', name: 'X / Twitter', handle: '', followers: '', connected: false, color: '#1DA1F2', icon: 'X' },
-  { id: 'spotify', name: 'Spotify', handle: '', followers: '', connected: false, color: '#1DB954', icon: 'SP' },
-  { id: 'snapchat', name: 'Snapchat', handle: '', followers: '', connected: false, color: '#FFFC00', icon: 'SC', textColor: '#111' },
-  { id: 'linkedin', name: 'LinkedIn', handle: '', followers: '', connected: false, color: '#0A66C2', icon: 'LI' },
-  { id: 'pinterest', name: 'Pinterest', handle: '', followers: '', connected: false, color: '#E60023', icon: 'PI' },
-  { id: 'zomato', name: 'Zomato', handle: '', followers: '', connected: false, color: '#E23744', icon: 'ZO' },
-  { id: 'swiggy', name: 'Swiggy', handle: '', followers: '', connected: false, color: '#FC8019', icon: 'SW' },
-];
-
-const COLLABS = [
-  { id: 1, brand: 'Smokehouse Bar', img: 'https://images.unsplash.com/photo-1514190051997-0f6f39ca5cde?w=200&h=200&fit=crop', reach: '42K', eng: '8.4%' },
-  { id: 2, brand: 'Cafe Verde', img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=200&fit=crop', reach: '31K', eng: '7.1%' },
-  { id: 3, brand: 'Chianti & Co', img: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?w=200&h=200&fit=crop', reach: '28K', eng: '6.8%' },
-  { id: 4, brand: 'Roasted Bean', img: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&h=200&fit=crop', reach: '19K', eng: '9.2%' },
-  { id: 5, brand: 'Urban Bistro', img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&h=200&fit=crop', reach: '22K', eng: '5.9%' },
-  { id: 6, brand: 'The Waffle Lab', img: 'https://images.unsplash.com/photo-1568051243858-533a607809a5?w=200&h=200&fit=crop', reach: '16K', eng: '7.7%' },
-];
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '../../components/ui/carousel';
 
 type BrandRecord = (typeof BRAND_CAMPAIGNS)[number];
-
-const STARRED_BRANDS: BrandRecord[] = BRAND_CAMPAIGNS.filter((brand) => brand.audienceFit >= 85).slice(0, 4);
-const LIKED_BRANDS: BrandRecord[] = BRAND_CAMPAIGNS.filter((brand) => brand.marketing.status !== 'Completed').slice(0, 5);
 
 type View =
   | 'dashboard'
@@ -82,6 +48,77 @@ type View =
 
 type ToneKey = 'emerald' | 'sky' | 'amber' | 'gray' | 'purple' | 'cyan';
 
+type PlatformId = 'instagram' | 'facebook' | 'spotify' | 'youtube';
+
+type CreatorSocial = {
+  url: string;
+  label: string;
+  followers: string;
+};
+
+type CreatorProfileState = {
+  name: string;
+  handle: string;
+  avatar: string;
+  cover: string;
+  location: string;
+  tagline: string;
+  bio: string;
+  niches: string[];
+  reach: string;
+  engagementRate: string;
+  socials: Record<PlatformId, CreatorSocial>;
+  showcaseImages: string[];
+  showcasedCollabIds: number[];
+};
+
+const STORAGE_KEY = 'creatorhub.profile.v3';
+
+const PLATFORM_META: Record<
+  PlatformId,
+  {
+    name: string;
+    short: string;
+    color: string;
+    gradient: string;
+    helper: string;
+    placeholder: string;
+  }
+> = {
+  instagram: {
+    name: 'Instagram',
+    short: 'IG',
+    color: '#E1306C',
+    gradient: 'linear-gradient(135deg, #ff90c5 0%, #d63384 55%, #7c3aed 100%)',
+    helper: 'Main profile link',
+    placeholder: 'https://instagram.com/yourhandle',
+  },
+  facebook: {
+    name: 'Facebook',
+    short: 'FB',
+    color: '#1877F2',
+    gradient: 'linear-gradient(135deg, #60a5fa 0%, #2563eb 100%)',
+    helper: 'Page or creator profile',
+    placeholder: 'https://facebook.com/yourpage',
+  },
+  spotify: {
+    name: 'Spotify Playlist',
+    short: 'SP',
+    color: '#1DB954',
+    gradient: 'linear-gradient(135deg, #4ade80 0%, #16a34a 100%)',
+    helper: 'Playlist or artist link',
+    placeholder: 'https://open.spotify.com/playlist/...',
+  },
+  youtube: {
+    name: 'YouTube',
+    short: 'YT',
+    color: '#FF0000',
+    gradient: 'linear-gradient(135deg, #fb7185 0%, #ef4444 45%, #dc2626 100%)',
+    helper: 'Channel or playlist link',
+    placeholder: 'https://youtube.com/@yourchannel',
+  },
+};
+
 const TONE_STYLES: Record<ToneKey, { container: string; dot: string }> = {
   emerald: { container: 'bg-emerald-50 text-emerald-700 border border-emerald-200', dot: 'bg-emerald-500' },
   sky: { container: 'bg-sky-50 text-sky-700 border border-sky-200', dot: 'bg-sky-500' },
@@ -91,11 +128,53 @@ const TONE_STYLES: Record<ToneKey, { container: string; dot: string }> = {
   cyan: { container: 'bg-cyan-50 text-cyan-700 border border-cyan-200', dot: 'bg-cyan-500' },
 };
 
+const COLLABS: { id: number; brand: string; img: string; reach: string; eng: string; campaign: string; date: string }[] = [];
+
+const STARRED_BRANDS: BrandRecord[] = BRAND_CAMPAIGNS.filter((brand) => brand.audienceFit >= 85).slice(0, 4);
+const LIKED_BRANDS: BrandRecord[] = BRAND_CAMPAIGNS.filter((brand) => brand.marketing.status !== 'Completed').slice(0, 5);
+
 const INR = new Intl.NumberFormat('en-IN', {
   style: 'currency',
   currency: 'INR',
   maximumFractionDigits: 0,
 });
+
+const INITIAL_PROFILE: CreatorProfileState = {
+  name: CREATOR.name,
+  handle: CREATOR.handle,
+  avatar: CREATOR.avatar,
+  cover: CREATOR.cover,
+  location: CREATOR.location,
+  tagline: CREATOR.tagline,
+  bio: CREATOR.bio,
+  niches: CREATOR.categories,
+  reach: CREATOR.reach,
+  engagementRate: CREATOR.engagementRate,
+  socials: {
+    instagram: {
+      label: '',
+      followers: '',
+      url: '',
+    },
+    facebook: {
+      label: '',
+      followers: '',
+      url: '',
+    },
+    spotify: {
+      label: '',
+      followers: '',
+      url: '',
+    },
+    youtube: {
+      label: '',
+      followers: '',
+      url: '',
+    },
+  },
+  showcaseImages: [],
+  showcasedCollabIds: [],
+};
 
 const formatDate = (iso: string) => {
   const date = new Date(iso);
@@ -103,427 +182,24 @@ const formatDate = (iso: string) => {
   return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
 };
 
-function HamburgerMenu({ onClose, onNavigate, activeView }: { onClose: () => void; onNavigate: (v: View) => void; activeView: View }) {
-  const navigate = useNavigate();
-
-  const primary = [
-    { label: 'Dashboard', view: 'dashboard' as View },
-    { label: 'Profile Bio', view: 'bio' as View },
-    { label: 'Analytics', view: 'stats' as View },
-    { label: 'Social Accounts', view: 'socials' as View },
-  ];
-
-  const privateLinks = [
-    { label: 'Saved Favorites', view: 'favorites' as View, icon: Star },
-    { label: 'Liked Pitch Queue', view: 'liked' as View, icon: Heart },
-    { label: 'Privacy & Data', view: 'privacy' as View, icon: ShieldCheck },
-    { label: 'Account Controls', view: 'account' as View, icon: SlidersHorizontal },
-  ];
-
-  const systemLinks = [
-    { label: 'Switch workspace', path: '/marketing', icon: ArrowLeftRight },
-  ];
-
-  const handleNavigate = (view: View) => {
-    onNavigate(view);
-    onClose();
-  };
-
-  const handleSystem = (path: string) => {
-    navigate(path);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-black/50" onClick={onClose} />
-      <div className="w-72 bg-white h-full flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <span className="font-bold text-gray-900 text-lg">Menu</span>
-          <button onClick={onClose}>
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <img
-              src={CREATOR.avatar}
-              alt={CREATOR.name}
-              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
-            />
-            <div>
-              <div className="font-bold text-gray-900">{CREATOR.name}</div>
-              <div className="text-xs text-gray-500">{CREATOR.handle}</div>
-            </div>
-          </div>
-        </div>
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          <div className="text-[10px] font-semibold text-gray-400 tracking-[0.2em] px-2 pb-2">NAVIGATION</div>
-          {primary.map((item) => (
-            <button
-              key={item.view}
-              onClick={() => handleNavigate(item.view)}
-              className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
-                activeView === item.view ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {item.label}
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            </button>
-          ))}
-          <div className="text-[10px] font-semibold text-gray-400 tracking-[0.2em] px-2 pt-4 pb-2">PRIVATE</div>
-          {privateLinks.map(({ label, view, icon: Icon }) => {
-            const isActive = activeView === view;
-            return (
-            <button
-              key={view}
-              onClick={() => handleNavigate(view)}
-              className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
-                isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
-                  <Icon className="w-4 h-4" />
-                </span>
-                {label}
-              </span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            </button>
-            );
-          })}
-          <div className="text-[10px] font-semibold text-gray-400 tracking-[0.2em] px-2 pt-4 pb-2">SYSTEM</div>
-          {systemLinks.map(({ label, path, icon: Icon }) => (
-            <button
-              key={path}
-              onClick={() => handleSystem(path)}
-              className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-all"
-            >
-              <span className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
-                  <Icon className="w-4 h-4" />
-                </span>
-                {label}
-              </span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-gray-100">
-          <button className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-500">
-            Log Out
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+async function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
 }
 
-function MenuToggle({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center"
-      aria-label="Open menu"
-    >
-      <div className="flex flex-col gap-[3px] items-end">
-        <div className="w-4 h-[2px] bg-gray-700 rounded" />
-        <div className="w-4 h-[2px] bg-gray-700 rounded" />
-        <div className="w-2.5 h-[2px] bg-gray-700 rounded" />
-      </div>
-    </button>
-  );
+function safeUrl(url: string) {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 }
 
-function SocialConnect({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () => void }) {
-  const [platforms, setPlatforms] = useState(ALL_PLATFORMS);
-  const [connecting, setConnecting] = useState<string | null>(null);
-
-  const toggle = (id: string) => {
-    setConnecting(id);
-    setTimeout(() => {
-      setPlatforms((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, connected: !p.connected } : p))
-      );
-      setConnecting(null);
-    }, 800);
-  };
-
-  const connected = platforms.filter((p) => p.connected);
-  const available = platforms.filter((p) => !p.connected);
-
-  return (
-    <div className="flex flex-col bg-gray-50 h-full">
-      <TopBar
-        title={
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center text-xs font-bold">
-              🔗
-            </span>
-            <div>
-              <div className="font-bold text-gray-900 leading-tight">Social Accounts</div>
-              <div className="text-[11px] text-gray-400 uppercase tracking-wide">Private controls</div>
-            </div>
-          </div>
-        }
-        right={<MenuToggle onClick={onOpenMenu} />}
-      />
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Connected */}
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">CONNECTED · {connected.length}</div>
-          <div className="space-y-2">
-            {connected.map((p) => (
-              <div key={p.id} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs text-white flex-shrink-0"
-                  style={{ background: p.color }}
-                >
-                  {p.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-gray-900 text-sm">{p.name}</div>
-                  <div className="text-xs text-gray-500">{p.handle} · {p.followers} followers</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-green-600" />
-                  </div>
-                  <button
-                    onClick={() => toggle(p.id)}
-                    className="text-xs text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    {connecting === p.id ? '...' : 'Disconnect'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Available */}
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">ADD MORE</div>
-          <div className="space-y-2">
-            {available.map((p) => (
-              <div key={p.id} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0"
-                  style={{ background: p.color, color: p.textColor ?? 'white' }}
-                >
-                  {p.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-gray-900 text-sm">{p.name}</div>
-                  <div className="text-xs text-gray-400">Tap to connect</div>
-                </div>
-                <button
-                  onClick={() => toggle(p.id)}
-                  className="w-8 h-8 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center hover:border-gray-900 transition-all"
-                >
-                  {connecting === p.id ? (
-                    <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Plus className="w-4 h-4 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="flex-shrink-0 p-4 border-t border-gray-100 bg-white">
-        <button onClick={onBack} className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-500">
-          ← Back
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DashboardView({ onView, onOpenMenu }: { onView: (v: View) => void; onOpenMenu: () => void }) {
-  const connected = ALL_PLATFORMS.filter((p) => p.connected);
-
-  return (
-    <div className="flex flex-col bg-gray-50 h-full">
-      <TopBar
-        right={<MenuToggle onClick={onOpenMenu} />}
-      />
-      <div className="flex-1 overflow-y-auto">
-        {/* Hero cover */}
-        <div className="relative">
-          <div className="relative h-36 w-full overflow-hidden">
-            <img
-              src={CREATOR.cover}
-              alt="Profile cover"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-gray-50" />
-            <button
-              onClick={() => onView('account')}
-              className="absolute right-3 top-3 rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/60"
-            >
-              Edit cover
-            </button>
-          </div>
-          {/* Avatar overlapping the cover */}
-          <div className="relative z-10 px-4 -mt-12 flex flex-col">
-            <img
-              src={CREATOR.avatar}
-              alt={CREATOR.name}
-              className="h-24 w-24 rounded-full object-cover border-4 border-gray-50 shadow-lg bg-gray-100"
-            />
-            <div className="mt-2 flex items-center gap-1.5">
-              <span className="font-bold text-gray-900 text-lg leading-tight">{CREATOR.name}</span>
-              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-cyan-500 text-white">
-                <Check className="h-2.5 w-2.5" strokeWidth={3} />
-              </span>
-            </div>
-            <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-              {CREATOR.handle} <span className="text-gray-300">·</span>
-              <MapPin className="h-3 w-3" /> Bangalore
-            </div>
-            <div className="mt-3 flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 rounded-full border border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100 px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm">
-                🍔 Food
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-pink-100 bg-gradient-to-r from-pink-50 to-rose-100 px-3 py-1 text-xs font-semibold text-rose-600 shadow-sm">
-                ✨ Lifestyle
-              </span>
-              <button
-                onClick={() => onView('bio')}
-                className="ml-auto inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 hover:border-gray-300"
-              >
-                View bio <ChevronRight className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 py-4 space-y-4">
-        {/* Social chips */}
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">CONNECTED PLATFORMS</div>
-          <div className="grid grid-cols-2 gap-2">
-            {connected.map((p) => (
-              <div
-                key={p.id}
-                className="relative overflow-hidden rounded-2xl p-4 text-white shadow-lg"
-                style={{ background: p.gradient ?? p.color }}
-              >
-                <div className="pointer-events-none absolute -top-6 -right-6 h-20 w-20 rounded-full bg-white/15" />
-                <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/10" />
-                <div className="relative space-y-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-white/80">Connected</div>
-                  <div>
-                    <div className="text-xs font-medium text-white/80">{p.handle || p.name}</div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-black leading-none">{p.followers}</span>
-                      <span className="text-[10px] uppercase tracking-wide text-white/75">Followers</span>
-                    </div>
-                  </div>
-                  <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
-                    <Check className="h-3 w-3" /> {p.icon}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() => onView('socials')}
-            className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 bg-white text-[11px] font-semibold text-gray-500 transition-all hover:border-gray-400"
-          >
-            <Plus className="h-4 w-4" /> Add More
-          </button>
-        </div>
-
-        {/* Live Metrics */}
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">LIVE METRICS</div>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => onView('stats')}
-              className="rounded-2xl bg-white p-3 text-center shadow-sm transition-all hover:shadow-md"
-            >
-              <div className="text-lg font-bold text-gray-900">142K</div>
-              <div className="text-[9px] uppercase tracking-wide text-gray-400">Reach</div>
-            </button>
-            <div className="rounded-2xl border border-cyan-200 bg-white p-3 text-center shadow-[0_10px_30px_-12px_rgba(45,212,191,0.65)]">
-              <div className="text-lg font-bold text-cyan-600">7.2%</div>
-              <div className="text-[9px] uppercase tracking-wide text-gray-400">Eng. Rate</div>
-            </div>
-            <div className="rounded-2xl bg-white p-3 text-center shadow-sm">
-              <div className="text-base font-bold text-gray-900">Blore</div>
-              <div className="text-[9px] uppercase tracking-wide text-gray-400">Top City</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Private shortcuts */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-900">My shortcuts</div>
-            <span className="flex items-center gap-1 text-xs font-medium text-indigo-500">
-              <Lock className="h-3.5 w-3.5" /> Private
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => onView('favorites')}
-              className="group flex h-full items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 text-amber-500 shadow-inner">
-                <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">Starred pitches</div>
-                <div className="text-[11px] font-medium text-gray-400">{STARRED_BRANDS.length} saved</div>
-              </div>
-            </button>
-            <button
-              onClick={() => onView('liked')}
-              className="group flex h-full items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-pink-100 text-rose-500 shadow-inner">
-                <Heart className="h-5 w-5 fill-rose-400 text-rose-500" />
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">Liked queue</div>
-                <div className="text-[11px] font-medium text-gray-400">{LIKED_BRANDS.length} brands</div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Past Collabs */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">PAST COLLABS · {COLLABS.length}</div>
-            <button className="text-xs font-semibold text-cyan-600">View All →</button>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {COLLABS.map((c) => (
-              <div key={c.id} className="group relative aspect-square overflow-hidden rounded-2xl shadow-sm">
-                <img src={c.img} alt={c.brand} className="h-full w-full object-cover" />
-                <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/55 via-black/10 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <div className="text-[9px] font-semibold leading-tight text-white">{c.reach} reach</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* View bio button */}
-        <button
-          onClick={() => onView('bio')}
-          className="w-full py-3 bg-white rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 shadow-sm flex items-center justify-center gap-2"
-        >
-          View Public Bio <ChevronRight className="w-4 h-4" />
-        </button>
-        </div>
-      </div>
-    </div>
-  );
+function getConnectedPlatforms(profile: CreatorProfileState) {
+  return (Object.keys(PLATFORM_META) as PlatformId[]).filter((platform) => profile.socials[platform].url.trim());
 }
 
 function BrandListCard({ brand, intent }: { brand: BrandRecord; intent: 'favorites' | 'liked' }) {
@@ -543,53 +219,51 @@ function BrandListCard({ brand, intent }: { brand: BrandRecord; intent: 'favorit
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+    <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <img src={brand.thumb} alt={brand.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
-        <div className="flex-1 min-w-0">
+        <img src={brand.thumb} alt={brand.name} className="h-14 w-14 flex-shrink-0 rounded-xl object-cover" />
+        <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <div className="font-semibold text-gray-900 text-sm leading-tight">{brand.name}</div>
-              <div className="text-xs text-gray-500 line-clamp-1">{brand.tagline}</div>
+              <div className="text-sm font-semibold leading-tight text-gray-900">{brand.name}</div>
+              <div className="line-clamp-1 text-xs text-gray-500">{brand.tagline}</div>
             </div>
-            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${statusTone.container}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusTone.dot}`} />
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusTone.container}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${statusTone.dot}`} />
               {statusMeta.label}
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-gray-500 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> {brand.location}
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-gray-500">
+            <MapPin className="h-3 w-3" /> {brand.location}
           </div>
         </div>
       </div>
       <div className="flex items-center justify-between text-[11px] font-semibold text-gray-500">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${accentClasses}`}>
-          <AccentIcon
-            className={`w-3 h-3 ${intent === 'favorites' ? 'fill-amber-500 text-amber-500' : 'fill-rose-500 text-rose-500'}`}
-          />
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${accentClasses}`}>
+          <AccentIcon className={`h-3 w-3 ${intent === 'favorites' ? 'fill-amber-500 text-amber-500' : 'fill-rose-500 text-rose-500'}`} />
           {intent === 'favorites' ? 'Starred' : 'Liked'}
         </span>
         <span className="text-gray-400">Updated {formatDate(brand.marketing.targetLaunch)}</span>
       </div>
       <div className="grid grid-cols-3 gap-2 text-center text-[11px] text-gray-500">
-        <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+        <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
           <div className="text-sm font-semibold text-gray-900">{INR.format(brand.marketing.budget)}</div>
-          <div className="uppercase tracking-wide text-[10px] text-gray-400">Budget</div>
+          <div className="text-[10px] uppercase tracking-wide text-gray-400">Budget</div>
         </div>
-        <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+        <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
           <div className="text-sm font-semibold text-gray-900">{brand.marketing.inboundLeads} leads</div>
-          <div className="uppercase tracking-wide text-[10px] text-gray-400">Inbound</div>
+          <div className="text-[10px] uppercase tracking-wide text-gray-400">Inbound</div>
         </div>
-        <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold ${pipelineTone.container}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${pipelineTone.dot}`} />
+        <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${pipelineTone.container}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${pipelineTone.dot}`} />
             {pipelineMeta.label}
           </span>
         </div>
       </div>
       <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs font-semibold">
-        <button onClick={handleViewBrief} className="text-cyan-700 hover:underline inline-flex items-center gap-1">
-          View brief <ChevronRight className="w-3 h-3" />
+        <button onClick={handleViewBrief} className="inline-flex items-center gap-1 text-cyan-700 hover:underline">
+          View brief <ChevronRight className="h-3 w-3" />
         </button>
         <button className="text-gray-400 hover:text-gray-600">Remove</button>
       </div>
@@ -597,24 +271,457 @@ function BrandListCard({ brand, intent }: { brand: BrandRecord; intent: 'favorit
   );
 }
 
-function FavoritesView({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () => void }) {
+function HamburgerMenu({ onClose, onNavigate, activeView, profile }: { onClose: () => void; onNavigate: (v: View) => void; activeView: View; profile: CreatorProfileState }) {
+  const navigate = useNavigate();
+
+  const primary = [
+    { label: 'Dashboard', view: 'dashboard' as View },
+    { label: 'Brand Preview', view: 'bio' as View },
+    { label: 'Analytics', view: 'stats' as View },
+    { label: 'Social Accounts', view: 'socials' as View },
+  ];
+
+  const privateLinks = [
+    { label: 'Saved Favorites', view: 'favorites' as View, icon: Star },
+    { label: 'Liked Pitch Queue', view: 'liked' as View, icon: Heart },
+    { label: 'Privacy & Data', view: 'privacy' as View, icon: ShieldCheck },
+    { label: 'Profile Controls', view: 'account' as View, icon: SlidersHorizontal },
+  ];
+
+  const systemLinks = [{ label: 'Switch workspace', path: '/marketing', icon: ArrowLeftRight }];
+
+  const handleSystem = (path: string) => {
+    navigate(path);
+    onClose();
+  };
+
   return (
-    <div className="flex flex-col bg-gray-50 h-full">
+    <div className="fixed inset-0 z-50 flex">
+      <div className="flex-1 bg-black/50" onClick={onClose} />
+      <div className="flex h-full w-72 flex-col bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <span className="text-lg font-bold text-gray-900">Menu</span>
+          <button onClick={onClose}>
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
+        </div>
+        <div className="border-b border-gray-100 p-4">
+          <div className="flex items-center gap-3">
+            <img src={profile.avatar} alt={profile.name} className="h-12 w-12 rounded-full border-2 border-gray-200 object-cover" />
+            <div>
+              <div className="font-bold text-gray-900">{profile.name}</div>
+              <div className="text-xs text-gray-500">{profile.handle}</div>
+            </div>
+          </div>
+        </div>
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+          <div className="px-2 pb-2 text-[10px] font-semibold tracking-[0.2em] text-gray-400">NAVIGATION</div>
+          {primary.map((item) => (
+            <button
+              key={item.view}
+              onClick={() => {
+                onNavigate(item.view);
+                onClose();
+              }}
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold transition-all ${
+                activeView === item.view ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {item.label}
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+            </button>
+          ))}
+          <div className="px-2 pb-2 pt-4 text-[10px] font-semibold tracking-[0.2em] text-gray-400">PRIVATE</div>
+          {privateLinks.map(({ label, view, icon: Icon }) => (
+            <button
+              key={view}
+              onClick={() => {
+                onNavigate(view);
+                onClose();
+              }}
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold transition-all ${
+                activeView === view ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                  <Icon className="h-4 w-4" />
+                </span>
+                {label}
+              </span>
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+            </button>
+          ))}
+          <div className="px-2 pb-2 pt-4 text-[10px] font-semibold tracking-[0.2em] text-gray-400">SYSTEM</div>
+          {systemLinks.map(({ label, path, icon: Icon }) => (
+            <button
+              key={path}
+              onClick={() => handleSystem(path)}
+              className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-100"
+            >
+              <span className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                  <Icon className="h-4 w-4" />
+                </span>
+                {label}
+              </span>
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
+function MenuToggle({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white"
+      aria-label="Open menu"
+    >
+      <div className="flex flex-col items-end gap-[3px]">
+        <div className="h-[2px] w-4 rounded bg-gray-700" />
+        <div className="h-[2px] w-4 rounded bg-gray-700" />
+        <div className="h-[2px] w-2.5 rounded bg-gray-700" />
+      </div>
+    </button>
+  );
+}
+
+function SocialConnect({
+  onBack,
+  onOpenMenu,
+  profile,
+  onUpdateSocial,
+}: {
+  onBack: () => void;
+  onOpenMenu: () => void;
+  profile: CreatorProfileState;
+  onUpdateSocial: (platform: PlatformId, field: keyof CreatorSocial, value: string) => void;
+}) {
+  return (
+    <div className="flex h-full flex-col bg-gray-50">
       <TopBar
         title={
           <div className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-              <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 text-cyan-600">
+              <Link2 className="h-4 w-4" />
             </span>
             <div>
-              <div className="font-bold text-gray-900 leading-tight">Starred brands</div>
-              <div className="text-[11px] text-gray-400 uppercase tracking-wide">Private</div>
+              <div className="leading-tight font-bold text-gray-900">Social Accounts</div>
+              <div className="text-[11px] uppercase tracking-wide text-gray-400">Only brand-facing links</div>
             </div>
           </div>
         }
         right={<MenuToggle onClick={onOpenMenu} />}
       />
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        {(Object.keys(PLATFORM_META) as PlatformId[]).map((platform) => {
+          const meta = PLATFORM_META[platform];
+          const social = profile.socials[platform];
+          const connected = !!social.url.trim();
+
+          return (
+            <section key={platform} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl text-xs font-black text-white"
+                    style={{ background: meta.gradient }}
+                  >
+                    {meta.short}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">{meta.name}</div>
+                    <div className="text-xs text-gray-400">{meta.helper}</div>
+                  </div>
+                </div>
+                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${connected ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {connected ? 'Visible to brands' : 'Hidden'}
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                <label className="block">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Clickable link</div>
+                  <input
+                    value={social.url}
+                    onChange={(event) => onUpdateSocial(platform, 'url', event.target.value)}
+                    placeholder={meta.placeholder}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Label shown</div>
+                    <input
+                      value={social.label}
+                      onChange={(event) => onUpdateSocial(platform, 'label', event.target.value)}
+                      placeholder={platform === 'spotify' ? 'Playlist name' : '@handle or page name'}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+                    />
+                  </label>
+                  <label className="block">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Followers / saves</div>
+                    <input
+                      value={social.followers}
+                      onChange={(event) => onUpdateSocial(platform, 'followers', event.target.value)}
+                      placeholder="12K"
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+                    />
+                  </label>
+                </div>
+                {connected ? (
+                  <a
+                    href={safeUrl(social.url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-cyan-700 hover:underline"
+                  >
+                    Open live link <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                ) : (
+                  <p className="text-xs text-gray-400">Add a link to make this platform clickable in the brand preview.</p>
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+      <div className="flex-shrink-0 border-t border-gray-100 bg-white p-4">
+        <button onClick={onBack} className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600">
+          Back to dashboard
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DashboardView({
+  onView,
+  onOpenMenu,
+  profile,
+  onCoverUpload,
+}: {
+  onView: (v: View) => void;
+  onOpenMenu: () => void;
+  profile: CreatorProfileState;
+  onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const connected = getConnectedPlatforms(profile);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+
+  return (
+    <div className="flex h-full flex-col bg-gray-50">
+      <TopBar right={<MenuToggle onClick={onOpenMenu} />} />
+      <div className="flex-1 overflow-y-auto">
+        <div className="relative">
+          <div className="relative h-40 w-full overflow-hidden">
+            <img src={profile.cover} alt="Profile cover" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-gray-50" />
+            <div className="absolute right-3 top-3 flex gap-2">
+              <button
+                onClick={() => coverInputRef.current?.click()}
+                className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/60"
+              >
+                Change image
+              </button>
+              <button
+                onClick={() => onView('account')}
+                className="rounded-full bg-white/85 px-3 py-1 text-[11px] font-semibold text-gray-700 backdrop-blur transition hover:bg-white"
+              >
+                Edit profile
+              </button>
+            </div>
+            <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={onCoverUpload} />
+          </div>
+          <div className="relative z-10 -mt-12 flex flex-col px-4">
+            <img src={profile.avatar} alt={profile.name} className="h-24 w-24 rounded-full border-4 border-gray-50 bg-gray-100 object-cover shadow-lg" />
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="text-lg font-bold leading-tight text-gray-900">{profile.name}</span>
+              <img src="/verified-badge.png" alt="Verified" className="h-4 w-4 object-contain flex-shrink-0" />
+            </div>
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+              {profile.handle} <span className="text-gray-300">Â·</span>
+              <MapPin className="h-3 w-3" /> {profile.location}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {profile.niches.map((niche) => (
+                <span
+                  key={niche}
+                  className="inline-flex items-center rounded-full border border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100 px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm"
+                >
+                  {niche}
+                </span>
+              ))}
+              <button
+                onClick={() => onView('bio')}
+                className="ml-auto inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 hover:border-gray-300"
+              >
+                Brand preview <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 px-4 py-4">
+          <div>
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">CONNECTED PLATFORMS</div>
+            <div className="grid grid-cols-2 gap-2">
+              {connected.map((platform) => {
+                const meta = PLATFORM_META[platform];
+                const social = profile.socials[platform];
+                return (
+                  <a
+                    key={platform}
+                    href={safeUrl(social.url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="relative overflow-hidden rounded-2xl p-4 text-white shadow-lg"
+                    style={{ background: meta.gradient }}
+                  >
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/15" />
+                    <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/10" />
+                    <div className="relative space-y-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-widest text-white/80">{meta.name}</div>
+                      <div>
+                        <div className="text-xs font-medium text-white/80">{social.label || meta.name}</div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black leading-none">{social.followers || 'Live'}</span>
+                          <span className="text-[10px] uppercase tracking-wide text-white/75">Audience</span>
+                        </div>
+                      </div>
+                      <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">
+                        <ExternalLink className="h-3 w-3" /> Clickable
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => onView('socials')}
+              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 bg-white text-[11px] font-semibold text-gray-500 transition-all hover:border-gray-400"
+            >
+              <Plus className="h-4 w-4" /> Edit social links
+            </button>
+          </div>
+
+          <div>
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">SHOWCASE SLIDES</div>
+            <div className="rounded-3xl border border-gray-200 bg-white p-3 shadow-sm">
+              <Carousel opts={{ loop: profile.showcaseImages.length > 1 }}>
+                <CarouselContent className="-ml-3">
+                  {profile.showcaseImages.map((image, index) => (
+                    <CarouselItem key={`${image}-${index}`} className="pl-3">
+                      <div className="relative h-44 overflow-hidden rounded-2xl">
+                        <img src={image} alt={`Showcase slide ${index + 1}`} className="h-full w-full object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
+                          <div className="text-sm font-semibold">Photo showcase for brands</div>
+                          <div className="text-xs text-white/75">Slide {index + 1} of {profile.showcaseImages.length}</div>
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {profile.showcaseImages.length > 1 && (
+                  <>
+                    <CarouselPrevious className="left-3 top-auto bottom-3 h-9 w-9 translate-y-0 border-white/20 bg-black/45 text-white hover:bg-black/60" />
+                    <CarouselNext className="right-3 top-auto bottom-3 h-9 w-9 translate-y-0 border-white/20 bg-black/45 text-white hover:bg-black/60" />
+                  </>
+                )}
+              </Carousel>
+              <button
+                onClick={() => onView('account')}
+                className="mt-3 w-full rounded-2xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600"
+              >
+                Add or manage slideshow images
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">LIVE METRICS</div>
+            <div className="grid grid-cols-3 gap-2">
+              <button onClick={() => onView('stats')} className="rounded-2xl bg-white p-3 text-center shadow-sm transition-all hover:shadow-md">
+                <div className="text-lg font-bold text-gray-900">{profile.reach}</div>
+                <div className="text-[9px] uppercase tracking-wide text-gray-400">Reach</div>
+              </button>
+              <div className="rounded-2xl bg-white p-3 text-center shadow-sm">
+                <div className="text-lg font-bold text-gray-900">{profile.engagementRate || 'â€”'}</div>
+                <div className="text-[9px] uppercase tracking-wide text-gray-400">Eng. Rate</div>
+              </div>
+              <div className="rounded-2xl bg-white p-3 text-center shadow-sm">
+                <div className="text-base font-bold text-gray-900">â€”</div>
+                <div className="text-[9px] uppercase tracking-wide text-gray-400">Top City</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-sm font-semibold text-gray-900">My shortcuts</div>
+              <span className="flex items-center gap-1 text-xs font-medium text-indigo-500">
+                <Lock className="h-3.5 w-3.5" /> Private
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Heart â€” free save list, open to all */}
+              <button
+                onClick={() => onView('liked')}
+                className="group flex h-full items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-pink-100 text-rose-500 shadow-inner">
+                  <Heart className="h-5 w-5 fill-rose-400 text-rose-500" />
+                </span>
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">Saved brands</div>
+                  <div className="text-[11px] font-medium text-gray-400">{LIKED_BRANDS.length} saved</div>
+                </div>
+              </button>
+              {/* Star â€” paid feature, gets the deal via bidding */}
+              <button
+                onClick={() => onView('favorites')}
+                className="group flex h-full items-center gap-2 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 text-amber-500 shadow-inner">
+                  <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-1">
+                    <div className="text-sm font-semibold text-gray-900">Bid & get deal</div>
+                    <span className="text-[9px] font-bold bg-amber-400 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wide">Pro</span>
+                  </div>
+                  <div className="text-[11px] font-medium text-gray-400">Star to bid on a brand</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FavoritesView({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () => void }) {
+  return (
+    <div className="flex h-full flex-col bg-gray-50">
+      <TopBar
+        title={
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+              <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+            </span>
+            <div>
+              <div className="leading-tight font-bold text-gray-900">Starred brands</div>
+              <div className="text-[11px] uppercase tracking-wide text-gray-400">Private</div>
+            </div>
+          </div>
+        }
+        right={<MenuToggle onClick={onOpenMenu} />}
+      />
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {STARRED_BRANDS.map((brand) => (
           <BrandListCard key={brand.id} brand={brand} intent="favorites" />
         ))}
@@ -624,11 +731,8 @@ function FavoritesView({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu:
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-gray-100 bg-white">
-        <button
-          onClick={onBack}
-          className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600"
-        >
+      <div className="border-t border-gray-100 bg-white p-4">
+        <button onClick={onBack} className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600">
           Back to dashboard
         </button>
       </div>
@@ -638,22 +742,22 @@ function FavoritesView({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu:
 
 function LikedView({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () => void }) {
   return (
-    <div className="flex flex-col bg-gray-50 h-full">
+    <div className="flex h-full flex-col bg-gray-50">
       <TopBar
         title={
           <div className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-              <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
+              <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
             </span>
             <div>
-              <div className="font-bold text-gray-900 leading-tight">Liked pitch queue</div>
-              <div className="text-[11px] text-gray-400 uppercase tracking-wide">Private</div>
+              <div className="leading-tight font-bold text-gray-900">Liked pitch queue</div>
+              <div className="text-[11px] uppercase tracking-wide text-gray-400">Private</div>
             </div>
           </div>
         }
         right={<MenuToggle onClick={onOpenMenu} />}
       />
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {LIKED_BRANDS.map((brand) => (
           <BrandListCard key={brand.id} brand={brand} intent="liked" />
         ))}
@@ -663,11 +767,8 @@ function LikedView({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () 
           </div>
         )}
       </div>
-      <div className="p-4 border-t border-gray-100 bg-white">
-        <button
-          onClick={onBack}
-          className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600"
-        >
+      <div className="border-t border-gray-100 bg-white p-4">
+        <button onClick={onBack} className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600">
           Back to dashboard
         </button>
       </div>
@@ -677,50 +778,31 @@ function LikedView({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () 
 
 function PrivacyCenter({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () => void }) {
   return (
-    <div className="flex flex-col bg-gray-50 h-full">
+    <div className="flex h-full flex-col bg-gray-50">
       <TopBar
         title={
           <div className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700">
+              <ShieldCheck className="h-4 w-4" />
             </span>
             <div>
-              <div className="font-bold text-gray-900 leading-tight">Privacy & data</div>
-              <div className="text-[11px] text-gray-400 uppercase tracking-wide">Policy & controls</div>
+              <div className="leading-tight font-bold text-gray-900">Privacy & data</div>
+              <div className="text-[11px] uppercase tracking-wide text-gray-400">Private controls</div>
             </div>
           </div>
         }
         right={<MenuToggle onClick={onOpenMenu} />}
       />
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900">Privacy policy</h3>
-          <p className="text-sm text-gray-500 mt-2">
-            Learn how Treva handles your creator data, consent, and analytics. Review the latest update from May 2026.
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-900">What brands can see</h3>
+          <p className="mt-2 text-sm text-gray-500">
+            Brands only see your public preview, uploaded cover image, showcase slideshow, and the social links you added.
           </p>
-          <button className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cyan-700 hover:underline">
-            Read full privacy policy <ChevronRight className="w-3 h-3" />
-          </button>
         </section>
-        <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900">Data controls</h3>
-          <ul className="mt-2 space-y-2 text-sm text-gray-600">
-            <li>• Export campaign history as CSV</li>
-            <li>• Request data deletion for archived brands</li>
-            <li>• Manage consents shared with brand partners</li>
-          </ul>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:border-gray-300">
-              Export data
-            </button>
-            <button className="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-600">
-              Request deletion
-            </button>
-          </div>
-        </section>
-        <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-900">Security alerts</h3>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="mt-2 text-sm text-gray-500">
             Enable push alerts when a new device logs in or when connected accounts lose access.
           </p>
           <div className="mt-3 flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
@@ -733,11 +815,8 @@ function PrivacyCenter({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu:
           </div>
         </section>
       </div>
-      <div className="p-4 border-t border-gray-100 bg-white">
-        <button
-          onClick={onBack}
-          className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600"
-        >
+      <div className="border-t border-gray-100 bg-white p-4">
+        <button onClick={onBack} className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600">
           Back to dashboard
         </button>
       </div>
@@ -745,61 +824,227 @@ function PrivacyCenter({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu:
   );
 }
 
-function AccountControls({ onBack, onOpenMenu }: { onBack: () => void; onOpenMenu: () => void }) {
+function AccountControls({
+  onBack,
+  onOpenMenu,
+  profile,
+  setProfile,
+  onCoverUpload,
+  onShowcaseUpload,
+}: {
+  onBack: () => void;
+  onOpenMenu: () => void;
+  profile: CreatorProfileState;
+  setProfile: Dispatch<SetStateAction<CreatorProfileState>>;
+  onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  onShowcaseUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const [coverUrlDraft, setCoverUrlDraft] = useState('');
+  const [galleryUrlDraft, setGalleryUrlDraft] = useState('');
+
+  const applyCoverUrl = () => {
+    const url = safeUrl(coverUrlDraft);
+    if (!url) return;
+    setProfile((current) => ({ ...current, cover: url }));
+    setCoverUrlDraft('');
+  };
+
+  const addGalleryUrl = () => {
+    const url = safeUrl(galleryUrlDraft);
+    if (!url) return;
+    setProfile((current) => ({ ...current, showcaseImages: [...current.showcaseImages, url] }));
+    setGalleryUrlDraft('');
+  };
+
+  const removeShowcaseImage = (index: number) => {
+    setProfile((current) => ({
+      ...current,
+      showcaseImages: current.showcaseImages.filter((_, currentIndex) => currentIndex !== index),
+    }));
+  };
+
   return (
-    <div className="flex flex-col bg-gray-50 h-full">
+    <div className="flex h-full flex-col bg-gray-50">
       <TopBar
         title={
           <div className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-lg bg-gray-900 text-white flex items-center justify-center text-sm font-semibold">
-              ⚙️
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900 text-white">
+              <SlidersHorizontal className="h-4 w-4" />
             </span>
             <div>
-              <div className="font-bold text-gray-900 leading-tight">Account controls</div>
-              <div className="text-[11px] text-gray-400 uppercase tracking-wide">Profile & sessions</div>
+              <div className="leading-tight font-bold text-gray-900">Profile controls</div>
+              <div className="text-[11px] uppercase tracking-wide text-gray-400">Edit what brands see</div>
             </div>
           </div>
         }
         right={<MenuToggle onClick={onOpenMenu} />}
       />
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900">Creator profile</h3>
-          <p className="text-sm text-gray-500 mt-2">
-            Update your bio, categories, and profile imagery used across marketing pitches.
-          </p>
-          <button className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cyan-700 hover:underline">
-            Edit profile bio <ChevronRight className="w-3 h-3" />
-          </button>
-        </section>
-        <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900">Sessions & devices</h3>
-          <div className="mt-3 space-y-2 text-sm text-gray-600">
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
-              <span>MacBook Pro · Chrome</span>
-              <span className="text-xs font-semibold text-emerald-600">Current</span>
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Background image</h3>
+              <p className="mt-1 text-sm text-gray-500">Change the profile background so brands see your latest look.</p>
             </div>
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
-              <span>Pixel 7 · Treva App</span>
-              <button className="text-xs font-semibold text-rose-600">Sign out</button>
-            </div>
+            <button
+              onClick={() => coverInputRef.current?.click()}
+              className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              <Upload className="h-3.5 w-3.5" /> Upload
+            </button>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-gray-200">
+            <img src={profile.cover} alt="Current cover" className="h-32 w-full object-cover" />
+          </div>
+          <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={onCoverUpload} />
+          <div className="mt-3 flex gap-2">
+            <input
+              value={coverUrlDraft}
+              onChange={(event) => setCoverUrlDraft(event.target.value)}
+              placeholder="Paste cover image URL"
+              className="flex-1 rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+            />
+            <button onClick={applyCoverUrl} className="rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white">
+              Apply
+            </button>
           </div>
         </section>
-        <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900">Workspace switching</h3>
-          <p className="text-sm text-gray-500 mt-2">
-            Jump to the marketing console to collaborate with brand managers or manage creator hub settings.
-          </p>
-          <button className="mt-3 w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-300">
-            Switch to marketing workspace
-          </button>
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Brand collabs showcase</h3>
+              <p className="mt-1 text-sm text-gray-500">Select which past brand collabs to display publicly on your profile.</p>
+            </div>
+            <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{profile.showcasedCollabIds.length} shown</span>
+          </div>
+          <div className="space-y-2">
+            {COLLABS.map((collab) => {
+              const shown = profile.showcasedCollabIds.includes(collab.id);
+              return (
+                <div key={collab.id} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-2">
+                  <img src={collab.img} alt={collab.brand} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 truncate">{collab.brand}</div>
+                    <div className="text-xs text-gray-400">{collab.campaign} Â· {collab.reach} reach</div>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setProfile((cur) => ({
+                        ...cur,
+                        showcasedCollabIds: shown
+                          ? cur.showcasedCollabIds.filter((id) => id !== collab.id)
+                          : [...cur.showcasedCollabIds, collab.id],
+                      }))
+                    }
+                    className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all ${
+                      shown
+                        ? 'bg-cyan-500 border-cyan-500 text-white'
+                        : 'bg-white border-gray-200 text-gray-600 hover:border-cyan-300'
+                    }`}
+                  >
+                    {shown ? 'Showcased' : 'Showcase'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-900">Brand profile copy</h3>
+          <p className="mt-1 text-sm text-gray-500">Whatever you update here is the same content brands see in the preview.</p>
+          <div className="mt-3 space-y-3">
+            <label className="block">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Location</div>
+              <input
+                value={profile.location}
+                onChange={(event) => setProfile((current) => ({ ...current, location: event.target.value }))}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+              />
+            </label>
+            <label className="block">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Tagline</div>
+              <input
+                value={profile.tagline}
+                onChange={(event) => setProfile((current) => ({ ...current, tagline: event.target.value }))}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+              />
+            </label>
+            <label className="block">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Niche labels</div>
+              <input
+                value={profile.niches.join(', ')}
+                onChange={(event) =>
+                  setProfile((current) => ({
+                    ...current,
+                    niches: event.target.value
+                      .split(',')
+                      .map((item) => item.trim())
+                      .filter(Boolean),
+                  }))
+                }
+                placeholder="Food, Lifestyle, Local"
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+              />
+            </label>
+            <label className="block">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Bio</div>
+              <textarea
+                value={profile.bio}
+                onChange={(event) => setProfile((current) => ({ ...current, bio: event.target.value }))}
+                rows={5}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Photo slideshow</h3>
+              <p className="mt-1 text-sm text-gray-500">Add showcase images that appear as a sliding gallery for brands.</p>
+            </div>
+            <button
+              onClick={() => galleryInputRef.current?.click()}
+              className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              <ImagePlus className="h-3.5 w-3.5" /> Add photos
+            </button>
+          </div>
+          <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onShowcaseUpload} />
+          <div className="mb-3 flex gap-2">
+            <input
+              value={galleryUrlDraft}
+              onChange={(event) => setGalleryUrlDraft(event.target.value)}
+              placeholder="Paste image URL for slideshow"
+              className="flex-1 rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-cyan-400"
+            />
+            <button onClick={addGalleryUrl} className="rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white">
+              Add
+            </button>
+          </div>
+          <div className="space-y-2">
+            {profile.showcaseImages.map((image, index) => (
+              <div key={`${image}-${index}`} className="flex items-center gap-3 rounded-2xl border border-gray-200 p-2">
+                <img src={image} alt={`Showcase ${index + 1}`} className="h-14 w-14 rounded-xl object-cover" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-gray-900">Slide {index + 1}</div>
+                  <div className="truncate text-xs text-gray-400">{image}</div>
+                </div>
+                <button onClick={() => removeShowcaseImage(index)} className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-rose-600">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </section>
       </div>
-      <div className="p-4 border-t border-gray-100 bg-white">
-        <button
-          onClick={onBack}
-          className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600"
-        >
+      <div className="border-t border-gray-100 bg-white p-4">
+        <button onClick={onBack} className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600">
           Back to dashboard
         </button>
       </div>
@@ -807,168 +1052,241 @@ function AccountControls({ onBack, onOpenMenu }: { onBack: () => void; onOpenMen
   );
 }
 
-function BioView({ onBack }: { onBack: () => void }) {
+function CollabsShowcase({
+  profile,
+  onToggle,
+}: {
+  profile: CreatorProfileState;
+  onToggle?: (id: number) => void;
+}) {
+  const showcased = COLLABS.filter((c) => profile.showcasedCollabIds.includes(c.id));
+  if (showcased.length === 0) return null;
   return (
-    <div className="flex flex-col bg-gray-50 h-full overflow-y-auto">
-      {/* Hero */}
-      <div className="relative bg-gray-200" style={{ height: 200 }}>
-        <img
-          src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80"
-          alt="Creator cover"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/70" />
-        <button
-          onClick={onBack}
-          className="absolute top-3 right-3 bg-black/40 backdrop-blur rounded-full p-1.5"
-        >
-          <X className="w-4 h-4 text-white" />
-        </button>
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end gap-3">
-          <img
-            src={CREATOR.avatar}
-            alt={CREATOR.name}
-            className="w-14 h-14 rounded-full border-2 border-white object-cover"
-          />
-          <div>
-            <div className="font-bold text-white text-lg leading-none">{CREATOR.name}</div>
-            <div className="text-xs text-gray-300 flex items-center gap-1 mt-0.5">
-              {CREATOR.handle} · <MapPin className="w-2.5 h-2.5" /> Bangalore
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 pt-4 space-y-4">
-        {/* Tags */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {['🍔 Food', '✨ Lifestyle', '📍 Local'].map((tag) => (
-            <span key={tag} className="bg-white border border-gray-200 text-gray-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        {/* Reach */}
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">REACH ACROSS PLATFORMS</div>
-          <div className="flex items-center gap-2">
-            {ALL_PLATFORMS.filter((p) => p.connected).map((p) => (
-              <div
-                key={p.id}
-                className="rounded-xl px-4 py-2.5 text-white text-center"
-                style={{ background: p.color }}
-              >
-                <div className="font-bold text-base leading-none">{p.followers}</div>
-                <div className="text-[9px] opacity-70 mt-0.5">{p.icon} ✓</div>
+    <div>
+      <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">BRAND COLLABS</div>
+      <div className="space-y-2">
+        {showcased.map((collab) => (
+          <div key={collab.id} className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm border border-gray-100">
+            <img src={collab.img} alt={collab.brand} className="h-12 w-12 flex-shrink-0 rounded-xl object-cover" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <Award className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                <div className="text-sm font-bold text-gray-900 truncate">{collab.brand}</div>
               </div>
-            ))}
-            <button
-              onClick={onBack}
-              className="bg-white border border-dashed border-gray-200 rounded-xl px-4 py-2.5 text-center text-gray-400 text-xs font-semibold"
-            >
-              + More
-            </button>
+              <div className="text-xs text-gray-500 truncate">{collab.campaign}</div>
+              <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-400">
+                <span>{collab.reach} reach</span>
+                <span>Â·</span>
+                <span>{collab.eng} eng.</span>
+                <span>Â·</span>
+                <span>{collab.date}</span>
+              </div>
+            </div>
+            {onToggle && (
+              <button
+                onClick={() => onToggle(collab.id)}
+                className="flex-shrink-0 text-[10px] font-semibold text-rose-500 border border-rose-200 rounded-lg px-2 py-1 hover:bg-rose-50"
+              >
+                Remove
+              </button>
+            )}
           </div>
-        </div>
-
-        {/* About */}
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">ABOUT</div>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Bangalore-based food & lifestyle creator. I love exploring hidden gems and authentic experiences across the city.
-            Partnering with brands that share a passion for great food and storytelling.
-          </p>
-        </div>
-
-        {/* Featured Collab */}
-        <div className="bg-white rounded-xl p-3 shadow-sm flex items-center gap-3">
-          <img
-            src="https://images.unsplash.com/photo-1514190051997-0f6f39ca5cde?w=100&h=100&fit=crop"
-            alt="Smokehouse"
-            className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-          />
-          <div>
-            <div className="text-[10px] text-gray-400 font-medium">Featured Collab</div>
-            <div className="font-bold text-gray-900 text-sm">The Smokehouse Bar</div>
-            <div className="text-xs text-gray-400 mt-0.5">42K reach · 8.43% eng</div>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function StatsView({ onBack }: { onBack: () => void }) {
+function BioView({ onBack, profile }: { onBack: () => void; profile: CreatorProfileState }) {
+  const connected = getConnectedPlatforms(profile);
+
   return (
-    <div className="flex flex-col bg-gray-950 h-full text-white overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 flex-shrink-0">
-        <img
-          src={CREATOR.avatar}
-          alt={CREATOR.name}
-          className="w-10 h-10 rounded-full object-cover"
-        />
-        <div className="flex-1">
-          <div className="font-bold text-white">{CREATOR.name}</div>
-          <div className="text-xs text-gray-400">{CREATOR.handle}</div>
+    <div className="flex h-full flex-col overflow-y-auto bg-gray-50">
+      <div className="relative bg-gray-200" style={{ height: 220 }}>
+        <img src={profile.cover} alt="Creator cover" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/75" />
+        <button onClick={onBack} className="absolute right-3 top-3 rounded-full bg-black/40 p-1.5 backdrop-blur">
+          <X className="h-4 w-4 text-white" />
+        </button>
+        <div className="absolute bottom-0 left-0 right-0 flex items-end gap-3 px-4 pb-4">
+          <img src={profile.avatar} alt={profile.name} className="h-16 w-16 rounded-full border-2 border-white object-cover" />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-bold leading-none text-white">{profile.name}</span>
+              <img src="/verified-badge.png" alt="Verified" className="h-4 w-4 object-contain flex-shrink-0" />
+            </div>
+            <div className="mt-1 flex items-center gap-1 text-xs text-gray-200">
+              {profile.handle} Â· <MapPin className="h-2.5 w-2.5" /> {profile.location}
+            </div>
+            <div className="mt-1 text-xs text-gray-200">{profile.tagline}</div>
+          </div>
         </div>
-        <button
-          onClick={onBack}
-          className="w-8 h-8 rounded-lg border border-gray-700 flex items-center justify-center"
-        >
-          <X className="w-4 h-4 text-gray-400" />
+      </div>
+
+      <div className="space-y-4 px-4 py-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {profile.niches.map((tag) => (
+            <span key={tag} className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm">
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <div>
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">REACH ACROSS PLATFORMS</div>
+          <div className="grid grid-cols-2 gap-2">
+            {connected.map((platform) => {
+              const meta = PLATFORM_META[platform];
+              const social = profile.socials[platform];
+              return (
+                <a
+                  key={platform}
+                  href={safeUrl(social.url)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-2xl px-4 py-3 text-white shadow-sm"
+                  style={{ background: meta.gradient }}
+                >
+                  <div className="text-[10px] uppercase tracking-wide text-white/75">{meta.name}</div>
+                  <div className="mt-1 text-xl font-black leading-none">{social.followers || 'Live'}</div>
+                  <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-white/90">
+                    {social.label || meta.name} <ExternalLink className="h-3 w-3" />
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">CLICKABLE SOCIALS</div>
+          <div className="space-y-2">
+            {connected.map((platform) => {
+              const meta = PLATFORM_META[platform];
+              const social = profile.socials[platform];
+              return (
+                <a
+                  key={platform}
+                  href={safeUrl(social.url)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black text-white"
+                      style={{ background: meta.gradient }}
+                    >
+                      {meta.short}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{meta.name}</div>
+                      <div className="text-xs text-gray-400">{social.label}</div>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-gray-400" />
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">ABOUT</div>
+          <p className="text-sm leading-relaxed text-gray-600">{profile.bio}</p>
+        </div>
+
+        <div>
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-gray-400">PHOTO SHOWCASE</div>
+          <div className="rounded-[28px] border border-gray-200 bg-white p-3 shadow-sm">
+            <Carousel opts={{ loop: profile.showcaseImages.length > 1 }}>
+              <CarouselContent className="-ml-3">
+                {profile.showcaseImages.map((image, index) => (
+                  <CarouselItem key={`${image}-${index}`} className="pl-3">
+                    <div className="relative h-56 overflow-hidden rounded-3xl">
+                      <img src={image} alt={`Showcase slide ${index + 1}`} className="h-full w-full object-cover" />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-4 text-white">
+                        <div className="text-sm font-semibold">Brand showcase gallery</div>
+                        <div className="text-xs text-white/75">Slide {index + 1} of {profile.showcaseImages.length}</div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              {profile.showcaseImages.length > 1 && (
+                <>
+                  <CarouselPrevious className="left-3 top-auto bottom-3 h-9 w-9 translate-y-0 border-white/20 bg-black/45 text-white hover:bg-black/60" />
+                  <CarouselNext className="right-3 top-auto bottom-3 h-9 w-9 translate-y-0 border-white/20 bg-black/45 text-white hover:bg-black/60" />
+                </>
+              )}
+            </Carousel>
+          </div>
+        </div>
+
+        <CollabsShowcase profile={profile} />
+      </div>
+    </div>
+  );
+}
+
+function StatsView({ onBack, profile }: { onBack: () => void; profile: CreatorProfileState }) {
+  return (
+    <div className="flex h-full flex-col overflow-y-auto bg-gray-950 text-white">
+      <div className="flex flex-shrink-0 items-center gap-3 px-4 pb-3 pt-4">
+        <img src={profile.avatar} alt={profile.name} className="h-10 w-10 rounded-full object-cover" />
+        <div className="flex-1">
+          <div className="font-bold text-white">{profile.name}</div>
+          <div className="text-xs text-gray-400">{profile.handle}</div>
+        </div>
+        <button onClick={onBack} className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-700">
+          <X className="h-4 w-4 text-gray-400" />
         </button>
       </div>
 
-      {/* Total reach hero */}
       <div className="px-4 py-6 text-center">
-        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">TOTAL REACH</div>
-        <div className="text-6xl font-black text-cyan-400">142K</div>
-        <div className="flex items-center justify-center gap-1 text-xs text-green-400 mt-1">
-          <TrendingUp className="w-3 h-3" /> +12% this month
+        <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">TOTAL REACH</div>
+        <div className="text-6xl font-black text-cyan-400">{profile.reach}</div>
+        <div className="mt-1 flex items-center justify-center gap-1 text-xs text-green-400">
+          <TrendingUp className="h-3 w-3" /> +12% this month
         </div>
       </div>
 
-      {/* Metrics grid */}
-      <div className="px-4 grid grid-cols-2 gap-2 mb-4">
-        <div className="bg-gray-900 rounded-xl p-4">
-          <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">ENGAGEMENT</div>
-          <div className="text-2xl font-bold text-cyan-400">7.2%</div>
+      <div className="mb-4 grid grid-cols-2 gap-2 px-4">
+        <div className="rounded-xl bg-gray-900 p-4">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-gray-400">ENGAGEMENT</div>
+          <div className="text-2xl font-bold text-cyan-400">{profile.engagementRate}</div>
         </div>
-        <div className="bg-gray-900 rounded-xl p-4">
-          <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">PITCH CRED.</div>
+        <div className="rounded-xl bg-gray-900 p-4">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-gray-400">PITCH CRED.</div>
           <div className="text-2xl font-bold text-white">12</div>
         </div>
       </div>
 
-      {/* Top cities */}
-      <div className="px-4 mb-4">
-        <div className="bg-gray-900 rounded-xl p-4">
-          <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-3">TOP AUDIENCE CITIES</div>
+      <div className="mb-4 px-4">
+        <div className="rounded-xl bg-gray-900 p-4">
+          <div className="mb-3 text-[10px] uppercase tracking-wide text-gray-400">TOP AUDIENCE CITIES</div>
           {[
             { city: 'Bangalore', pct: 72, color: '#22D3EE' },
             { city: 'Mumbai', pct: 14, color: '#6B7280' },
             { city: 'Delhi', pct: 9, color: '#4B5563' },
           ].map(({ city, pct, color }) => (
-            <div key={city} className="flex items-center gap-3 mb-2.5">
-              <span className="text-xs text-gray-300 w-16">{city}</span>
-              <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div key={city} className="mb-2.5 flex items-center gap-3">
+              <span className="w-16 text-xs text-gray-300">{city}</span>
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-800">
                 <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
               </div>
-              <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+              <span className="w-8 text-right text-xs text-gray-400">{pct}%</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Recent */}
       <div className="px-4 pb-4">
-        <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">RECENT CONTENT</div>
+        <div className="mb-2 text-[10px] uppercase tracking-wide text-gray-400">RECENT CONTENT</div>
         <div className="grid grid-cols-4 gap-2">
-          {COLLABS.slice(0, 4).map((c) => (
-            <div key={c.id} className="aspect-square rounded-xl overflow-hidden">
-              <img src={c.img} alt={c.brand} className="w-full h-full object-cover" />
+          {profile.showcaseImages.slice(0, 4).map((image, index) => (
+            <div key={`${image}-${index}`} className="aspect-square overflow-hidden rounded-xl">
+              <img src={image} alt={`Recent showcase ${index + 1}`} className="h-full w-full object-cover" />
             </div>
           ))}
         </div>
@@ -980,8 +1298,31 @@ function StatsView({ onBack }: { onBack: () => void }) {
 function ProfileRouter() {
   const [view, setView] = useState<View>('dashboard');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<CreatorProfileState>(INITIAL_PROFILE);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<CreatorProfileState>;
+      setProfile((current) => ({
+        ...current,
+        ...parsed,
+        socials: { ...current.socials, ...(parsed.socials ?? {}) },
+        showcaseImages: parsed.showcaseImages?.length ? parsed.showcaseImages : current.showcaseImages,
+        niches: parsed.niches?.length ? parsed.niches : current.niches,
+        showcasedCollabIds: parsed.showcasedCollabIds ?? current.showcasedCollabIds,
+      }));
+    } catch {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  }, [profile]);
 
   useEffect(() => {
     const state = location.state as { profileView?: View; openMenu?: boolean } | undefined;
@@ -996,26 +1337,52 @@ function ProfileRouter() {
     }
   }, [location.pathname, location.state, navigate, view]);
 
-  const openMenu = () => setMenuOpen(true);
-  const closeMenu = () => setMenuOpen(false);
-  const handleNavigate = (next: View) => {
-    setView(next);
-  };
-
   useEffect(() => {
     setMenuOpen(false);
   }, [view]);
 
+  const openMenu = () => setMenuOpen(true);
+  const closeMenu = () => setMenuOpen(false);
+
+  const updateSocial = (platform: PlatformId, field: keyof CreatorSocial, value: string) => {
+    setProfile((current) => ({
+      ...current,
+      socials: {
+        ...current.socials,
+        [platform]: {
+          ...current.socials[platform],
+          [field]: value,
+        },
+      },
+    }));
+  };
+
+  const handleCoverUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const nextCover = await readFileAsDataUrl(file);
+    setProfile((current) => ({ ...current, cover: nextCover }));
+    event.target.value = '';
+  };
+
+  const handleShowcaseUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) return;
+    const images = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
+    setProfile((current) => ({ ...current, showcaseImages: [...current.showcaseImages, ...images] }));
+    event.target.value = '';
+  };
+
   let content: JSX.Element;
   switch (view) {
     case 'bio':
-      content = <BioView onBack={() => setView('dashboard')} />;
+      content = <BioView onBack={() => setView('dashboard')} profile={profile} />;
       break;
     case 'stats':
-      content = <StatsView onBack={() => setView('dashboard')} />;
+      content = <StatsView onBack={() => setView('dashboard')} profile={profile} />;
       break;
     case 'socials':
-      content = <SocialConnect onBack={() => setView('dashboard')} onOpenMenu={openMenu} />;
+      content = <SocialConnect onBack={() => setView('dashboard')} onOpenMenu={openMenu} profile={profile} onUpdateSocial={updateSocial} />;
       break;
     case 'favorites':
       content = <FavoritesView onBack={() => setView('dashboard')} onOpenMenu={openMenu} />;
@@ -1027,11 +1394,20 @@ function ProfileRouter() {
       content = <PrivacyCenter onBack={() => setView('dashboard')} onOpenMenu={openMenu} />;
       break;
     case 'account':
-      content = <AccountControls onBack={() => setView('dashboard')} onOpenMenu={openMenu} />;
+      content = (
+        <AccountControls
+          onBack={() => setView('dashboard')}
+          onOpenMenu={openMenu}
+          profile={profile}
+          setProfile={setProfile}
+          onCoverUpload={handleCoverUpload}
+          onShowcaseUpload={handleShowcaseUpload}
+        />
+      );
       break;
     case 'dashboard':
     default:
-      content = <DashboardView onView={handleNavigate} onOpenMenu={openMenu} />;
+      content = <DashboardView onView={setView} onOpenMenu={openMenu} profile={profile} onCoverUpload={handleCoverUpload} />;
   }
 
   return (
@@ -1041,10 +1417,8 @@ function ProfileRouter() {
         <HamburgerMenu
           activeView={view}
           onClose={closeMenu}
-          onNavigate={(next) => {
-            setView(next);
-            closeMenu();
-          }}
+          onNavigate={setView}
+          profile={profile}
         />
       )}
     </div>

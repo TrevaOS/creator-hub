@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { X, Star, Heart, MapPin, Film, BookImage, ChevronDown, ChevronLeft, ChevronRight, Map, TrendingUp, Menu } from 'lucide-react';
 import { TopBar } from '../CreatorHubApp';
@@ -71,7 +71,7 @@ export default function CreatorHome() {
   const location = useLocation();
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedMapBrand, setSelectedMapBrand] = useState(BRANDS[0]);
+  const [selectedMapBrand, setSelectedMapBrand] = useState<Brand | undefined>(BRANDS[0]);
   const [imageIndex, setImageIndex] = useState(0);
   const [showDetail, setShowDetail] = useState(false);
   const dragStartX = useRef(0);
@@ -158,8 +158,36 @@ export default function CreatorHome() {
     if (Math.abs(diff) > 60) handlePass();
   };
 
+  // EMPTY STATE
+  if (BRANDS.length === 0) {
+    return (
+      <div className="flex flex-col bg-gray-50 h-full">
+        <TopBar
+          right={
+            <button
+              onClick={() => navigate('/creatorhub/profile', { state: { openMenu: true } })}
+              className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center"
+              aria-label="Open menu"
+            >
+              <Menu className="w-4 h-4 text-gray-700" />
+            </button>
+          }
+        />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+            <MapPin className="w-8 h-8 text-gray-300" />
+          </div>
+          <div>
+            <div className="font-bold text-gray-900 text-lg">No campaigns yet</div>
+            <div className="text-sm text-gray-400 mt-1">Brand campaigns will appear here once they go live on the platform.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // MAP VIEW
-  if (viewMode === 'map') {
+  if (viewMode === 'map' && selectedMapBrand) {
     return (
       <div className="flex flex-col bg-white" style={{ height: '100%' }}>
         <TopBar
@@ -185,7 +213,7 @@ export default function CreatorHome() {
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
           <div className="bg-white rounded-full px-4 py-1.5 flex items-center gap-2 shadow-md text-xs font-semibold text-gray-700 border border-gray-100">
             <div className="w-2 h-2 rounded-full bg-gray-900" />
-            5km · 12 brands nearby
+            5km Â· 12 brands nearby
           </div>
         </div>
 
@@ -201,7 +229,7 @@ export default function CreatorHome() {
           />
         </div>
 
-        {/* Bottom sheet — fixed height, never scroll off */}
+        {/* Bottom sheet â€” fixed height, never scroll off */}
         {(() => {
           const marketing = selectedMapBrand.marketing;
           return (
@@ -222,7 +250,7 @@ export default function CreatorHome() {
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {selectedMapBrand.location}
                     </span>
-                    <span className="inline-flex items-center gap-1">★ {selectedMapBrand.rating.toFixed(1)}</span>
+                    <span className="inline-flex items-center gap-1">â˜… {selectedMapBrand.rating.toFixed(1)}</span>
                     <span className="inline-flex items-center gap-1 text-cyan-600 font-semibold">
                       <TrendingUp className="w-3 h-3" /> {selectedMapBrand.audienceFit}% match
                     </span>
@@ -231,7 +259,7 @@ export default function CreatorHome() {
               </div>
 
               <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Target launch · {formatDate(marketing.targetLaunch)}</span>
+                <span>Target launch Â· {formatDate(marketing.targetLaunch)}</span>
                 <span className="font-semibold text-gray-700">{marketing.inboundLeads} inbound</span>
               </div>
 
@@ -360,12 +388,14 @@ export default function CreatorHome() {
           </div>
         )}
       </div>
-      <BudgetRail
-        label="Budget"
-        amount={brand.marketing.budget}
-        offer={brand.offer}
-        className="bg-gray-50 border-t border-gray-100"
-      />
+      {brand && (
+        <BudgetRail
+          label="Budget"
+          amount={brand.marketing.budget}
+          offer={brand.offer}
+          className="bg-gray-50 border-t border-gray-100"
+        />
+      )}
     </div>
   );
 }
@@ -440,7 +470,7 @@ function SwipeCard({
             <span>{brand.location}</span>
           </span>
           <span className="inline-flex items-center gap-1">
-            ★<span>{brand.rating.toFixed(1)}</span>
+            â˜…<span>{brand.rating.toFixed(1)}</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
@@ -480,7 +510,7 @@ function DetailCard({
   const currentImage = gallery[imageIndex] ?? gallery[0];
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-md">
-      {/* Hero image — compact */}
+      {/* Hero image â€” compact */}
       <div className="relative h-44">
         <img src={currentImage} alt={brand.name} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50" />
@@ -526,7 +556,7 @@ function DetailCard({
             <span className="inline-flex items-center gap-1 text-cyan-600">
               <MapPin className="w-3 h-3" /> {brand.location}
             </span>
-            <span className="inline-flex items-center gap-1">★ {brand.rating.toFixed(1)}</span>
+            <span className="inline-flex items-center gap-1">â˜… {brand.rating.toFixed(1)}</span>
             <span className="inline-flex items-center gap-1 text-cyan-600 font-semibold">{brand.audienceFit}% match</span>
           </div>
         </div>
@@ -591,7 +621,7 @@ function DetailCard({
           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Account Owner</div>
           <div className="text-sm font-semibold text-gray-900">{brand.marketing.owner.name}</div>
           <div className="text-xs text-gray-500">{brand.marketing.owner.role}</div>
-          <div className="text-xs text-gray-500 mt-1">{brand.marketing.owner.email} · {brand.marketing.owner.phone}</div>
+          <div className="text-xs text-gray-500 mt-1">{brand.marketing.owner.email} Â· {brand.marketing.owner.phone}</div>
         </div>
 
         {(brand.marketing.notes || brand.marketing.inboundLeads) && (

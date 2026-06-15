@@ -7,6 +7,7 @@ import CampaignManager from './pages/CampaignManager';
 import CampaignsList from './pages/CampaignsList';
 import FloorLive from './pages/FloorLive';
 import Settings from './pages/Settings';
+import MarketingChat from './pages/MarketingChat';
 import CreatorHubApp from './creatorhub/CreatorHubApp';
 import AdminApp from './admin/AdminApp';
 
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="discover" element={<OutboundDiscovery />} />
           <Route path="campaigns" element={<CampaignsList />} />
           <Route path="campaigns/:campaignId" element={<CampaignManager />} />
+          <Route path="chat" element={<MarketingChat />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="/" element={<Navigate to="/marketing" replace />} />

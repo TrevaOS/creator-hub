@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+﻿import { Link } from 'react-router';
 import {
   ArrowRight,
   Heart,
@@ -18,15 +18,14 @@ import {
   IndianRupee,
   Eye,
   PlayCircle,
+  Utensils,
+  Wine,
+  Camera,
+  BarChart3,
 } from 'lucide-react';
+import { SEGMENT_GROUPS, CAMPAIGNS, type SegmentGroupId } from './CampaignsList';
 
-const creators = [
-  { name: 'Maya R.', handle: '@foodie_blr', action: 'sent you a pitch', time: '2 hours ago', type: 'pitch', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&h=40&fit=crop&crop=face' },
-  { name: 'Priya S.', handle: '@dineanddash', action: 'accepted your invitation', time: '5 hours ago', type: 'accepted', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=40&h=40&fit=crop&crop=face' },
-  { name: 'Rohan M.', handle: '@thefoodiephd', action: 'completed content draft', time: '1 day ago', type: 'content', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-  { name: 'Devi P.', handle: '@deviperks', action: 'posted collaboration content · 42K reach', time: '2 days ago', type: 'posted', img: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=40&h=40&fit=crop&crop=face' },
-  { name: 'Kiran A.', handle: '@kiranfood', action: 'submitted content draft for review', time: '3 days ago', type: 'content', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
-];
+const creators: { name: string; handle: string; action: string; time: string; type: string; img: string }[] = [];
 
 const activityDotColor: Record<string, string> = {
   pitch: 'bg-cyan-500',
@@ -35,11 +34,7 @@ const activityDotColor: Record<string, string> = {
   posted: 'bg-purple-500',
 };
 
-const topCreators = [
-  { name: 'Maya R.', handle: '@foodie_blr', followers: '28.4K', eng: '7.2%', score: 92, img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&h=40&fit=crop&crop=face' },
-  { name: 'Priya S.', handle: '@dineanddash', followers: '12.2K', eng: '9.1%', score: 87, img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=40&h=40&fit=crop&crop=face' },
-  { name: 'Arjun K.', handle: '@bangalorebites', followers: '45K', eng: '5.8%', score: 74, img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
-];
+const topCreators: { name: string; handle: string; followers: string; eng: string; score: number; img: string }[] = [];
 
 const INR = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 
@@ -61,59 +56,7 @@ interface LiveCampaign {
   daysLeft: number;
 }
 
-const LIVE_CAMPAIGNS: LiveCampaign[] = [
-  {
-    id: 'weekend-brunch',
-    name: 'Weekend Brunch Push',
-    status: 'On Track',
-    applicants: 18,
-    approved: 5,
-    liveCreators: 4,
-    budget: 85000,
-    spent: 41200,
-    deliverablesTotal: 12,
-    deliverablesReceived: 6,
-    deliverablesPending: 5,
-    deliverablesOverdue: 1,
-    nextDueLabel: 'Reel draft · Maya R. · Fri',
-    reach: '184K',
-    daysLeft: 28,
-  },
-  {
-    id: 'cocktail-launch',
-    name: 'New Cocktail Menu Launch',
-    status: 'At Risk',
-    applicants: 11,
-    approved: 3,
-    liveCreators: 2,
-    budget: 60000,
-    spent: 18000,
-    deliverablesTotal: 8,
-    deliverablesReceived: 2,
-    deliverablesPending: 4,
-    deliverablesOverdue: 2,
-    nextDueLabel: 'IG Post · Arjun K. · Today',
-    reach: '62K',
-    daysLeft: 42,
-  },
-  {
-    id: 'student-night',
-    name: 'Student Night Series',
-    status: 'Behind',
-    applicants: 6,
-    approved: 2,
-    liveCreators: 1,
-    budget: 35000,
-    spent: 12500,
-    deliverablesTotal: 6,
-    deliverablesReceived: 1,
-    deliverablesPending: 2,
-    deliverablesOverdue: 3,
-    nextDueLabel: 'Story · Devi P. · Overdue',
-    reach: '24K',
-    daysLeft: 12,
-  },
-];
+const LIVE_CAMPAIGNS: LiveCampaign[] = [];
 
 type DeliverableStatus = 'Pending' | 'Submitted' | 'Approved' | 'Overdue';
 
@@ -129,14 +72,7 @@ interface DeliverableRow {
   status: DeliverableStatus;
 }
 
-const DELIVERABLES: DeliverableRow[] = [
-  { id: 'd1', campaign: 'New Cocktail Menu Launch', campaignId: 'cocktail-launch', creator: 'Arjun K.', creatorImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face', type: 'Instagram Post', dueLabel: 'Today, 6 PM', due: '2026-05-18', status: 'Overdue' },
-  { id: 'd2', campaign: 'Student Night Series', campaignId: 'student-night', creator: 'Devi P.', creatorImg: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=40&h=40&fit=crop&crop=face', type: 'Instagram Story', dueLabel: 'Overdue 2 days', due: '2026-05-16', status: 'Overdue' },
-  { id: 'd3', campaign: 'Weekend Brunch Push', campaignId: 'weekend-brunch', creator: 'Maya R.', creatorImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&h=40&fit=crop&crop=face', type: 'Reel Draft', dueLabel: 'Fri, May 22', due: '2026-05-22', status: 'Pending' },
-  { id: 'd4', campaign: 'Weekend Brunch Push', campaignId: 'weekend-brunch', creator: 'Priya S.', creatorImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=40&h=40&fit=crop&crop=face', type: 'Reel Final', dueLabel: 'Mon, May 25', due: '2026-05-25', status: 'Submitted' },
-  { id: 'd5', campaign: 'New Cocktail Menu Launch', campaignId: 'cocktail-launch', creator: 'Rohan M.', creatorImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face', type: 'YouTube Short', dueLabel: 'Wed, May 27', due: '2026-05-27', status: 'Pending' },
-  { id: 'd6', campaign: 'Weekend Brunch Push', campaignId: 'weekend-brunch', creator: 'Tanvi G.', creatorImg: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=40&h=40&fit=crop&crop=face', type: 'Google Review', dueLabel: 'May 14', due: '2026-05-14', status: 'Approved' },
-];
+const DELIVERABLES: DeliverableRow[] = [];
 
 interface PastCampaign {
   id: string;
@@ -150,41 +86,7 @@ interface PastCampaign {
   cover: string;
 }
 
-const PAST_CAMPAIGNS: PastCampaign[] = [
-  {
-    id: 'biryani-festival',
-    name: 'Biryani Festival 2025',
-    endedOn: 'Feb 28, 2026',
-    reach: '512K',
-    posts: 14,
-    spent: 65000,
-    budget: 65000,
-    roi: '+38%',
-    cover: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=400&q=70',
-  },
-  {
-    id: 'valentine-special',
-    name: 'Valentine Couple Special',
-    endedOn: 'Feb 18, 2026',
-    reach: '288K',
-    posts: 9,
-    spent: 42000,
-    budget: 50000,
-    roi: '+22%',
-    cover: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=400&q=70',
-  },
-  {
-    id: 'new-year-bash',
-    name: 'NYE Countdown Bash',
-    endedOn: 'Jan 5, 2026',
-    reach: '740K',
-    posts: 18,
-    spent: 95000,
-    budget: 90000,
-    roi: '+46%',
-    cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=70',
-  },
-];
+const PAST_CAMPAIGNS: PastCampaign[] = [];
 
 const STATUS_PILL: Record<LiveCampaign['status'], string> = {
   'On Track': 'bg-green-50 text-green-700 border-green-200',
@@ -205,13 +107,12 @@ export default function Dashboard() {
       <header className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Welcome back, Smokehouse · Indiranagar</p>
+          <p className="text-sm text-gray-500 mt-0.5">Your marketing overview</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400">May 9, 2026</span>
           <Link to="/marketing/inbound" className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
             <Heart className="w-3.5 h-3.5" />
-            12 new pitches
+            Review pitches
           </Link>
         </div>
       </header>
@@ -222,12 +123,12 @@ export default function Dashboard() {
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4">
             {[
-              { label: 'Active Campaigns', value: '5', sub: '+2 this week', trend: 'up', icon: Calendar, color: 'text-cyan-600', bg: 'bg-cyan-50' },
-              { label: 'New Pitches', value: '12', sub: 'Pending review', trend: 'up', icon: Heart, color: 'text-pink-600', bg: 'bg-pink-50' },
-              { label: 'Deliverables Due', value: '11', sub: '3 overdue', trend: 'down', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
-              { label: 'Spend / Budget', value: '₹71.7K', sub: 'of ₹1.8L', trend: 'up', icon: IndianRupee, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { label: 'Total Reach', value: '2.4M', sub: 'Last 30 days', trend: 'up', icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
-              { label: 'Avg Engagement', value: '6.8%', sub: 'Above target', trend: 'up', icon: Activity, color: 'text-green-600', bg: 'bg-green-50' },
+              { label: 'Active Campaigns', value: '0', sub: 'No active campaigns', trend: 'up', icon: Calendar, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+              { label: 'New Pitches', value: '0', sub: 'No pitches yet', trend: 'up', icon: Heart, color: 'text-pink-600', bg: 'bg-pink-50' },
+              { label: 'Deliverables Due', value: '0', sub: 'All clear', trend: 'up', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
+              { label: 'Spend / Budget', value: '0', sub: 'No spend yet', trend: 'up', icon: IndianRupee, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { label: 'Total Reach', value: '0', sub: 'No campaigns live', trend: 'up', icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
+              { label: 'Avg Engagement', value: '0%', sub: 'No data yet', trend: 'up', icon: Activity, color: 'text-green-600', bg: 'bg-green-50' },
             ].map((stat) => {
               const Icon = stat.icon;
               return (
@@ -250,6 +151,9 @@ export default function Dashboard() {
             })}
           </div>
 
+          {/* Segment Spend Overview */}
+          <SegmentSpendPanel />
+
           {/* Live Campaigns */}
           <section>
             <div className="flex items-center justify-between mb-3">
@@ -263,6 +167,11 @@ export default function Dashboard() {
                 Manage all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
+            {LIVE_CAMPAIGNS.length === 0 && (
+              <div className="bg-white border border-dashed border-gray-200 rounded-xl p-8 text-center text-sm text-gray-400">
+                No live campaigns yet. Create a campaign to see it here.
+              </div>
+            )}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {LIVE_CAMPAIGNS.map((c) => {
                 const budgetPct = Math.min(100, (c.spent / c.budget) * 100);
@@ -358,6 +267,9 @@ export default function Dashboard() {
                 </div>
                 <Link to="/marketing/campaigns" className="text-xs text-cyan-600 font-semibold hover:underline">View all</Link>
               </div>
+              {DELIVERABLES.length === 0 ? (
+                <div className="p-8 text-center text-sm text-gray-400">No deliverables yet.</div>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -405,6 +317,7 @@ export default function Dashboard() {
                   </tbody>
                 </table>
               </div>
+              )}
             </section>
 
             {/* Past campaigns */}
@@ -412,10 +325,13 @@ export default function Dashboard() {
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-bold text-gray-900">Past Campaigns</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Recently wrapped — quick recap.</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Recently wrapped â€” quick recap.</p>
                 </div>
                 <Link to="/marketing/campaigns" className="text-xs text-cyan-600 font-semibold hover:underline">All</Link>
               </div>
+              {PAST_CAMPAIGNS.length === 0 && (
+                <div className="p-8 text-center text-sm text-gray-400">No past campaigns yet.</div>
+              )}
               <div className="divide-y divide-gray-50">
                 {PAST_CAMPAIGNS.map((p) => (
                   <Link
@@ -447,10 +363,9 @@ export default function Dashboard() {
             <div className="col-span-1 space-y-3">
               <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Quick Actions</h2>
               {[
-                { to: '/marketing/inbound', icon: Heart, label: 'Review Pitches', sub: '12 creators waiting', color: 'text-pink-600', bg: 'bg-pink-50 hover:bg-pink-100', border: 'border-pink-200' },
-                { to: '/marketing/discover', icon: Search, label: 'Discover Creators', sub: '426 nearby matches', color: 'text-cyan-600', bg: 'bg-cyan-50 hover:bg-cyan-100', border: 'border-cyan-200' },
-                { to: '/marketing/campaigns', icon: Calendar, label: 'Manage Campaigns', sub: '2 need booking now', color: 'text-violet-600', bg: 'bg-violet-50 hover:bg-violet-100', border: 'border-violet-200' },
-                { to: '/floor', icon: Users, label: 'Floor & Live', sub: '12/20 tables occupied', color: 'text-green-600', bg: 'bg-green-50 hover:bg-green-100', border: 'border-green-200' },
+                { to: '/marketing/inbound', icon: Heart, label: 'Review Pitches', sub: 'Inbound pitch requests', color: 'text-pink-600', bg: 'bg-pink-50 hover:bg-pink-100', border: 'border-pink-200' },
+                { to: '/marketing/discover', icon: Search, label: 'Discover Creators', sub: 'Find creators nearby', color: 'text-cyan-600', bg: 'bg-cyan-50 hover:bg-cyan-100', border: 'border-cyan-200' },
+                { to: '/marketing/campaigns', icon: Calendar, label: 'Manage Campaigns', sub: 'View all campaigns', color: 'text-violet-600', bg: 'bg-violet-50 hover:bg-violet-100', border: 'border-violet-200' },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
@@ -478,6 +393,9 @@ export default function Dashboard() {
                 <h2 className="text-sm font-bold text-gray-900">Recent Activity</h2>
                 <Link to="/marketing/inbound" className="text-xs text-cyan-600 font-semibold hover:underline">View all</Link>
               </div>
+              {creators.length === 0 && (
+                <div className="p-8 text-center text-sm text-gray-400">No recent activity yet.</div>
+              )}
               <div className="divide-y divide-gray-50">
                 {creators.map((c, idx) => (
                   <div key={idx} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer">
@@ -505,12 +423,15 @@ export default function Dashboard() {
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-bold text-gray-900">Top Matched Creators</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Ranked by AI match score · audience overlap · niche fit</p>
+                <p className="text-xs text-gray-400 mt-0.5">Ranked by AI match score Â· audience overlap Â· niche fit</p>
               </div>
               <Link to="/marketing/inbound" className="text-xs text-cyan-600 font-semibold hover:underline flex items-center gap-1">
                 See ranked view <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
+            {topCreators.length === 0 && (
+              <div className="p-8 text-center text-sm text-gray-400">No matched creators yet â€” discover creators to see top matches here.</div>
+            )}
             <div className="divide-y divide-gray-50">
               {topCreators.map((c, idx) => (
                 <div key={idx} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors cursor-pointer">
@@ -518,7 +439,7 @@ export default function Dashboard() {
                   <img src={c.img} alt={c.name} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm text-gray-900">{c.name} <span className="text-gray-400 font-normal text-xs">{c.handle}</span></div>
-                    <div className="text-xs text-gray-500">{c.followers} followers · {c.eng} engagement</div>
+                    <div className="text-xs text-gray-500">{c.followers} followers Â· {c.eng} engagement</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
@@ -549,6 +470,105 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
+  );
+}
+
+const SEGMENT_ICON: Record<SegmentGroupId, React.ComponentType<{ className?: string }>> = {
+  food:     Utensils,
+  ambience: Camera,
+  drinks:   Wine,
+};
+
+function SegmentSpendPanel() {
+  const segments = SEGMENT_GROUPS.map(g => {
+    const gc = CAMPAIGNS.filter(c => c.groupId === g.id);
+    return {
+      ...g,
+      spent: gc.reduce((s, c) => s + c.spent, 0),
+      allocated: gc.reduce((s, c) => s + c.budget, 0),
+      count: gc.length,
+    };
+  });
+  const totalSpent = segments.reduce((s, g) => s + g.spent, 0);
+  const totalBudget = SEGMENT_GROUPS.reduce((s, g) => s + g.totalBudget, 0);
+  const INR2 = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+
+  return (
+    <section className="bg-white border border-gray-200 rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-gray-500" />
+          <h2 className="text-sm font-bold text-gray-900">Budget by Segment</h2>
+          <span className="text-xs text-gray-400">Food Â· Ambience Â· Drinks</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="text-[10px] text-gray-400 uppercase tracking-wider">Total spent</div>
+            <div className="text-base font-black text-gray-900">
+              {INR2.format(totalSpent)}{' '}
+              <span className="text-xs text-gray-400 font-normal">of {INR2.format(totalBudget)}</span>
+            </div>
+          </div>
+          <Link to="/marketing/campaigns" className="text-xs text-cyan-600 font-semibold hover:underline flex items-center gap-1">
+            Details <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Stacked bar */}
+      <div className="flex h-3 rounded-full overflow-hidden gap-0.5 mb-4">
+        {segments.map(g => {
+          const width = totalBudget > 0 ? (g.spent / totalBudget) * 100 : 0;
+          if (width < 0.5) return null;
+          return (
+            <div
+              key={g.id}
+              className="h-full rounded-sm transition-all"
+              style={{ width: `${width}%`, background: g.accentHex }}
+              title={`${g.name}: ${INR2.format(g.spent)}`}
+            />
+          );
+        })}
+        <div className="flex-1 h-full bg-gray-100 rounded-sm" />
+      </div>
+
+      {/* Per-segment rows */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {segments.map(g => {
+          const IconComp = SEGMENT_ICON[g.id];
+          const pct = g.totalBudget > 0 ? Math.min(100, (g.spent / g.totalBudget) * 100) : 0;
+          const allocPct = g.totalBudget > 0 ? Math.min(100, (g.allocated / g.totalBudget) * 100) : 0;
+          return (
+            <div key={g.id} className={`${g.color} rounded-xl p-4 border ${g.borderColor}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm`}>
+                  <IconComp className={`w-4 h-4 ${g.textColor}`} />
+                </div>
+                <div>
+                  <div className={`text-sm font-bold ${g.textColor}`}>{g.name}</div>
+                  <div className="text-[10px] text-gray-500">{g.count} campaign{g.count !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500">Spent</span>
+                  <span className={`font-bold ${g.textColor}`}>{INR2.format(g.spent)}</span>
+                </div>
+                <div className="h-2 bg-white/60 rounded-full overflow-hidden">
+                  <div className="h-full relative rounded-full" style={{ width: `${allocPct}%`, background: `${g.accentHex}40` }}>
+                    <div className="h-full rounded-full" style={{ width: `${allocPct > 0 ? (pct / allocPct) * 100 : 0}%`, background: g.accentHex }} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-gray-500">
+                  <span>{Math.round(pct)}% of {INR2.format(g.totalBudget)}</span>
+                  <span className="font-semibold">{INR2.format(Math.max(0, g.totalBudget - g.allocated))} left</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

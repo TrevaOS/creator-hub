@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router';
-import { MessageSquare, MapPin, Clock, Upload, Search, ArrowLeft, Send, CheckCheck } from 'lucide-react';
+import { MessageSquare, MapPin, Clock, Upload, Search, ArrowLeft, Send, CheckCheck, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { TopBar } from '../CreatorHubApp';
 import {
   BRAND_CAMPAIGNS,
@@ -60,9 +60,9 @@ const formatMatched = (hoursAgo: number) => {
 };
 
 const formatRelativeShort = (iso: string | null | undefined): string => {
-  if (!iso) return '—';
+  if (!iso) return 'â€”';
   const timestamp = new Date(iso).getTime();
-  if (Number.isNaN(timestamp)) return '—';
+  if (Number.isNaN(timestamp)) return 'â€”';
   const diffMinutes = Math.round((Date.now() - timestamp) / 60000);
   if (diffMinutes <= 0) return 'now';
   if (diffMinutes < 60) return `${diffMinutes}m`;
@@ -104,7 +104,7 @@ const INBOX_BRANDS = BRAND_CAMPAIGNS.slice(0, 8).map((brand, index) => {
     thumb: brand.thumb,
     lastMsg:
       brand.marketing.notes?.slice(0, 36) ??
-      `${statusMeta.label} · ${brand.offer.split('+')[0].trim()} collab`,
+      `${statusMeta.label} Â· ${brand.offer.split('+')[0].trim()} collab`,
     time: formatTimeLabel(hoursAgo),
     matched: formatMatched(hoursAgo),
     unread: index % 3 === 0 ? 2 : index % 3 === 1 ? 1 : 0,
@@ -117,45 +117,214 @@ const INBOX_BRANDS = BRAND_CAMPAIGNS.slice(0, 8).map((brand, index) => {
   } satisfies InboxBrandRow;
 });
 
-type PipelineItem = { id: number; name: string; sub: string; action: 'Chat' | 'View' | 'Submit'; thumb: string; alert?: string };
+type CollabTimelineStep = { key: string; label: string; done: boolean; active: boolean };
+
+type PipelineItem = {
+  id: number;
+  name: string;
+  sub: string;
+  action: 'Chat' | 'View' | 'Submit';
+  thumb: string;
+  alert?: string;
+  deliverables: string[];
+  timelineSteps: CollabTimelineStep[];
+};
 type PipelineSection = { stage: string; dot: string; items: PipelineItem[] };
+
+const isAcceptedDealRow = (row: InboxBrandRow) => row.stage === 'Live' || row.stage === 'Wrap';
+
+const buildTimelineSteps = (deliverables: string[], stage: InboxBrandRow['stage']): CollabTimelineStep[] => {
+  const base: { key: string; label: string }[] = [
+    { key: 'matched', label: 'Matched & accepted' },
+    { key: 'booked', label: 'Visit / shoot booked' },
+    { key: 'draft', label: 'Content draft submitted' },
+    ...deliverables.map((d, i) => ({ key: `deliverable-${i}`, label: d })),
+    { key: 'posted', label: 'Posted & reach reported' },
+  ];
+
+  const doneCount = stage === 'Wrap' ? base.length - 1 : 2;
+  const activeIdx = stage === 'Wrap' ? base.length - 1 : 2;
+
+  return base.map((step, idx) => ({
+    ...step,
+    done: idx < doneCount,
+    active: idx === activeIdx,
+  }));
+};
 
 const buildPipeline = (rows: InboxBrandRow[]): PipelineSection[] => {
   const groups: Record<string, PipelineSection> = {
-    Negotiation: { stage: 'NEGOTIATION', dot: '#F59E0B', items: [] },
     Live: { stage: 'LIVE CAMPAIGNS', dot: '#10B981', items: [] },
-    Shortlist: { stage: 'SHORTLIST', dot: '#06B6D4', items: [] },
-    Brief: { stage: 'BRIEFING', dot: '#8B5CF6', items: [] },
     Wrap: { stage: 'WRAP UP', dot: '#9CA3AF', items: [] },
   };
 
   rows.forEach((row) => {
+    if (!isAcceptedDealRow(row)) return;
     const group = groups[row.stage];
     if (!group) return;
-    const action: 'Chat' | 'View' | 'Submit' = row.stage === 'Negotiation' ? 'Chat' : row.stage === 'Live' ? 'View' : row.stage === 'Shortlist' ? 'Chat' : 'Submit';
+    const action: 'Chat' | 'View' | 'Submit' = row.stage === 'Live' ? 'View' : 'Submit';
     group.items.push({
       id: row.threadId,
       name: row.name,
-      sub: `${MARKETING_STATUS_META[row.marketingStatus].label.toLowerCase()} · ${row.offer}`,
+      sub: `${MARKETING_STATUS_META[row.marketingStatus].label.toLowerCase()} Â· ${row.offer}`,
       action,
       thumb: row.thumb,
-      alert: row.stage === 'Live' ? `📈 ${row.inboundLeads} inbound leads` : undefined,
+      alert: row.stage === 'Live' ? `ðŸ“ˆ ${row.inboundLeads} inbound leads` : undefined,
+      deliverables: row.deliverables,
+      timelineSteps: buildTimelineSteps(row.deliverables, row.stage),
     });
   });
 
   return Object.values(groups);
 };
 
-const CHAT_DATA: Record<number, { from: 'brand' | 'me'; text: string; time: string }[]> = BRAND_CAMPAIGNS.reduce((acc, brand, idx) => {
-  acc[brand.id] = [
-    { from: 'brand', text: `Hi! We loved your work and would like to partner on ${brand.offer}.`, time: '10:00 AM' },
-    { from: 'me', text: 'Hey! Excited about this. Can you share the deliverables?', time: '10:02 AM' },
-    { from: 'brand', text: `${brand.deliverables.join(', ')} with schedule around ${formatMatched(6 + idx * 2)}.`, time: '10:05 AM' },
-  ];
-  return acc;
-}, {} as Record<number, { from: 'brand' | 'me'; text: string; time: string }[]>);
+const CHAT_DATA: Record<number, { from: 'brand' | 'me'; text: string; time: string }[]> = {};
 
-type Tab = 'matches' | 'pipeline' | 'messages';
+type Tab = 'messages' | 'pipeline' | 'matches';
+
+function PipelineCollabCard({ item, navigate }: { item: PipelineItem; navigate: (path: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const completedCount = item.timelineSteps.filter((s) => s.done).length;
+  const totalCount = item.timelineSteps.length;
+  const pct = Math.round((completedCount / totalCount) * 100);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="p-3">
+        <div className="flex items-center gap-3">
+          <img src={item.thumb} alt={item.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-gray-900 text-sm">{item.name}</div>
+            <div className="text-xs text-gray-400">{item.sub}</div>
+          </div>
+          <button
+            onClick={() => navigate(`/creatorhub/inbox/chat/${item.id}`)}
+            className="bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 flex-shrink-0"
+          >
+            {item.action === 'Chat' && <MessageSquare className="w-3 h-3" />}
+            {item.action === 'View' && <MapPin className="w-3 h-3" />}
+            {item.action === 'Submit' && <Upload className="w-3 h-3" />}
+            {item.action}
+          </button>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-2.5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Progress</span>
+            <span className="text-[10px] font-bold text-gray-600">{completedCount}/{totalCount} steps</span>
+          </div>
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${pct}%`, background: pct === 100 ? '#10B981' : '#06B6D4' }}
+            />
+          </div>
+        </div>
+
+        {item.alert && (
+          <div className="mt-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-amber-700 font-medium">
+            {item.alert}
+          </div>
+        )}
+
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 w-full flex items-center justify-center gap-1 text-[11px] font-semibold text-gray-400 hover:text-gray-600"
+        >
+          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {expanded ? 'Hide timeline' : 'Show timeline'}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Campaign Timeline</div>
+          <div className="space-y-0">
+            {item.timelineSteps.map((step, idx) => {
+              const isLast = idx === item.timelineSteps.length - 1;
+              return (
+                <div key={step.key} className="flex items-start gap-2.5">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      step.done
+                        ? 'bg-emerald-500 border-emerald-500'
+                        : step.active
+                        ? 'bg-cyan-500 border-cyan-500'
+                        : 'bg-white border-gray-300'
+                    }`}>
+                      {step.done && <CheckCircle2 className="w-3 h-3 text-white" strokeWidth={3} />}
+                      {step.active && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </div>
+                    {!isLast && (
+                      <div className={`w-0.5 h-5 mt-0.5 ${step.done ? 'bg-emerald-200' : 'bg-gray-200'}`} />
+                    )}
+                  </div>
+                  <div className="pb-4 min-w-0 flex-1">
+                    <div className={`text-xs leading-tight ${
+                      step.done ? 'text-gray-500' : step.active ? 'text-gray-900 font-bold' : 'text-gray-400'
+                    }`}>
+                      {step.label}
+                    </div>
+                    {step.active && item.action === 'Submit' && (
+                      <button
+                        onClick={() => navigate(`/creatorhub/inbox/chat/${item.id}`)}
+                        className="mt-1 text-[10px] font-bold text-cyan-600 flex items-center gap-1"
+                      >
+                        <Upload className="w-3 h-3" /> Submit now
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PipelineTab({
+  pipelineSections,
+  pipelineCount,
+  navigate,
+}: {
+  pipelineSections: PipelineSection[];
+  pipelineCount: number;
+  navigate: (path: string) => void;
+}) {
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-bold text-lg text-gray-900">My Pipeline</span>
+        <span className="text-gray-500 text-sm font-semibold">{pipelineCount} collabs</span>
+      </div>
+      <div className="space-y-4">
+        {pipelineSections.map((section) => (
+          <div key={section.stage}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: section.dot }} />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                {section.stage}{section.items.length > 0 ? ` Â· ${section.items.length}` : ''}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {section.items.map((item: PipelineItem) => (
+                <PipelineCollabCard key={item.id} item={item} navigate={navigate} />
+              ))}
+              {section.items.length === 0 && (
+                <div className="bg-white/60 rounded-xl p-3 text-xs text-gray-300 text-center border border-dashed border-gray-200">
+                  No items
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type BrandRecord = (typeof BRAND_CAMPAIGNS)[number];
 
@@ -228,7 +397,7 @@ const mapThreadToInboxRow = (thread: ChatThreadRecord): InboxBrandRow => {
 const FALLBACK_INBOX_ROWS: InboxBrandRow[] = INBOX_BRANDS;
 
 function InboxList() {
-  const [tab, setTab] = useState<Tab>('matches');
+  const [tab, setTab] = useState<Tab>('messages');
   const navigate = useNavigate();
   const [threads, setThreads] = useState<ChatThreadRecord[]>([]);
   const [loadingThreads, setLoadingThreads] = useState(false);
@@ -264,10 +433,12 @@ function InboxList() {
   const supabaseRows = useMemo(() => threads.map(mapThreadToInboxRow), [threads]);
   const hasSupabaseRows = supabaseRows.length > 0;
   const rows = hasSupabaseRows ? supabaseRows : FALLBACK_INBOX_ROWS;
-  const matchesLabel = `New Matches · ${rows.length}`;
+  const inboxRows = rows;
+  const acceptedRows = useMemo(() => rows.filter(isAcceptedDealRow), [rows]);
+  const matchesLabel = `New Matches Â· ${rows.length}`;
   const pipelineSections = useMemo(() => buildPipeline(rows), [rows]);
   const pipelineCount = pipelineSections.reduce<number>((sum, section) => sum + section.items.length, 0);
-  const spotlight = rows[0];
+  const spotlight = acceptedRows[0] ?? inboxRows[0];
   const spotlightStatus = spotlight ? MARKETING_STATUS_META[spotlight.marketingStatus] : null;
 
   return (
@@ -278,7 +449,7 @@ function InboxList() {
       <div className="flex bg-white border-b border-gray-100 px-4">
         {([
           ['matches', matchesLabel],
-          ['pipeline', `Pipeline · ${pipelineCount}`],
+          ['pipeline', `Pipeline Â· ${pipelineCount}`],
           ['messages', 'Messages'],
         ] as [Tab, string][]).map(([t, label]) => (
           <button
@@ -304,7 +475,7 @@ function InboxList() {
           <div className="p-4 space-y-3">
             {loadingThreads && hasSupabaseRows && (
               <div className="rounded-xl border border-dashed border-gray-200 bg-white/70 p-3 text-center text-xs text-gray-400">
-                Refreshing conversations…
+                Refreshing conversationsâ€¦
               </div>
             )}
 
@@ -333,7 +504,7 @@ function InboxList() {
 
             {!rows.length && (
               <div className="rounded-xl border border-dashed border-gray-200 bg-white/60 p-4 text-center text-xs text-gray-400">
-                No conversations yet — matches will appear here once campaigns go live.
+                No conversations yet â€” matches will appear here once campaigns go live.
               </div>
             )}
 
@@ -356,13 +527,13 @@ function InboxList() {
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-gray-700 text-xs mb-2">
-                    <Clock className="w-3 h-3" /> {spotlight.deliverables.length ? spotlight.deliverables.join(' · ') : spotlight.offer}
+                    <Clock className="w-3 h-3" /> {spotlight.deliverables.length ? spotlight.deliverables.join(' Â· ') : spotlight.offer}
                   </div>
                   <button
                     onClick={() => navigate(`/creatorhub/inbox/chat/${spotlight.threadId}`)}
                     className="w-full bg-gray-900 text-white rounded-xl py-2.5 text-sm font-bold flex items-center justify-center gap-2"
                   >
-                    <Upload className="w-4 h-4" /> Open chat →
+                    <Upload className="w-4 h-4" /> Open chat â†’
                   </button>
                 </div>
               </div>
@@ -371,56 +542,11 @@ function InboxList() {
         )}
 
         {tab === 'pipeline' && (
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-bold text-lg text-gray-900">My Pipeline</span>
-              <span className="text-gray-500 text-sm font-semibold">{pipelineCount} collabs</span>
-            </div>
-            <div className="space-y-4">
-              {pipelineSections.map((section) => (
-                <div key={section.stage}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: section.dot }} />
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-                      {section.stage}{section.items.length > 0 ? ` · ${section.items.length}` : ''}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {section.items.map((item: PipelineItem) => (
-                      <div key={item.id} className="bg-white rounded-xl p-3 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <img src={item.thumb} alt={item.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 text-sm">{item.name}</div>
-                            <div className="text-xs text-gray-400">{item.sub}</div>
-                          </div>
-                          <button
-                            onClick={() => {}}
-                            className="bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"
-                          >
-                            {item.action === 'Chat' && <MessageSquare className="w-3 h-3" />}
-                            {item.action === 'View' && <MapPin className="w-3 h-3" />}
-                            {item.action === 'Submit' && <Upload className="w-3 h-3" />}
-                            {item.action}
-                          </button>
-                        </div>
-                        {'alert' in item && item.alert && (
-                          <div className="mt-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-amber-700 font-medium">
-                            {item.alert}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {section.items.length === 0 && (
-                      <div className="bg-white/60 rounded-xl p-3 text-xs text-gray-300 text-center border border-dashed border-gray-200">
-                        No items
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <PipelineTab
+            pipelineSections={pipelineSections}
+            pipelineCount={pipelineCount}
+            navigate={navigate}
+          />
         )}
 
         {tab === 'messages' && (
@@ -434,7 +560,7 @@ function InboxList() {
                   </span>
                   <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">2 days</span>
                 </div>
-                <div className="font-semibold text-gray-900 text-sm mb-2">Submit Draft — {spotlight.name}</div>
+                <div className="font-semibold text-gray-900 text-sm mb-2">Submit Draft â€” {spotlight.name}</div>
                 <button
                   onClick={() => navigate(`/creatorhub/inbox/chat/${spotlight.threadId}`)}
                   className="w-full bg-gray-900 text-white rounded-xl py-2.5 text-sm font-bold"
@@ -642,10 +768,10 @@ function ChatScreen() {
         </button>
       </div>
 
-      {/* Messages — scrollable */}
+      {/* Messages â€” scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
         {loading && (
-          <div className="text-xs text-gray-400 text-center py-6">Loading conversation…</div>
+          <div className="text-xs text-gray-400 text-center py-6">Loading conversationâ€¦</div>
         )}
 
         {!loading && messages.length === 0 && (
@@ -676,7 +802,7 @@ function ChatScreen() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input — always at bottom, no overflow */}
+      {/* Input â€” always at bottom, no overflow */}
       <div className="flex-shrink-0 px-4 py-3 bg-white border-t border-gray-100">
         <div className="flex items-center gap-2">
           <input
