@@ -36,8 +36,8 @@ function deriveOffer(profile: InfluencerProfile): string {
   const cost = (profile.cost || '').trim();
   const type = (profile.influencerType || '').toLowerCase();
   if (type === 'barter' || type === 'contra') return 'Barter collab';
-  if (cost && cost !== 'â€”' && cost !== 'NA') return cost;
-  if (type === 'paid') return 'Paid Â· On request';
+  if (cost && cost !== '—' && cost !== 'NA') return cost;
+  if (type === 'paid') return 'Paid · On request';
   return 'Barter collab';
 }
 
@@ -55,7 +55,7 @@ function formatFollowers(n: number, raw: string): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
   if (n > 0) return n.toString();
-  return raw || 'â€”';
+  return raw || '—';
 }
 
 function deriveSubtext(profile: InfluencerProfile, score: number): string {
@@ -64,7 +64,7 @@ function deriveSubtext(profile: InfluencerProfile, score: number): string {
   if (score >= 90) parts.push('High trust score');
   if (profile.isVerified) parts.push('Verified account');
   if (profile.followersExact > 100000) parts.push('100K+ reach');
-  return parts.slice(0, 2).join(' Â· ') || 'Influencer match';
+  return parts.slice(0, 2).join(' · ') || 'Influencer match';
 }
 
 function deriveBadge(score: number): string | undefined {
@@ -90,7 +90,7 @@ function mapInfluencersToCreators(influencers: InfluencerProfile[]): Creator[] {
       handle,
       followers,
       followersExact: p.followersExact,
-      engagement: p.avgPlays || p.impressions || 'â€”',
+      engagement: p.avgPlays || p.impressions || '—',
       offer: deriveOffer(p),
       score,
       badge: deriveBadge(score),
@@ -174,11 +174,11 @@ export default function InboundMatches() {
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-gray-900">Inbound Pitches</h1>
             <span className="bg-cyan-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-              {loading ? 'â€¦' : visible.filter(c => c.stage === 'New').length} new
+              {loading ? '…' : visible.filter(c => c.stage === 'New').length} new
             </span>
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
-            {loading ? 'Loadingâ€¦' : `${visible.length} total pitches Â· ${visible.filter(c => c.badge === 'Super').length} super matches`}
+            {loading ? 'Loading…' : `${visible.length} total pitches · ${visible.filter(c => c.badge === 'Super').length} super matches`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -213,7 +213,7 @@ export default function InboundMatches() {
 
       <main className="flex-1 overflow-auto p-6">
 
-        {/* Empty state â€” no inbound pitches yet */}
+        {/* Empty state — no inbound pitches yet */}
         {!loading && visible.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center gap-4">
             <div className="w-16 h-16 rounded-full bg-pink-50 border border-pink-100 flex items-center justify-center">
@@ -335,12 +335,12 @@ export default function InboundMatches() {
               <div className="flex items-center justify-center gap-2 mt-4">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 disabled:opacity-40 hover:bg-gray-50">
-                  â† Prev
+                  ← Prev
                 </button>
                 <span className="text-xs text-gray-500 font-medium">Page {page} of {totalPages}</span>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                   className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 disabled:opacity-40 hover:bg-gray-50">
-                  Next â†’
+                  Next →
                 </button>
               </div>
             )}
@@ -364,7 +364,7 @@ export default function InboundMatches() {
                   <div className="flex items-center gap-2 px-3 py-3 flex-shrink-0">
                     <span className={`w-2 h-2 rounded-full ${dot}`} />
                     <span className="text-xs font-bold uppercase tracking-wide text-gray-600">{label}</span>
-                    <span className="text-xs text-gray-400">Â· {colCreators.length}</span>
+                    <span className="text-xs text-gray-400">· {colCreators.length}</span>
                   </div>
                   <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-2">
                     {colCreators.slice(0, 30).map(creator => (
@@ -439,7 +439,7 @@ export default function InboundMatches() {
                           {creator.isVerified && <img src="/verified-badge.png" alt="Verified" className="w-3.5 h-3.5 object-contain flex-shrink-0" />}
                         </div>
                         <div className="text-xs text-gray-400 truncate">{creator.handle}</div>
-                        <div className="text-[10px] text-gray-400 truncate">{creator.area} Â· {creator.niche}</div>
+                        <div className="text-[10px] text-gray-400 truncate">{creator.area} · {creator.niche}</div>
                       </div>
                     </div>
 
@@ -516,12 +516,12 @@ export default function InboundMatches() {
               <div className="flex items-center justify-center gap-2 mt-5">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 disabled:opacity-40 hover:bg-gray-50">
-                  â† Prev
+                  ← Prev
                 </button>
                 <span className="text-xs text-gray-500 font-medium">Page {page} of {totalPages}</span>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                   className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 disabled:opacity-40 hover:bg-gray-50">
-                  Next â†’
+                  Next →
                 </button>
               </div>
             )}

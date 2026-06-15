@@ -543,7 +543,7 @@ function DashboardView({
               <img src="/verified-badge.png" alt="Verified" className="h-4 w-4 object-contain flex-shrink-0" />
             </div>
             <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-              {profile.handle} <span className="text-gray-300">Â·</span>
+              {profile.handle} <span className="text-gray-300">·</span>
               <MapPin className="h-3 w-3" /> {profile.location}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -649,11 +649,11 @@ function DashboardView({
                 <div className="text-[9px] uppercase tracking-wide text-gray-400">Reach</div>
               </button>
               <div className="rounded-2xl bg-white p-3 text-center shadow-sm">
-                <div className="text-lg font-bold text-gray-900">{profile.engagementRate || 'â€”'}</div>
+                <div className="text-lg font-bold text-gray-900">{profile.engagementRate || '—'}</div>
                 <div className="text-[9px] uppercase tracking-wide text-gray-400">Eng. Rate</div>
               </div>
               <div className="rounded-2xl bg-white p-3 text-center shadow-sm">
-                <div className="text-base font-bold text-gray-900">â€”</div>
+                <div className="text-base font-bold text-gray-900">—</div>
                 <div className="text-[9px] uppercase tracking-wide text-gray-400">Top City</div>
               </div>
             </div>
@@ -667,7 +667,7 @@ function DashboardView({
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {/* Heart â€” free save list, open to all */}
+              {/* Heart — free save list, open to all */}
               <button
                 onClick={() => onView('liked')}
                 className="group flex h-full items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
@@ -680,7 +680,7 @@ function DashboardView({
                   <div className="text-[11px] font-medium text-gray-400">{LIKED_BRANDS.length} saved</div>
                 </div>
               </button>
-              {/* Star â€” paid feature, gets the deal via bidding */}
+              {/* Star — paid feature, gets the deal via bidding */}
               <button
                 onClick={() => onView('favorites')}
                 className="group flex h-full items-center gap-2 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-3 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
@@ -928,7 +928,7 @@ function AccountControls({
                   <img src={collab.img} alt={collab.brand} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-gray-900 truncate">{collab.brand}</div>
-                    <div className="text-xs text-gray-400">{collab.campaign} Â· {collab.reach} reach</div>
+                    <div className="text-xs text-gray-400">{collab.campaign} · {collab.reach} reach</div>
                   </div>
                   <button
                     onClick={() =>
@@ -1076,9 +1076,9 @@ function CollabsShowcase({
               <div className="text-xs text-gray-500 truncate">{collab.campaign}</div>
               <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-400">
                 <span>{collab.reach} reach</span>
-                <span>Â·</span>
+                <span>·</span>
                 <span>{collab.eng} eng.</span>
-                <span>Â·</span>
+                <span>·</span>
                 <span>{collab.date}</span>
               </div>
             </div>
@@ -1116,7 +1116,7 @@ function BioView({ onBack, profile }: { onBack: () => void; profile: CreatorProf
               <img src="/verified-badge.png" alt="Verified" className="h-4 w-4 object-contain flex-shrink-0" />
             </div>
             <div className="mt-1 flex items-center gap-1 text-xs text-gray-200">
-              {profile.handle} Â· <MapPin className="h-2.5 w-2.5" /> {profile.location}
+              {profile.handle} · <MapPin className="h-2.5 w-2.5" /> {profile.location}
             </div>
             <div className="mt-1 text-xs text-gray-200">{profile.tagline}</div>
           </div>

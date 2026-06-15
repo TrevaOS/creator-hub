@@ -213,7 +213,7 @@ export default function CreatorHome() {
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
           <div className="bg-white rounded-full px-4 py-1.5 flex items-center gap-2 shadow-md text-xs font-semibold text-gray-700 border border-gray-100">
             <div className="w-2 h-2 rounded-full bg-gray-900" />
-            5km Â· 12 brands nearby
+            5km · 12 brands nearby
           </div>
         </div>
 
@@ -229,7 +229,7 @@ export default function CreatorHome() {
           />
         </div>
 
-        {/* Bottom sheet â€” fixed height, never scroll off */}
+        {/* Bottom sheet — fixed height, never scroll off */}
         {(() => {
           const marketing = selectedMapBrand.marketing;
           return (
@@ -250,7 +250,7 @@ export default function CreatorHome() {
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {selectedMapBrand.location}
                     </span>
-                    <span className="inline-flex items-center gap-1">â˜… {selectedMapBrand.rating.toFixed(1)}</span>
+                    <span className="inline-flex items-center gap-1">★ {selectedMapBrand.rating.toFixed(1)}</span>
                     <span className="inline-flex items-center gap-1 text-cyan-600 font-semibold">
                       <TrendingUp className="w-3 h-3" /> {selectedMapBrand.audienceFit}% match
                     </span>
@@ -259,7 +259,7 @@ export default function CreatorHome() {
               </div>
 
               <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Target launch Â· {formatDate(marketing.targetLaunch)}</span>
+                <span>Target launch · {formatDate(marketing.targetLaunch)}</span>
                 <span className="font-semibold text-gray-700">{marketing.inboundLeads} inbound</span>
               </div>
 
@@ -470,7 +470,7 @@ function SwipeCard({
             <span>{brand.location}</span>
           </span>
           <span className="inline-flex items-center gap-1">
-            â˜…<span>{brand.rating.toFixed(1)}</span>
+            ★<span>{brand.rating.toFixed(1)}</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
@@ -510,7 +510,7 @@ function DetailCard({
   const currentImage = gallery[imageIndex] ?? gallery[0];
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-md">
-      {/* Hero image â€” compact */}
+      {/* Hero image — compact */}
       <div className="relative h-44">
         <img src={currentImage} alt={brand.name} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50" />
@@ -556,7 +556,7 @@ function DetailCard({
             <span className="inline-flex items-center gap-1 text-cyan-600">
               <MapPin className="w-3 h-3" /> {brand.location}
             </span>
-            <span className="inline-flex items-center gap-1">â˜… {brand.rating.toFixed(1)}</span>
+            <span className="inline-flex items-center gap-1">★ {brand.rating.toFixed(1)}</span>
             <span className="inline-flex items-center gap-1 text-cyan-600 font-semibold">{brand.audienceFit}% match</span>
           </div>
         </div>
@@ -621,7 +621,7 @@ function DetailCard({
           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Account Owner</div>
           <div className="text-sm font-semibold text-gray-900">{brand.marketing.owner.name}</div>
           <div className="text-xs text-gray-500">{brand.marketing.owner.role}</div>
-          <div className="text-xs text-gray-500 mt-1">{brand.marketing.owner.email} Â· {brand.marketing.owner.phone}</div>
+          <div className="text-xs text-gray-500 mt-1">{brand.marketing.owner.email} · {brand.marketing.owner.phone}</div>
         </div>
 
         {(brand.marketing.notes || brand.marketing.inboundLeads) && (

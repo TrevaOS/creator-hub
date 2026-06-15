@@ -60,9 +60,9 @@ const formatMatched = (hoursAgo: number) => {
 };
 
 const formatRelativeShort = (iso: string | null | undefined): string => {
-  if (!iso) return 'â€”';
+  if (!iso) return '—';
   const timestamp = new Date(iso).getTime();
-  if (Number.isNaN(timestamp)) return 'â€”';
+  if (Number.isNaN(timestamp)) return '—';
   const diffMinutes = Math.round((Date.now() - timestamp) / 60000);
   if (diffMinutes <= 0) return 'now';
   if (diffMinutes < 60) return `${diffMinutes}m`;
@@ -104,7 +104,7 @@ const INBOX_BRANDS = BRAND_CAMPAIGNS.slice(0, 8).map((brand, index) => {
     thumb: brand.thumb,
     lastMsg:
       brand.marketing.notes?.slice(0, 36) ??
-      `${statusMeta.label} Â· ${brand.offer.split('+')[0].trim()} collab`,
+      `${statusMeta.label} · ${brand.offer.split('+')[0].trim()} collab`,
     time: formatTimeLabel(hoursAgo),
     matched: formatMatched(hoursAgo),
     unread: index % 3 === 0 ? 2 : index % 3 === 1 ? 1 : 0,
@@ -166,10 +166,10 @@ const buildPipeline = (rows: InboxBrandRow[]): PipelineSection[] => {
     group.items.push({
       id: row.threadId,
       name: row.name,
-      sub: `${MARKETING_STATUS_META[row.marketingStatus].label.toLowerCase()} Â· ${row.offer}`,
+      sub: `${MARKETING_STATUS_META[row.marketingStatus].label.toLowerCase()} · ${row.offer}`,
       action,
       thumb: row.thumb,
-      alert: row.stage === 'Live' ? `ðŸ“ˆ ${row.inboundLeads} inbound leads` : undefined,
+      alert: row.stage === 'Live' ? `📈 ${row.inboundLeads} inbound leads` : undefined,
       deliverables: row.deliverables,
       timelineSteps: buildTimelineSteps(row.deliverables, row.stage),
     });
@@ -306,7 +306,7 @@ function PipelineTab({
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: section.dot }} />
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-                {section.stage}{section.items.length > 0 ? ` Â· ${section.items.length}` : ''}
+                {section.stage}{section.items.length > 0 ? ` · ${section.items.length}` : ''}
               </span>
             </div>
             <div className="space-y-2">
@@ -435,7 +435,7 @@ function InboxList() {
   const rows = hasSupabaseRows ? supabaseRows : FALLBACK_INBOX_ROWS;
   const inboxRows = rows;
   const acceptedRows = useMemo(() => rows.filter(isAcceptedDealRow), [rows]);
-  const matchesLabel = `New Matches Â· ${rows.length}`;
+  const matchesLabel = `New Matches · ${rows.length}`;
   const pipelineSections = useMemo(() => buildPipeline(rows), [rows]);
   const pipelineCount = pipelineSections.reduce<number>((sum, section) => sum + section.items.length, 0);
   const spotlight = acceptedRows[0] ?? inboxRows[0];
@@ -449,7 +449,7 @@ function InboxList() {
       <div className="flex bg-white border-b border-gray-100 px-4">
         {([
           ['matches', matchesLabel],
-          ['pipeline', `Pipeline Â· ${pipelineCount}`],
+          ['pipeline', `Pipeline · ${pipelineCount}`],
           ['messages', 'Messages'],
         ] as [Tab, string][]).map(([t, label]) => (
           <button
@@ -475,7 +475,7 @@ function InboxList() {
           <div className="p-4 space-y-3">
             {loadingThreads && hasSupabaseRows && (
               <div className="rounded-xl border border-dashed border-gray-200 bg-white/70 p-3 text-center text-xs text-gray-400">
-                Refreshing conversationsâ€¦
+                Refreshing conversations…
               </div>
             )}
 
@@ -504,7 +504,7 @@ function InboxList() {
 
             {!rows.length && (
               <div className="rounded-xl border border-dashed border-gray-200 bg-white/60 p-4 text-center text-xs text-gray-400">
-                No conversations yet â€” matches will appear here once campaigns go live.
+                No conversations yet — matches will appear here once campaigns go live.
               </div>
             )}
 
@@ -527,13 +527,13 @@ function InboxList() {
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-gray-700 text-xs mb-2">
-                    <Clock className="w-3 h-3" /> {spotlight.deliverables.length ? spotlight.deliverables.join(' Â· ') : spotlight.offer}
+                    <Clock className="w-3 h-3" /> {spotlight.deliverables.length ? spotlight.deliverables.join(' · ') : spotlight.offer}
                   </div>
                   <button
                     onClick={() => navigate(`/creatorhub/inbox/chat/${spotlight.threadId}`)}
                     className="w-full bg-gray-900 text-white rounded-xl py-2.5 text-sm font-bold flex items-center justify-center gap-2"
                   >
-                    <Upload className="w-4 h-4" /> Open chat â†’
+                    <Upload className="w-4 h-4" /> Open chat →
                   </button>
                 </div>
               </div>
@@ -560,7 +560,7 @@ function InboxList() {
                   </span>
                   <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">2 days</span>
                 </div>
-                <div className="font-semibold text-gray-900 text-sm mb-2">Submit Draft â€” {spotlight.name}</div>
+                <div className="font-semibold text-gray-900 text-sm mb-2">Submit Draft — {spotlight.name}</div>
                 <button
                   onClick={() => navigate(`/creatorhub/inbox/chat/${spotlight.threadId}`)}
                   className="w-full bg-gray-900 text-white rounded-xl py-2.5 text-sm font-bold"
@@ -768,10 +768,10 @@ function ChatScreen() {
         </button>
       </div>
 
-      {/* Messages â€” scrollable */}
+      {/* Messages — scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
         {loading && (
-          <div className="text-xs text-gray-400 text-center py-6">Loading conversationâ€¦</div>
+          <div className="text-xs text-gray-400 text-center py-6">Loading conversation…</div>
         )}
 
         {!loading && messages.length === 0 && (
@@ -802,7 +802,7 @@ function ChatScreen() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input â€” always at bottom, no overflow */}
+      {/* Input — always at bottom, no overflow */}
       <div className="flex-shrink-0 px-4 py-3 bg-white border-t border-gray-100">
         <div className="flex items-center gap-2">
           <input

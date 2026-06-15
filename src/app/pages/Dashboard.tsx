@@ -325,7 +325,7 @@ export default function Dashboard() {
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-bold text-gray-900">Past Campaigns</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Recently wrapped â€” quick recap.</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Recently wrapped — quick recap.</p>
                 </div>
                 <Link to="/marketing/campaigns" className="text-xs text-cyan-600 font-semibold hover:underline">All</Link>
               </div>
@@ -423,14 +423,14 @@ export default function Dashboard() {
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-bold text-gray-900">Top Matched Creators</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Ranked by AI match score Â· audience overlap Â· niche fit</p>
+                <p className="text-xs text-gray-400 mt-0.5">Ranked by AI match score · audience overlap · niche fit</p>
               </div>
               <Link to="/marketing/inbound" className="text-xs text-cyan-600 font-semibold hover:underline flex items-center gap-1">
                 See ranked view <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
             {topCreators.length === 0 && (
-              <div className="p-8 text-center text-sm text-gray-400">No matched creators yet â€” discover creators to see top matches here.</div>
+              <div className="p-8 text-center text-sm text-gray-400">No matched creators yet — discover creators to see top matches here.</div>
             )}
             <div className="divide-y divide-gray-50">
               {topCreators.map((c, idx) => (
@@ -439,7 +439,7 @@ export default function Dashboard() {
                   <img src={c.img} alt={c.name} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm text-gray-900">{c.name} <span className="text-gray-400 font-normal text-xs">{c.handle}</span></div>
-                    <div className="text-xs text-gray-500">{c.followers} followers Â· {c.eng} engagement</div>
+                    <div className="text-xs text-gray-500">{c.followers} followers · {c.eng} engagement</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
@@ -499,7 +499,7 @@ function SegmentSpendPanel() {
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-gray-500" />
           <h2 className="text-sm font-bold text-gray-900">Budget by Segment</h2>
-          <span className="text-xs text-gray-400">Food Â· Ambience Â· Drinks</span>
+          <span className="text-xs text-gray-400">Food · Ambience · Drinks</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
