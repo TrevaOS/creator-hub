@@ -7,8 +7,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 type ViewMode = 'grid' | 'map' | 'lists';
 
-// â”€â”€ Creator Trust Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// All influencers start in the 92â€“100 band.
+// ── Creator Trust Score ────────────────────────────────────────────────────────
+// All influencers start in the 92–100 band.
 // Brand-side penalty events deduct from the score.
 // Score is shown as a circular ring on every card and in the spotlight.
 
@@ -21,13 +21,13 @@ interface ScoreEvent {
 
 const SCORE_EVENTS: ScoreEvent[] = [
   { type: 'late_cancel',  delta: -3, label: 'Late Cancel',   description: 'Cancelled after campaign brief was sent' },
-  { type: 'early_cancel', delta: -1, label: 'Early Cancel',  description: 'Cancelled before brief â€” forgivable' },
+  { type: 'early_cancel', delta: -1, label: 'Early Cancel',  description: 'Cancelled before brief — forgivable' },
   { type: 'ghost',        delta: -2, label: 'Ghosted',       description: 'No response after accepting' },
   { type: 'no_show',      delta: -3, label: 'No Show',       description: 'Did not show up / deliver content' },
   { type: 'completed',    delta: +1, label: 'Completed',     description: 'Successfully completed a collab' },
 ];
 
-// Derive a deterministic base score 92â€“100 from profile completeness
+// Derive a deterministic base score 92–100 from profile completeness
 function deriveBaseScore(profile: { followers: string; bio: string; scraped: boolean; avgPlays: string; email: string }): number {
   let score = 92;
   if (profile.bio && profile.bio.length > 20)  score += 2;
@@ -62,14 +62,14 @@ function ScoreRing({ score, size = 40 }: { score: number; size?: number }) {
   );
 }
 
-// â”€â”€ Deal type derivation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Deal type derivation ───────────────────────────────────────────────────────
 function deriveDealType(influencerType: string, cost: string): 'paid' | 'barter' | 'unpaid' {
   const t = (influencerType || '').toLowerCase().trim();
   const c = (cost || '').toLowerCase().trim();
   // explicit barter/contra
   if (t === 'barter' || t === 'contra' || c === 'barter' || c === 'contra') return 'barter';
   // if there's an actual cost amount, it's paid
-  if (cost && cost.trim() && cost.trim() !== 'â€”' && cost.trim() !== 'NA' && cost.trim() !== 'na') {
+  if (cost && cost.trim() && cost.trim() !== '—' && cost.trim() !== 'NA' && cost.trim() !== 'na') {
     const numeric = cost.replace(/[^0-9.]/g, '');
     if (numeric && parseFloat(numeric) > 0) return 'paid';
   }
@@ -112,7 +112,7 @@ interface CreatorCard {
   notes: string;
   influencerType: string;
   dealType: 'paid' | 'barter' | 'unpaid';
-  score: number;       // 0â€“100 trust score
+  score: number;       // 0–100 trust score
   initials: string;
   profile: InfluencerProfile;
 }
@@ -153,7 +153,7 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
     { label: 'Avg. Plays', value: formatStat(profile.avgPlays) },
     { label: 'Impressions', value: formatStat(profile.impressions) },
     { label: 'Cost', value: profile.cost || 'On request' },
-  ].filter(s => s.value && s.value !== 'â€”');
+  ].filter(s => s.value && s.value !== '—');
 
   const categories = card.categories.length ? card.categories : [card.niche];
   const sources = card.sources.length ? card.sources : profile.source ? [profile.source] : [];
@@ -205,7 +205,7 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
                 ))}
               </div>
             </div>
-            {/* Score ring â€” always visible in header */}
+            {/* Score ring — always visible in header */}
             <div className="flex-shrink-0 bg-white/15 backdrop-blur-sm rounded-2xl px-3 py-2 flex flex-col items-center gap-0.5">
               <ScoreRing score={card.score} size={48} />
               <span className="text-[9px] font-bold text-white/80 uppercase tracking-wider">Trust</span>
@@ -278,7 +278,7 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
 
         {/* Scrollable body */}
         {activeTab === 'profile' && <div className="overflow-y-auto flex-1 p-5 space-y-4">
-          {/* â”€â”€ Trust Score panel â”€â”€ */}
+          {/* ── Trust Score panel ── */}
           {(() => {
             const { ring, text, bg } = getScoreColor(card.score);
             return (
@@ -345,7 +345,7 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
             </div>
           )}
 
-          {/* Recent posts â€” exactly 3 */}
+          {/* Recent posts — exactly 3 */}
           {profile.latestPosts && profile.latestPosts.length > 0 && (
             <div>
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Recent Posts</div>
@@ -377,26 +377,26 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
                     <div className="absolute top-1.5 left-1.5 right-1.5 flex items-start justify-between gap-1">
                       <div className="flex flex-col gap-0.5">
                         {(post.type === 'Video' || post.productType === 'clips') && (
-                          <span className="bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">â–¶ Reel</span>
+                          <span className="bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">▶ Reel</span>
                         )}
                         {post.isPinned && (
-                          <span className="bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">ðŸ“Œ</span>
+                          <span className="bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">📌</span>
                         )}
                       </div>
                       <div className="flex flex-col gap-0.5 items-end">
                         {post.videoViewCount > 0 && (
                           <span className="bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
-                            ðŸ‘ {post.videoViewCount >= 1000 ? `${(post.videoViewCount/1000).toFixed(0)}k` : post.videoViewCount}
+                            👁 {post.videoViewCount >= 1000 ? `${(post.videoViewCount/1000).toFixed(0)}k` : post.videoViewCount}
                           </span>
                         )}
                         {post.likesCount > 0 && (
                           <span className="bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
-                            â™¥ {post.likesCount >= 1000 ? `${(post.likesCount/1000).toFixed(0)}k` : post.likesCount}
+                            ♥ {post.likesCount >= 1000 ? `${(post.likesCount/1000).toFixed(0)}k` : post.likesCount}
                           </span>
                         )}
                         {post.commentsCount > 0 && (
                           <span className="bg-black/70 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
-                            ðŸ’¬ {post.commentsCount >= 1000 ? `${(post.commentsCount/1000).toFixed(0)}k` : post.commentsCount}
+                            💬 {post.commentsCount >= 1000 ? `${(post.commentsCount/1000).toFixed(0)}k` : post.commentsCount}
                           </span>
                         )}
                       </div>
@@ -409,7 +409,7 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
                         </p>
                       )}
                       {post.musicSong && !post.usesOriginalAudio && (
-                        <p className="text-[8px] text-white/80 truncate">â™ª {post.musicSong}</p>
+                        <p className="text-[8px] text-white/80 truncate">♪ {post.musicSong}</p>
                       )}
                     </div>
                   </a>
@@ -437,8 +437,8 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
               <div className="flex flex-wrap gap-2">
                 {Object.entries(profile.socialLinks).map(([platform, url]) => {
                   const icons: Record<string, string> = {
-                    youtube: 'â–¶', facebook: 'f', twitter: 'X', tiktok: 'â™ª',
-                    snapchat: 'ðŸ‘»', linkedin: 'in', website: 'ðŸŒ',
+                    youtube: '▶', facebook: 'f', twitter: 'X', tiktok: '♪',
+                    snapchat: '👻', linkedin: 'in', website: '🌐',
                   };
                   const colors: Record<string, string> = {
                     youtube: 'bg-red-50 text-red-600 border-red-100',
@@ -457,7 +457,7 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
                       rel="noopener noreferrer"
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80 ${colors[platform] || 'bg-gray-50 text-gray-700 border-gray-200'}`}
                     >
-                      <span>{icons[platform] || 'ðŸ”—'}</span>
+                      <span>{icons[platform] || '🔗'}</span>
                       <span className="capitalize">{platform}</span>
                     </a>
                   );
@@ -492,14 +492,14 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   {[
                     { label: 'Area',         value: card.area || 'Bengaluru' },
-                    { label: 'Gender',       value: profile.gender || 'â€”' },
-                    { label: 'Type',         value: profile.influencerType || 'â€”' },
+                    { label: 'Gender',       value: profile.gender || '—' },
+                    { label: 'Type',         value: profile.influencerType || '—' },
                     { label: 'Cost',         value: profile.cost || 'On request' },
                     profile.followingCount > 0 ? { label: 'Following',   value: formatFollowerCount(profile.followingCount) } : null,
                     profile.postsCount > 0 ?     { label: 'Total Posts', value: profile.postsCount.toLocaleString() } : null,
                     profile.businessCategory ?   { label: 'IG Category', value: profile.businessCategory } : null,
                     profile.isBusinessAccount ?  { label: 'Account',     value: 'Business' } : null,
-                    profile.isVerified ?         { label: 'Verified',    value: 'âœ“ Verified' } : null,
+                    profile.isVerified ?         { label: 'Verified',    value: '✓ Verified' } : null,
                     profile.joinedRecently ?     { label: 'Joined',      value: 'Recently' } : null,
                     profile.email ?              { label: 'Email',       value: profile.email } : null,
                   ].filter(Boolean).map(f => (
@@ -570,13 +570,13 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { label: 'Followers',  value: profile.followersExact > 0 ? formatFollowerCount(profile.followersExact) : formatStat(profile.followers) || 'â€”' },
-                    { label: 'Following',  value: profile.followingCount > 0 ? formatFollowerCount(profile.followingCount) : 'â€”' },
-                    { label: 'Posts',      value: profile.postsCount > 0 ? profile.postsCount.toLocaleString() : 'â€”' },
+                    { label: 'Followers',  value: profile.followersExact > 0 ? formatFollowerCount(profile.followersExact) : formatStat(profile.followers) || '—' },
+                    { label: 'Following',  value: profile.followingCount > 0 ? formatFollowerCount(profile.followingCount) : '—' },
+                    { label: 'Posts',      value: profile.postsCount > 0 ? profile.postsCount.toLocaleString() : '—' },
                     { label: 'Cost',       value: profile.cost || 'On request' },
-                    { label: 'Avg. Plays', value: formatStat(profile.avgPlays) || 'â€”' },
-                    { label: 'Impressions',value: formatStat(profile.impressions) || 'â€”' },
-                  ].filter(f => f.value && f.value !== 'â€”').map(f => (
+                    { label: 'Avg. Plays', value: formatStat(profile.avgPlays) || '—' },
+                    { label: 'Impressions',value: formatStat(profile.impressions) || '—' },
+                  ].filter(f => f.value && f.value !== '—').map(f => (
                     <div key={f.label}>
                       <div className="text-[9px] text-white/50 uppercase tracking-wider">{f.label}</div>
                       <div className="font-bold text-sm">{f.value}</div>
@@ -588,7 +588,7 @@ function SpotlightOverlay({ card, open, onClose, defaultTab = 'profile' }: Spotl
               <div className="border border-gray-200 rounded-xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actions</div>
-                  <div className="text-[10px] text-gray-400">{profile.scraped ? 'âœ“ Live data' : 'CSV dataset'}</div>
+                  <div className="text-[10px] text-gray-400">{profile.scraped ? '✓ Live data' : 'CSV dataset'}</div>
                 </div>
                 <a
                   href={card.profileUrl || '#'}
@@ -698,7 +698,7 @@ function getSpotlightPalette(card: CreatorCard) {
 }
 
 function formatFollowerCount(n: number): string {
-  if (!n) return 'â€”';
+  if (!n) return '—';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
   return n.toString();
@@ -707,8 +707,8 @@ function formatFollowerCount(n: number): string {
 function formatStat(raw: string): string {
   if (!raw) return '';
   return raw
-    .replace(/Ã¢â‚¬"/g, 'â€”')
-    .replace(/[â€“â€”â€•]/g, 'â€”')
+    .replace(/â€"/g, '—')
+    .replace(/[–—―]/g, '—')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/(\d+(?:[.,]\d+)?)(k|l|m)\b/gi, (_, n, u) => `${n}${u.toUpperCase()}`);
@@ -725,7 +725,7 @@ function mapInfluencersToCards(influencers: InfluencerProfile[]): CreatorCard[] 
     .map((influencer, index) => {
       const rawCategories = influencer.categories.length ? influencer.categories : [influencer.primaryCategory].filter(Boolean);
       // Each raw segment (already split by comma/slash/pipe) may still contain compound
-      // phrases like "Fashion And Lifestyle" â€” extract ALL matching niches from each segment
+      // phrases like "Fashion And Lifestyle" — extract ALL matching niches from each segment
       const canonicalSet = new Set<string>();
       rawCategories.forEach(cat => { extractNichesFromSegment(cat).forEach(n => canonicalSet.add(n)); });
       const categories = canonicalSet.size > 0 ? Array.from(canonicalSet) : ['Lifestyle'];
@@ -741,8 +741,8 @@ function mapInfluencersToCards(influencers: InfluencerProfile[]): CreatorCard[] 
       const handle = influencer.handle || (influencer.profileId ? `@${influencer.profileId}` : '');
       const followersRaw = influencer.followers || '';
       const engagementRaw = influencer.avgPlays || influencer.impressions || '';
-      const followers = formatStat(followersRaw) || 'â€”';
-      const engagement = formatStat(engagementRaw) || 'â€”';
+      const followers = formatStat(followersRaw) || '—';
+      const engagement = formatStat(engagementRaw) || '—';
       const niche = categories[0] || influencer.primaryCategory || 'Lifestyle';
       const statusLabel = influencer.response ? capitalizeWords(influencer.response) : 'Not yet invited';
       const statusKey = influencer.response ? influencer.response.toLowerCase() : 'not yet invited';
@@ -779,21 +779,21 @@ function mapInfluencersToCards(influencers: InfluencerProfile[]): CreatorCard[] 
     .filter(card => Boolean(card.name || card.handle));
 }
 
-// â”€â”€ Canonical niche map â€” ALL variants collapse to one canonical label â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Canonical niche map — ALL variants collapse to one canonical label ────────
 // Rule: if an influencer has "skincare" AND "makeup" they both map to "Beauty"
 // so the card gets ONE "Beauty" niche, not two duplicate entries.
 const NICHE_MAP: Record<string, string> = {
-  // â”€â”€ Beauty (all personal-care variants â†’ Beauty) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Beauty (all personal-care variants → Beauty) ──────────────────────────
   beauty: 'Beauty', skincare: 'Beauty', makeup: 'Beauty', haircare: 'Beauty',
   grooming: 'Beauty', cosmetics: 'Beauty', 'skin care': 'Beauty',
   'hair care': 'Beauty', nails: 'Beauty', 'nail art': 'Beauty',
   'personal care': 'Beauty', fragrance: 'Beauty', perfume: 'Beauty',
-  // â”€â”€ Fashion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fashion ───────────────────────────────────────────────────────────────
   fashion: 'Fashion', style: 'Fashion', streetwear: 'Fashion',
   thrifting: 'Fashion', vintage: 'Fashion', jewelry: 'Fashion',
   watches: 'Fashion', sneaker: 'Fashion', luxury: 'Fashion',
   ootd: 'Fashion', accessories: 'Fashion', modelling: 'Fashion',
-  // â”€â”€ Lifestyle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Lifestyle ─────────────────────────────────────────────────────────────
   lifestyle: 'Lifestyle', 'daily life': 'Lifestyle', vlogger: 'Lifestyle',
   vlogging: 'Lifestyle', 'couple content': 'Lifestyle', 'family content': 'Lifestyle',
   parenting: 'Lifestyle', minimalism: 'Lifestyle', 'college life': 'Lifestyle',
@@ -801,86 +801,86 @@ const NICHE_MAP: Record<string, string> = {
   pets: 'Lifestyle', home: 'Lifestyle', 'home decor': 'Lifestyle',
   'home & living': 'Lifestyle', 'plant parent': 'Lifestyle',
   blogger: 'Lifestyle', blog: 'Lifestyle', creator: 'Lifestyle',
-  // â”€â”€ Food â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Food ──────────────────────────────────────────────────────────────────
   food: 'Food', cooking: 'Food', baking: 'Food', nutrition: 'Food',
   'street food': 'Food', restaurant: 'Food', chef: 'Food',
   'coffee culture': 'Food', 'tea culture': 'Food', foodie: 'Food',
   'food blogger': 'Food', recipe: 'Food', 'home cook': 'Food',
-  // â”€â”€ Travel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Travel ────────────────────────────────────────────────────────────────
   travel: 'Travel', 'luxury travel': 'Travel', 'budget travel': 'Travel',
   'solo travel': 'Travel', backpacking: 'Travel', adventure: 'Travel',
   'van life': 'Travel', explore: 'Travel', hiking: 'Travel', camping: 'Travel',
   traveller: 'Travel', travelling: 'Travel', wanderlust: 'Travel',
   'travel blogger': 'Travel', trekking: 'Travel', roadtrip: 'Travel',
-  // â”€â”€ Fitness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fitness ───────────────────────────────────────────────────────────────
   fitness: 'Fitness', health: 'Fitness', wellness: 'Fitness',
   bodybuilding: 'Fitness', calisthenics: 'Fitness', yoga: 'Fitness',
   running: 'Fitness', cycling: 'Fitness', sports: 'Fitness',
   'mental health': 'Fitness', meditation: 'Fitness', pilates: 'Fitness',
   gym: 'Fitness', workout: 'Fitness', 'weight loss': 'Fitness',
   'healthy living': 'Fitness', nutrition: 'Fitness',
-  // â”€â”€ Technology â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Technology ────────────────────────────────────────────────────────────
   technology: 'Technology', tech: 'Technology', coding: 'Technology',
   'web development': 'Technology', 'mobile apps': 'Technology',
   'smart gadgets': 'Technology', 'smart home': 'Technology',
   'ui/ux design': 'Technology', engineering: 'Technology',
   'embedded systems': 'Technology', electronics: 'Technology',
   science: 'Technology', robotics: 'Technology', gadgets: 'Technology',
-  // â”€â”€ AI & Automation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── AI & Automation ───────────────────────────────────────────────────────
   'ai & automation': 'AI & Automation', ai: 'AI & Automation',
   automation: 'AI & Automation', 'virtual reality': 'AI & Automation',
   'augmented reality': 'AI & Automation', metaverse: 'AI & Automation',
-  // â”€â”€ Gaming â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Gaming ────────────────────────────────────────────────────────────────
   gaming: 'Gaming', esports: 'Gaming', 'board games': 'Gaming',
   'card games': 'Gaming', 'lego content': 'Gaming', gamer: 'Gaming',
-  // â”€â”€ Entertainment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Entertainment ─────────────────────────────────────────────────────────
   entertainment: 'Entertainment', comedy: 'Entertainment',
   movies: 'Entertainment', 'movies & ott': 'Entertainment',
   anime: 'Entertainment', meme: 'Entertainment', pranks: 'Entertainment',
   'reaction content': 'Entertainment', storytelling: 'Entertainment',
   'horror content': 'Entertainment', 'mystery content': 'Entertainment',
   asmr: 'Entertainment', 'live streaming': 'Entertainment', memes: 'Entertainment',
-  // â”€â”€ Music & Dance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Music & Dance ─────────────────────────────────────────────────────────
   music: 'Music & Dance', dance: 'Music & Dance', singing: 'Music & Dance',
   musician: 'Music & Dance', artist: 'Music & Dance', performer: 'Music & Dance',
-  // â”€â”€ Education â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Education ─────────────────────────────────────────────────────────────
   education: 'Education', tutorials: 'Education', books: 'Education',
   'language learning': 'Education', 'facts & knowledge': 'Education',
   'educational shorts': 'Education', 'career guidance': 'Education',
   'public speaking': 'Education', psychology: 'Education',
   philosophy: 'Education', history: 'Education', learning: 'Education',
-  // â”€â”€ Business & Finance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Business & Finance ────────────────────────────────────────────────────
   business: 'Business', finance: 'Finance', investment: 'Finance',
   cryptocurrency: 'Finance', 'stock market': 'Finance', trading: 'Finance',
   startups: 'Business', entrepreneurship: 'Business', saas: 'Business',
   freelancing: 'Business', 'passive income': 'Business',
   'side hustles': 'Business', marketing: 'Business',
   'personal branding': 'Business', 'social media': 'Business',
-  // â”€â”€ Nature & Outdoors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Nature & Outdoors ─────────────────────────────────────────────────────
   nature: 'Nature', wildlife: 'Nature', 'marine life': 'Nature',
   gardening: 'Nature', sustainability: 'Nature', 'zero waste': 'Nature',
   fishing: 'Nature', survival: 'Nature', environment: 'Nature',
-  // â”€â”€ Art & Photography â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Art & Photography ─────────────────────────────────────────────────────
   art: 'Art & Photography', photography: 'Art & Photography',
   videography: 'Art & Photography', filmmaking: 'Art & Photography',
   'graphic design': 'Art & Photography', 'drone content': 'Art & Photography',
   'diy & crafts': 'Art & Photography', diy: 'Art & Photography',
   crafts: 'Art & Photography', illustration: 'Art & Photography',
   painting: 'Art & Photography', drawing: 'Art & Photography',
-  // â”€â”€ Motivation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Motivation ────────────────────────────────────────────────────────────
   motivation: 'Motivation', 'self improvement': 'Motivation',
   'motivational quotes': 'Motivation', 'inspirational stories': 'Motivation',
   'self help': 'Motivation', mindset: 'Motivation',
-  // â”€â”€ Fashion catchall â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fashion catchall ──────────────────────────────────────────────────────
   model: 'Fashion',
 };
 
 // Strip emojis and non-ascii decoration from a string
 function stripEmojis(s: string): string {
-  return s.replace(/[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}Â©Â®â€ï¸]/gu, '').replace(/\s+/g, ' ').trim();
+  return s.replace(/[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}©®‍️]/gu, '').replace(/\s+/g, ' ').trim();
 }
 
-// Ordered list of [keyword-regex, canonical] â€” first match wins per segment
+// Ordered list of [keyword-regex, canonical] — first match wins per segment
 const NICHE_RULES: [RegExp, string][] = [
   [/\bbeauty\b|\bskincare\b|\bskin care\b|\bmakeup\b|\bhaircare\b|\bhair care\b|\bgrooming\b|\bcosmetic\b|\bnail\b|\bfragrance\b|\bperfume\b/, 'Beauty'],
   [/\bfashion\b|\bstyle\b|\bstreetwear\b|\bthrift\b|\bvintage\b|\bjewel\b|\bwatch\b|\bsneaker\b|\bluxury\b|\bootd\b|\baccessor\b|\bmodell\b|\bfasion\b/, 'Fashion'],
@@ -918,9 +918,9 @@ function mapToCanonicalNiche(raw: string): string {
 }
 
 // Extract ALL canonical niches from a single raw category string
-// e.g. "Fashion And Lifestyle" â†’ ['Fashion', 'Lifestyle']
-// e.g. "Fashion ðŸ‘—" â†’ ['Fashion']
-// e.g. "Food / Travel / Lifestyle" â†’ already split before this call, but handles slash too
+// e.g. "Fashion And Lifestyle" → ['Fashion', 'Lifestyle']
+// e.g. "Fashion 👗" → ['Fashion']
+// e.g. "Food / Travel / Lifestyle" → already split before this call, but handles slash too
 function extractNichesFromSegment(raw: string): string[] {
   const cleaned = stripEmojis(raw).toLowerCase().trim();
   if (!cleaned) return [];
@@ -972,7 +972,7 @@ function filterCreators(
   const searchValue = search.trim().toLowerCase();
   return cards.filter(card => {
     const radiusOk = card.distanceKm <= radiusValue;
-    // card.categories are already canonical â€” direct comparison
+    // card.categories are already canonical — direct comparison
     const nicheOk = activeNiches.length === 0 || activeNiches.some(n => card.categories.includes(n));
     const searchOk = !searchValue ||
       card.name.toLowerCase().includes(searchValue) ||
@@ -996,7 +996,7 @@ function filterCreators(
   });
 }
 
-// Full Bangalore area list â€” alphabetical, always shown in Region filter
+// Full Bangalore area list — alphabetical, always shown in Region filter
 const BANGALORE_AREAS = [
   'Bangalore',
   'Banashankari', 'Banaswadi', 'Bannerghatta', 'Basavanagudi', 'Basaveshwara Nagar',
@@ -1065,7 +1065,7 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
       </button>
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`dots-${i}`} className="px-2 text-gray-400 text-sm">â€¦</span>
+          <span key={`dots-${i}`} className="px-2 text-gray-400 text-sm">…</span>
         ) : (
           <button
             key={p}
@@ -1111,7 +1111,7 @@ interface FilterBarProps {
   onToggleRegion: (r: string) => void;
 }
 
-// â”€â”€ SVG brand icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SVG brand icons ────────────────────────────────────────────────────────────
 function SocialIcon({ platform, size = 28 }: { platform: string; size?: number }) {
   const s = size;
   const r = s / 2;
@@ -1190,14 +1190,14 @@ const DEAL_TYPE_OPTIONS = [
   { key: 'unpaid', label: 'Unpaid', dot: '#9ca3af' },
 ];
 
-// â”€â”€ Unified filter panel: single button â†’ left main tabs + right sub-options â”€â”€
+// ── Unified filter panel: single button → left main tabs + right sub-options ──
 type FilterCategory = 'type' | 'platform' | 'region' | 'niche';
 
 const FILTER_CATEGORIES: { key: FilterCategory; label: string; icon: string }[] = [
-  { key: 'type',     label: 'Deal Type', icon: 'ðŸ’°' },
-  { key: 'platform', label: 'Platform',  icon: 'ðŸ“±' },
-  { key: 'region',   label: 'Region',    icon: 'ðŸ“' },
-  { key: 'niche',    label: 'Niche',     icon: 'ðŸ·' },
+  { key: 'type',     label: 'Deal Type', icon: '💰' },
+  { key: 'platform', label: 'Platform',  icon: '📱' },
+  { key: 'region',   label: 'Region',    icon: '📍' },
+  { key: 'niche',    label: 'Niche',     icon: '🏷' },
 ];
 
 function FilterPanel({
@@ -1270,7 +1270,7 @@ function FilterPanel({
         <>
           <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 mb-2">
             <Search className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            <input autoFocus value={regionQ} onChange={e => setRegionQ(e.target.value)} placeholder="Search regionâ€¦"
+            <input autoFocus value={regionQ} onChange={e => setRegionQ(e.target.value)} placeholder="Search region…"
               className="flex-1 outline-none text-xs bg-transparent text-gray-700 placeholder-gray-400" />
             {regionQ && <button onClick={() => setRegionQ('')}><X className="w-3 h-3 text-gray-400" /></button>}
           </div>
@@ -1297,7 +1297,7 @@ function FilterPanel({
         <>
           <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 mb-2">
             <Search className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            <input autoFocus value={nicheQ} onChange={e => setNicheQ(e.target.value)} placeholder="Search nicheâ€¦"
+            <input autoFocus value={nicheQ} onChange={e => setNicheQ(e.target.value)} placeholder="Search niche…"
               className="flex-1 outline-none text-xs bg-transparent text-gray-700 placeholder-gray-400" />
             {nicheQ && <button onClick={() => setNicheQ('')}><X className="w-3 h-3 text-gray-400" /></button>}
           </div>
@@ -1400,7 +1400,7 @@ function FilterBar({ search, onSearch, selectedRadius, onRadius, categoryOptions
       {/* Search */}
       <div className="flex-1 min-w-[200px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2">
         <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-        <input type="text" value={search} onChange={e => onSearch(e.target.value)} placeholder="Search name, handle, cityâ€¦"
+        <input type="text" value={search} onChange={e => onSearch(e.target.value)} placeholder="Search name, handle, city…"
           className="flex-1 outline-none text-sm bg-transparent text-gray-700 placeholder-gray-400" />
         {search && <button onClick={() => onSearch('')}><X className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600" /></button>}
       </div>
@@ -1433,7 +1433,7 @@ function FilterBar({ search, onSearch, selectedRadius, onRadius, categoryOptions
   );
 }
 
-// â”€â”€ Area â†’ Bangalore coordinates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Area → Bangalore coordinates ───────────────────────────────────────────────
 const AREA_COORDS: Record<string, [number, number]> = {
   'whitefield':           [77.7480, 12.9698],
   'bangalore':            [77.5946, 12.9716],
@@ -1475,7 +1475,7 @@ function getCoords(area: string): [number, number] {
   return [jitter(77.5946, 0.12), jitter(12.9716, 0.10)];
 }
 
-// â”€â”€ Real MapLibre map for discover view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Real MapLibre map for discover view ────────────────────────────────────────
 interface DiscoverMapViewProps {
   creators: CreatorCard[];
   selected: string | null;
@@ -1506,7 +1506,7 @@ function DiscoverMapView({ creators, selected, onSelect }: DiscoverMapViewProps)
         const [lng, lat] = getCoords(creator.area);
 
         // IMPORTANT: MapLibre sets transform:translate on the outer element.
-        // Never set transform on it â€” use an inner wrapper for all visual effects.
+        // Never set transform on it — use an inner wrapper for all visual effects.
         const outer = document.createElement('div');
         outer.style.cssText = 'width:40px;height:40px;cursor:pointer;';
 
@@ -1534,7 +1534,7 @@ function DiscoverMapView({ creators, selected, onSelect }: DiscoverMapViewProps)
 
         outer.appendChild(inner);
 
-        // Hover â€” scale the INNER element only
+        // Hover — scale the INNER element only
         outer.addEventListener('mouseenter', () => {
           inner.style.transform = 'scale(1.25)';
           inner.style.boxShadow = '0 4px 16px rgba(0,0,0,0.28)';
@@ -1571,7 +1571,7 @@ function DiscoverMapView({ creators, selected, onSelect }: DiscoverMapViewProps)
     };
   }, []);
 
-  // Highlight selected marker â€” always target INNER element, never OUTER
+  // Highlight selected marker — always target INNER element, never OUTER
   useEffect(() => {
     markersRef.current.forEach(({ id, inner }) => {
       if (id === selected) {
@@ -1601,7 +1601,7 @@ function DiscoverMapView({ creators, selected, onSelect }: DiscoverMapViewProps)
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
 }
 
-// â”€â”€ Add Influencer Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Add Influencer Modal ───────────────────────────────────────────────────────
 interface AddInfluencerForm {
   name: string; handle: string; followers: string; category: string;
   influencerType: string; cost: string; email: string; phone: string;
@@ -1709,7 +1709,7 @@ function AddInfluencerModal({ open, onClose, onSave }: { open: boolean; onClose:
               <ModalField {...fp} label="Avg. Plays / Impressions" fieldKey="avgPlays" placeholder="e.g. 35k" />
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Category / Niche</label>
-                <input value={form.category} onChange={e => handleChange('category', e.target.value)} placeholder="Food, Lifestyle, Travelâ€¦"
+                <input value={form.category} onChange={e => handleChange('category', e.target.value)} placeholder="Food, Lifestyle, Travel…"
                   className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-300" />
               </div>
               <div>
@@ -1750,7 +1750,7 @@ function AddInfluencerModal({ open, onClose, onSave }: { open: boolean; onClose:
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
             <textarea value={form.notes} onChange={e => handleChange('notes', e.target.value)} rows={3}
-              placeholder="Any additional notes about this creatorâ€¦"
+              placeholder="Any additional notes about this creator…"
               className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan-300 resize-none" />
           </div>
         </div>
@@ -1839,7 +1839,7 @@ export default function OutboundDiscovery() {
     const cats = form.category ? form.category.split(',').map(c => c.trim()).filter(Boolean) : ['Lifestyle'];
     const newCard: CreatorCard = {
       id, name: form.name, handle,
-      followers: form.followers, engagement: form.avgPlays || 'â€”',
+      followers: form.followers, engagement: form.avgPlays || '—',
       niche: cats[0], categories: cats, categoryKeys: cats.map(normalizeKey),
       distance: '0 km', distanceKm: 0,
       img: '', statusKey: 'not yet invited', statusLabel: 'Not yet invited',
@@ -1878,8 +1878,8 @@ export default function OutboundDiscovery() {
             <h1 className="text-xl font-bold text-gray-900">Discover Creators</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {loading
-                ? 'Loading creator dataâ€¦'
-                : `${filtered.length} of ${creatorCards.length} creators Â· page ${page} of ${totalPages || 1}`}
+                ? 'Loading creator data…'
+                : `${filtered.length} of ${creatorCards.length} creators · page ${page} of ${totalPages || 1}`}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -1940,7 +1940,7 @@ export default function OutboundDiscovery() {
             </div>
           )}
 
-          {/* â”€â”€ Shortlist / Liked panel â”€â”€ */}
+          {/* ── Shortlist / Liked panel ── */}
           {activeListCards !== null && (
             <div className={`mb-5 rounded-2xl border overflow-hidden ${listFilter === 'starred' ? 'border-amber-200 bg-amber-50' : 'border-rose-200 bg-rose-50'}`}>
               {/* Panel header */}
@@ -1950,13 +1950,13 @@ export default function OutboundDiscovery() {
                     <>
                       <svg className="w-4 h-4 fill-amber-500" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
                       <span className="font-bold text-sm text-amber-800">Shortlisted Creators</span>
-                      <span className="text-xs text-amber-600">Â· creators you want to work with</span>
+                      <span className="text-xs text-amber-600">· creators you want to work with</span>
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4 fill-rose-500" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"/></svg>
                       <span className="font-bold text-sm text-rose-800">Liked Creators</span>
-                      <span className="text-xs text-rose-600">Â· creators you're considering</span>
+                      <span className="text-xs text-rose-600">· creators you're considering</span>
                     </>
                   )}
                 </div>
@@ -1969,8 +1969,8 @@ export default function OutboundDiscovery() {
               {activeListCards.length === 0 ? (
                 <div className="px-5 py-8 text-center text-sm text-gray-400">
                   {listFilter === 'starred'
-                    ? 'No creators shortlisted yet. Click â­ on a creator card to shortlist them.'
-                    : 'No creators liked yet. Click â¤ï¸ on a creator card to like them.'}
+                    ? 'No creators shortlisted yet. Click ⭐ on a creator card to shortlist them.'
+                    : 'No creators liked yet. Click ❤️ on a creator card to like them.'}
                 </div>
               ) : (
                 <div className="divide-y divide-white/60">
@@ -1993,7 +1993,7 @@ export default function OutboundDiscovery() {
                             </svg>
                           )}
                         </div>
-                        <div className="text-xs text-gray-400 truncate">{creator.handle} Â· {creator.niche}</div>
+                        <div className="text-xs text-gray-400 truncate">{creator.handle} · {creator.niche}</div>
                       </div>
                       <div className="text-sm font-bold text-gray-700 flex-shrink-0">
                         {creator.profile.followersExact > 0 ? formatFollowerCount(creator.profile.followersExact) : creator.followers}
@@ -2048,7 +2048,7 @@ export default function OutboundDiscovery() {
                 regionOptions={regionOptions} activeRegions={activeRegions} onToggleRegion={toggleRegion}
               />
 
-              {/* Grid â€” 4 cols Ã— 4 rows = 16 per page */}
+              {/* Grid — 4 cols × 4 rows = 16 per page */}
               <div className="grid grid-cols-4 gap-4">
                 {loading && Array.from({ length: PAGE_SIZE }).map((_, i) => (
                   <div key={i} className="bg-white rounded-3xl animate-pulse shadow-sm" style={{ height: 340 }} />
@@ -2060,11 +2060,11 @@ export default function OutboundDiscovery() {
 
                   const followersDisplay = creator.profile.followersExact > 0
                     ? formatFollowerCount(creator.profile.followersExact)
-                    : creator.followers || 'â€”';
+                    : creator.followers || '—';
                   const followingDisplay = creator.profile.followingCount > 0
-                    ? formatFollowerCount(creator.profile.followingCount) : 'â€”';
+                    ? formatFollowerCount(creator.profile.followingCount) : '—';
                   const postsDisplay = creator.profile.postsCount > 0
-                    ? creator.profile.postsCount.toLocaleString() : 'â€”';
+                    ? creator.profile.postsCount.toLocaleString() : '—';
 
                   // Detect primary social platform for top-left icon
                   const socialLinks = creator.profile.socialLinks || {};
@@ -2078,7 +2078,7 @@ export default function OutboundDiscovery() {
                     ? 'twitter'
                     : 'instagram';
 
-                  // Soft pastel gradient like the reference â€” always 3-stop radial mesh
+                  // Soft pastel gradient like the reference — always 3-stop radial mesh
                   const bannerStyle = {
                     background: `
                       radial-gradient(ellipse at 20% 50%, ${pal.start}cc 0%, transparent 60%),
@@ -2095,9 +2095,9 @@ export default function OutboundDiscovery() {
                       className="bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 cursor-pointer border border-gray-100 flex flex-col"
                       style={{ height: 340 }}
                     >
-                      {/* â”€â”€ Banner + Avatar wrapper â€” no overflow-hidden so avatar shows â”€â”€ */}
+                      {/* ── Banner + Avatar wrapper — no overflow-hidden so avatar shows ── */}
                       <div className="relative flex-shrink-0" style={{ height: 130 }}>
-                        {/* Gradient banner â€” rounded top only via border-radius */}
+                        {/* Gradient banner — rounded top only via border-radius */}
                         <div
                           className="absolute top-0 left-0 right-0"
                           style={{
@@ -2107,7 +2107,7 @@ export default function OutboundDiscovery() {
                           }}
                         />
 
-                        {/* Top-left: social icon â€” above banner */}
+                        {/* Top-left: social icon — above banner */}
                         <div className="absolute top-3 left-3 z-10">
                           <SocialIcon platform={primarySocial} size={28} />
                         </div>
@@ -2117,7 +2117,7 @@ export default function OutboundDiscovery() {
                           <ScoreRing score={creator.score} size={36} />
                         </div>
 
-                        {/* â”€â”€ Avatar â€” sits at bottom of this wrapper, overlapping banner edge â”€â”€ */}
+                        {/* ── Avatar — sits at bottom of this wrapper, overlapping banner edge ── */}
                         <div className="absolute left-0 right-0 flex justify-center z-10" style={{ top: 56 }}>
                           <div
                             style={{
@@ -2142,7 +2142,7 @@ export default function OutboundDiscovery() {
                         </div>
                       </div>
 
-                      {/* â”€â”€ Name / handle / niche â”€â”€ */}
+                      {/* ── Name / handle / niche ── */}
                       <div className="px-3 pt-1 text-center flex-shrink-0">
                         <div className="flex items-center justify-center gap-1 min-w-0">
                           <span className="font-bold text-[13px] text-gray-900 truncate leading-snug">{creator.name}</span>
@@ -2161,14 +2161,14 @@ export default function OutboundDiscovery() {
                         </div>
                       </div>
 
-                      {/* â”€â”€ Bio â€” fixed 2 lines always â”€â”€ */}
+                      {/* ── Bio — fixed 2 lines always ── */}
                       <div className="px-4 pt-2 flex-shrink-0" style={{ height: 38 }}>
                         <p className="text-[10px] text-gray-500 leading-relaxed text-center line-clamp-2">
                           {creator.profile.bio || creator.area || 'Bengaluru'}
                         </p>
                       </div>
 
-                      {/* â”€â”€ Stats row â”€â”€ */}
+                      {/* ── Stats row ── */}
                       <div className="flex items-center mx-4 mt-2 flex-shrink-0">
                         {[
                           { val: postsDisplay,     lbl: 'Posts' },
@@ -2182,7 +2182,7 @@ export default function OutboundDiscovery() {
                         ))}
                       </div>
 
-                      {/* â”€â”€ Action buttons: Instagram | Chat | Heart | Star â”€â”€ */}
+                      {/* ── Action buttons: Instagram | Chat | Heart | Star ── */}
                       <div className="px-4 mt-auto pb-4 pt-3 flex-shrink-0 flex items-center gap-2">
                         {/* Instagram */}
                         <a
@@ -2300,7 +2300,7 @@ export default function OutboundDiscovery() {
                       );
                     })}
                     {filtered.length > 12 && (
-                      <div className="text-xs text-gray-400 text-center py-1">+{filtered.length - 12} more â€” use Grid/List view</div>
+                      <div className="text-xs text-gray-400 text-center py-1">+{filtered.length - 12} more — use Grid/List view</div>
                     )}
                   </div>
                 </div>
@@ -2345,7 +2345,7 @@ export default function OutboundDiscovery() {
                           </div>
                           <div className="bg-gray-50 rounded-lg px-2 py-1.5">
                             <div className="text-gray-400">Cost</div>
-                            <div className="font-bold text-gray-800">{creator.profile.cost || 'â€”'}</div>
+                            <div className="font-bold text-gray-800">{creator.profile.cost || '—'}</div>
                           </div>
                         </div>
                         <button onClick={() => openSpotlight(creator)} className="w-full py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-bold text-xs transition-colors">
@@ -2423,7 +2423,7 @@ export default function OutboundDiscovery() {
                             </svg>
                           )}
                         </div>
-                        <div className="text-xs text-gray-400 truncate">{creator.handle} Â· {creator.area}</div>
+                        <div className="text-xs text-gray-400 truncate">{creator.handle} · {creator.area}</div>
                       </div>
                       <div className="hidden sm:flex items-center gap-1 w-36 flex-wrap">
                         {creator.categories.slice(0, 2).map(cat => (
@@ -2433,8 +2433,8 @@ export default function OutboundDiscovery() {
                       <div className="text-sm font-bold text-gray-700 w-16 text-right flex-shrink-0">
                         {creator.profile.followersExact > 0 ? formatFollowerCount(creator.profile.followersExact) : creator.followers}
                       </div>
-                      <div className="text-sm text-gray-500 w-16 text-right flex-shrink-0">{creator.engagement || 'â€”'}</div>
-                      <div className="text-sm font-semibold text-gray-700 w-16 text-right flex-shrink-0">{creator.profile.cost || 'â€”'}</div>
+                      <div className="text-sm text-gray-500 w-16 text-right flex-shrink-0">{creator.engagement || '—'}</div>
+                      <div className="text-sm font-semibold text-gray-700 w-16 text-right flex-shrink-0">{creator.profile.cost || '—'}</div>
                       <div className="w-20 flex justify-center flex-shrink-0">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${dealStyle.cls}`}>{dealStyle.label}</span>
                       </div>

@@ -30,9 +30,9 @@ interface Applicant {
 const DEFAULT_APPLICANTS: Applicant[] = [
   { id: '1', name: 'Maya R.', handle: '@foodie_blr', followers: '28.4K', engagement: '7.2%', offer: 'Barter: Dinner for 2', status: 'awaiting', deadline: 'Reservation needed', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&h=60&fit=crop&crop=face' },
   { id: '2', name: 'Priya S.', handle: '@dineanddash', followers: '12.2K', engagement: '9.1%', offer: 'Barter only', status: 'awaiting', deadline: 'Reservation needed', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&h=60&fit=crop&crop=face' },
-  { id: '3', name: 'Devi P.', handle: '@deviperks', followers: '18K', engagement: '8.4%', offer: 'Barter: Dinner for 4', status: 'booked', deadline: 'Sat 14 Â· 8:00pm Â· 2 pax', date: 'Sat 14 Mar', time: '8:00 PM', pax: 2, img: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=60&h=60&fit=crop&crop=face' },
-  { id: '4', name: 'Kiran A.', handle: '@kiranfood', followers: '33K', engagement: '5.5%', offer: 'Barter + â‚¹2,000', status: 'content', deadline: 'Draft due Friday', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&h=60&fit=crop&crop=face' },
-  { id: '5', name: 'Tanvi G.', handle: '@tanvig', followers: '22K', engagement: '7.8%', offer: 'Barter only', status: 'done', deadline: 'Posted Â· 42K reach', reach: '42K', img: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=60&h=60&fit=crop&crop=face' },
+  { id: '3', name: 'Devi P.', handle: '@deviperks', followers: '18K', engagement: '8.4%', offer: 'Barter: Dinner for 4', status: 'booked', deadline: 'Sat 14 · 8:00pm · 2 pax', date: 'Sat 14 Mar', time: '8:00 PM', pax: 2, img: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=60&h=60&fit=crop&crop=face' },
+  { id: '4', name: 'Kiran A.', handle: '@kiranfood', followers: '33K', engagement: '5.5%', offer: 'Barter + ₹2,000', status: 'content', deadline: 'Draft due Friday', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&h=60&fit=crop&crop=face' },
+  { id: '5', name: 'Tanvi G.', handle: '@tanvig', followers: '22K', engagement: '7.8%', offer: 'Barter only', status: 'done', deadline: 'Posted · 42K reach', reach: '42K', img: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=60&h=60&fit=crop&crop=face' },
 ];
 
 const STATUS_CONFIG: Record<CampaignStatus, { label: string; dot: string; badge: string }> = {
@@ -60,7 +60,7 @@ const STATUS_OPTIONS: CampaignSummaryStatus[] = ['Draft', 'Active', 'Paused', 'C
 
 const INR = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 
-// â”€â”€â”€ Campaign Edit Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Campaign Edit Panel ──────────────────────────────────────────────────────
 
 function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; onSave: (updated: CampaignSummary) => void }) {
   const [name, setName] = useState(campaign.name);
@@ -185,7 +185,7 @@ function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; on
               type="url"
               value={coverUrl}
               onChange={e => { setCoverUrl(e.target.value); setCoverPreview(null); }}
-              placeholder="Or paste image URLâ€¦"
+              placeholder="Or paste image URL…"
               className="px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-cyan-300"
             />
           </div>
@@ -225,8 +225,8 @@ function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; on
         <EField label="Category">
           <select value={category} onChange={(e) => setCategory(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300">
-            <option>Food Â· Lifestyle</option>
-            <option>Bar Â· Nightlife</option>
+            <option>Food · Lifestyle</option>
+            <option>Bar · Nightlife</option>
             <option>Fine Dine</option>
             <option>Casual Dining</option>
             <option>Cafe</option>
@@ -234,7 +234,7 @@ function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; on
           </select>
           {category === 'Other' && (
             <input value={customCategory} onChange={(e) => setCustomCategory(e.target.value)}
-              placeholder="e.g. Cloud Kitchen, Dessertsâ€¦"
+              placeholder="e.g. Cloud Kitchen, Desserts…"
               className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300" />
           )}
         </EField>
@@ -242,7 +242,7 @@ function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; on
         {/* Brief */}
         <EField label="Brief">
           <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={4}
-            placeholder="Goal, vibe, do's and don'tsâ€¦"
+            placeholder="Goal, vibe, do's and don'ts…"
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 resize-y" />
         </EField>
 
@@ -255,7 +255,7 @@ function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; on
             </select>
             {perk === 'Custom' && (
               <input value={customPerk} onChange={(e) => setCustomPerk(e.target.value)}
-                placeholder="Describe what you'll giveâ€¦"
+                placeholder="Describe what you'll give…"
                 className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300" />
             )}
           </EField>
@@ -268,7 +268,7 @@ function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; on
         {/* Audience + Hashtags */}
         <EField label="Target audience">
           <input value={audience} onChange={(e) => setAudience(e.target.value)}
-            placeholder="e.g. 22â€“35, foodies, Bangalore"
+            placeholder="e.g. 22–35, foodies, Bangalore"
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300" />
         </EField>
 
@@ -344,7 +344,7 @@ function CampaignEditPanel({ campaign, onSave }: { campaign: CampaignSummary; on
             </div>
             {newDelivLabel === 'Other' && (
               <input value={customDelivLabel} onChange={(e) => setCustomDelivLabel(e.target.value)}
-                placeholder="Describe the deliverableâ€¦"
+                placeholder="Describe the deliverable…"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-cyan-300 bg-white" />
             )}
           </div>
@@ -364,7 +364,7 @@ function EField({ label, hint, children }: { label: string; hint?: string; child
   );
 }
 
-// â”€â”€â”€ Main CampaignManager â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main CampaignManager ─────────────────────────────────────────────────────
 
 export default function CampaignManager() {
   const { campaignId } = useParams();
@@ -397,7 +397,7 @@ export default function CampaignManager() {
     setApplicantList(prev =>
       prev.map(c =>
         c.id === sheetCampaign.id
-          ? { ...c, status: 'booked', deadline: `${DATES[selectedDate]} Â· ${TIMES[selectedTime]}pm Â· ${pax} pax`, date: DATES[selectedDate], time: TIMES[selectedTime] + ' PM', pax }
+          ? { ...c, status: 'booked', deadline: `${DATES[selectedDate]} · ${TIMES[selectedTime]}pm · ${pax} pax`, date: DATES[selectedDate], time: TIMES[selectedTime] + ' PM', pax }
           : c
       )
     );
@@ -422,7 +422,7 @@ export default function CampaignManager() {
         { key: 'posted', label: 'Posted + reach reported', date: '' },
       ]
     : [
-        { key: 'pitched', label: 'Pitched Â· barter for dinner', date: 'Mar 5' },
+        { key: 'pitched', label: 'Pitched · barter for dinner', date: 'Mar 5' },
         { key: 'accepted', label: 'Accepted by you', date: 'Mar 6' },
         { key: 'book', label: 'Book table & reserve date', date: '' },
         { key: 'visit', label: 'Visit + content draft', date: '' },
@@ -463,7 +463,7 @@ export default function CampaignManager() {
             )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
-            {applicantList.length} applicants Â· {applicantList.filter(c => c.status === 'awaiting').length} awaiting Â· {applicantList.filter(c => c.status === 'content').length} content pending
+            {applicantList.length} applicants · {applicantList.filter(c => c.status === 'awaiting').length} awaiting · {applicantList.filter(c => c.status === 'content').length} content pending
           </p>
           {campaignMeta?.activeCreatorHandle && (
             <div className="mt-1.5 inline-flex items-center gap-2 bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-1.5">
@@ -472,7 +472,7 @@ export default function CampaignManager() {
               )}
               <Zap className="w-3 h-3 text-cyan-500" />
               <span className="text-xs font-semibold text-cyan-700">
-                Collab in progress Â· <span className="text-cyan-900">{campaignMeta.activeCreatorName ?? campaignMeta.activeCreatorHandle}</span>
+                Collab in progress · <span className="text-cyan-900">{campaignMeta.activeCreatorName ?? campaignMeta.activeCreatorHandle}</span>
               </span>
             </div>
           )}
@@ -554,7 +554,7 @@ export default function CampaignManager() {
                       <img src={applicant.img} alt={applicant.name} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
                       <div>
                         <div className="font-semibold text-sm text-gray-900">{applicant.name}</div>
-                        <div className="text-xs text-gray-400">{applicant.handle} Â· {applicant.followers}</div>
+                        <div className="text-xs text-gray-400">{applicant.handle} · {applicant.followers}</div>
                       </div>
                       <div>
                         <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${sc.badge}`}>
@@ -614,7 +614,7 @@ export default function CampaignManager() {
                       {selected.name} <span className="text-gray-400 font-normal text-sm">{selected.handle}</span>
                     </div>
                     <div className="text-sm text-gray-500 mt-0.5">
-                      {selected.followers} followers Â· {selected.engagement} engagement Â· {selected.offer}
+                      {selected.followers} followers · {selected.engagement} engagement · {selected.offer}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full border ${STATUS_CONFIG[selected.status].badge}`}>
@@ -660,7 +660,7 @@ export default function CampaignManager() {
                   </div>
                 </div>
 
-                {/* Timeline â€” uses live deliverables from campaign settings */}
+                {/* Timeline — uses live deliverables from campaign settings */}
                 <div className="flex-1 overflow-y-auto p-6">
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
                     <div className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-4">Campaign Timeline</div>
@@ -675,7 +675,7 @@ export default function CampaignManager() {
                               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                                 done ? 'bg-green-500 border-green-500 text-white' : active ? 'bg-cyan-500 border-cyan-500 text-white' : 'bg-white border-gray-300 text-gray-400'
                               }`}>
-                                {done ? 'âœ“' : active ? 'Â·' : ''}
+                                {done ? '✓' : active ? '·' : ''}
                               </div>
                               {!isLast && <div className={`w-0.5 h-6 mt-0.5 ${done ? 'bg-green-200' : 'bg-gray-200'}`} />}
                             </div>
@@ -696,7 +696,7 @@ export default function CampaignManager() {
                               )}
                               {selected.status === 'booked' && idx === 2 && (
                                 <div className="text-xs text-green-600 font-semibold mt-0.5">
-                                  {selected.date} Â· {selected.time} Â· {selected.pax} pax
+                                  {selected.date} · {selected.time} · {selected.pax} pax
                                 </div>
                               )}
                             </div>
@@ -730,7 +730,7 @@ export default function CampaignManager() {
         )}
       </div>
 
-      {/* Side Sheet â€” Quick Reservation */}
+      {/* Side Sheet — Quick Reservation */}
       {showSideSheet && sheetCampaign && (
         <div className="fixed inset-0 z-50 flex">
           <div className="flex-1 bg-black/20" onClick={() => setShowSideSheet(false)} />
@@ -738,7 +738,7 @@ export default function CampaignManager() {
             <div className="bg-gray-900 text-white px-5 py-4 flex items-center justify-between flex-shrink-0">
               <div>
                 <div className="font-bold text-sm">Quick Reservation</div>
-                <div className="text-xs text-gray-400 mt-0.5">{sheetCampaign.name} Â· {sheetCampaign.offer.split(':')[0]}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{sheetCampaign.name} · {sheetCampaign.offer.split(':')[0]}</div>
               </div>
               <button onClick={() => setShowSideSheet(false)}
                 className="w-7 h-7 border border-white/20 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-colors">
@@ -751,7 +751,7 @@ export default function CampaignManager() {
                 <img src={sheetCampaign.img} alt={sheetCampaign.name} className="w-10 h-10 rounded-full object-cover" />
                 <div>
                   <div className="font-semibold text-sm text-gray-900">{sheetCampaign.name}</div>
-                  <div className="text-xs text-gray-500">{sheetCampaign.followers} Â· {sheetCampaign.engagement} eng</div>
+                  <div className="text-xs text-gray-500">{sheetCampaign.followers} · {sheetCampaign.engagement} eng</div>
                 </div>
               </div>
 
@@ -783,7 +783,7 @@ export default function CampaignManager() {
                 <div className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Guests (Pax)</div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setPax(Math.max(1, pax - 1))}
-                    className="w-9 h-9 border border-gray-200 rounded-lg font-bold text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-center text-lg">âˆ’</button>
+                    className="w-9 h-9 border border-gray-200 rounded-lg font-bold text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-center text-lg">−</button>
                   <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg py-2 text-center text-sm font-bold text-gray-900">{pax} guests</div>
                   <button onClick={() => setPax(pax + 1)}
                     className="w-9 h-9 border border-gray-200 rounded-lg font-bold text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-center text-lg">+</button>
@@ -796,12 +796,12 @@ export default function CampaignManager() {
                     {campaignMeta?.perk ?? 'Marketing: Barter'}
                   </span>
                 </div>
-                <div className="text-xs text-gray-500">Auto-tagged Â· visible to front desk on the day</div>
+                <div className="text-xs text-gray-500">Auto-tagged · visible to front desk on the day</div>
               </div>
 
               <div>
                 <div className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Notes (optional)</div>
-                <textarea placeholder="e.g. window table preferred, dietary requirementsâ€¦"
+                <textarea placeholder="e.g. window table preferred, dietary requirements…"
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 placeholder-gray-400 min-h-[72px] outline-none focus:ring-2 focus:ring-cyan-300 resize-none" />
               </div>
             </div>
@@ -814,7 +814,7 @@ export default function CampaignManager() {
               ) : (
                 <button onClick={handleConfirm}
                   className="w-full py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-bold text-sm transition-colors">
-                  Confirm â€” Push to Floor
+                  Confirm — Push to Floor
                 </button>
               )}
               <div className="text-xs text-gray-400 text-center mt-2">Pushes to Floor & Live waitlist</div>
